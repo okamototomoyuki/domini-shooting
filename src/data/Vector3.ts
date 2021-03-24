@@ -30,31 +30,31 @@ export default class Vector3 {
      * @returns 結果のベクトル
      */
     rotateVector(v: Vector3): Vector3 {
-        var x1 = this.x,
-            y1 = this.y,
-            z1 = this.z,
-            angleX = v.x / 2,
-            angleY = v.y / 2,
-            angleZ = v.z / 2,
-            cr = Math.cos(angleX),
-            cp = Math.cos(angleY),
-            cy = Math.cos(angleZ),
-            sr = Math.sin(angleX),
-            sp = Math.sin(angleY),
-            sy = Math.sin(angleZ),
-            w = cr * cp * cy + -sr * sp * -sy,
-            x = sr * cp * cy - -cr * sp * -sy,
-            y = cr * sp * cy + sr * cp * sy,
-            z = cr * cp * sy - -sr * sp * -cy,
-            m0 = 1 - 2 * (y * y + z * z),
-            m1 = 2 * (x * y + z * w),
-            m2 = 2 * (x * z - y * w),
-            m4 = 2 * (x * y - z * w),
-            m5 = 1 - 2 * (x * x + z * z),
-            m6 = 2 * (z * y + x * w),
-            m8 = 2 * (x * z + y * w),
-            m9 = 2 * (y * z - x * w),
-            m10 = 1 - 2 * (x * x + y * y);
+        let x1 = this.x;
+        let y1 = this.y;
+        let z1 = this.z;
+        let angleX = v.x / 2;
+        let angleY = v.y / 2;
+        let angleZ = v.z / 2;
+        let cr = Math.cos(angleX);
+        let cp = Math.cos(angleY);
+        let cy = Math.cos(angleZ);
+        let sr = Math.sin(angleX);
+        let sp = Math.sin(angleY);
+        let sy = Math.sin(angleZ);
+        let w = cr * cp * cy + -sr * sp * -sy;
+        let x = sr * cp * cy - -cr * sp * -sy;
+        let y = cr * sp * cy + sr * cp * sy;
+        let z = cr * cp * sy - -sr * sp * -cy;
+        let m0 = 1 - 2 * (y * y + z * z);
+        let m1 = 2 * (x * y + z * w);
+        let m2 = 2 * (x * z - y * w);
+        let m4 = 2 * (x * y - z * w);
+        let m5 = 1 - 2 * (x * x + z * z);
+        let m6 = 2 * (z * y + x * w);
+        let m8 = 2 * (x * z + y * w);
+        let m9 = 2 * (y * z - x * w);
+        let m10 = 1 - 2 * (x * x + y * y);
 
         return new Vector3(
             x1 * m0 + y1 * m4 + z1 * m8,
@@ -62,3 +62,4 @@ export default class Vector3 {
             x1 * m2 + y1 * m6 + z1 * m10,
         );
     }
+}

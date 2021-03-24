@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import Rect from "./component/Rect.svelte";
+
+	let rect: Rect;
+	onMount(() => {
+		loop();
+	});
+	const loop = () => {
+		let t = rect.getTransform();
+		let style = getComputedStyle(t.node);
+		// var angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+		console.log("p:" + style.transform);
+		requestAnimationFrame(loop);
+	};
 </script>
 
-<div>
-	<h3 class:hide={isMsg == false} bind:this={hMsg}>読み込み中...</h3>
-	<textarea class:hide={isMsg} bind:this={txtBody} on:input={_dirty} disabled>
-		読み込み中...
-	</textarea>
-</div>
-
-<style lang="scss">
-</style>
+<Rect bind:this={rect} />

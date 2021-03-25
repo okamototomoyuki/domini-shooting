@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { get_custom_elements_slots } from "svelte/internal";
-    import Transform from "../data/Transform";
+    import Transform from "../ctrl/Transform";
 
     let element: HTMLDivElement;
     let transform: Transform;

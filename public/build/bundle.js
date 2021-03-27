@@ -4,6 +4,12 @@ var app = (function () {
     'use strict';
 
     function noop() { }
+    function assign(tar, src) {
+        // @ts-ignore
+        for (const k in src)
+            tar[k] = src[k];
+        return tar;
+    }
     function add_location(element, file, line, column, char) {
         element.__svelte_meta = {
             loc: { file, line, column, char }
@@ -27,6 +33,42 @@ var app = (function () {
     function is_empty(obj) {
         return Object.keys(obj).length === 0;
     }
+    function create_slot(definition, ctx, $$scope, fn) {
+        if (definition) {
+            const slot_ctx = get_slot_context(definition, ctx, $$scope, fn);
+            return definition[0](slot_ctx);
+        }
+    }
+    function get_slot_context(definition, ctx, $$scope, fn) {
+        return definition[1] && fn
+            ? assign($$scope.ctx.slice(), definition[1](fn(ctx)))
+            : $$scope.ctx;
+    }
+    function get_slot_changes(definition, $$scope, dirty, fn) {
+        if (definition[2] && fn) {
+            const lets = definition[2](fn(dirty));
+            if ($$scope.dirty === undefined) {
+                return lets;
+            }
+            if (typeof lets === 'object') {
+                const merged = [];
+                const len = Math.max($$scope.dirty.length, lets.length);
+                for (let i = 0; i < len; i += 1) {
+                    merged[i] = $$scope.dirty[i] | lets[i];
+                }
+                return merged;
+            }
+            return $$scope.dirty | lets;
+        }
+        return $$scope.dirty;
+    }
+    function update_slot(slot, slot_definition, ctx, $$scope, dirty, get_slot_changes_fn, get_slot_context_fn) {
+        const slot_changes = get_slot_changes(slot_definition, $$scope, dirty, get_slot_changes_fn);
+        if (slot_changes) {
+            const slot_context = get_slot_context(slot_definition, ctx, $$scope, get_slot_context_fn);
+            slot.p(slot_context, slot_changes);
+        }
+    }
     function insert(target, node, anchor) {
         target.insertBefore(node, anchor || null);
     }
@@ -49,13 +91,6 @@ var app = (function () {
         const e = document.createEvent('CustomEvent');
         e.initCustomEvent(type, false, false, detail);
         return e;
-    }
-    function get_custom_elements_slots(element) {
-        const result = {};
-        element.childNodes.forEach((node) => {
-            result[node.slot || 'default'] = true;
-        });
-        return result;
     }
 
     let current_component;
@@ -158,12 +193,6 @@ var app = (function () {
             block.o(local);
         }
     }
-
-    const globals = (typeof window !== 'undefined'
-        ? window
-        : typeof globalThis !== 'undefined'
-            ? globalThis
-            : global);
     function create_component(block) {
         block && block.c();
     }
@@ -457,108 +486,211 @@ var app = (function () {
         }
     }
 
-    /*
-    * 矩形の頂点データ
-    */
-    class VertexData {
-        /**
-         * コンストラクタ
-         * @param a 点1 左上
-         * @param b 点2 右上
-         * @param c 点3 右下
-         * @param d 点4 左下
-         */
-        constructor(a, b, c, d) {
-            this.a = a;
-            this.b = b;
-            this.c = c;
-            this.d = d;
-        }
-    }
-
     /**
      * 矩形の Transform
      */
     class Transform {
-        constructor(node, transformStyle, matrix, rotate, translate) {
+        constructor(node) {
+            this.frame = 0;
+            this.localPositionX = 0;
+            this.localPositionY = 0;
+            this.localRotate = 0;
+            this.localScaleX = 1;
+            this.localScaleY = 1;
+            this.isDirty = false;
             this.node = node;
-            this.transformStyle = transformStyle;
-            this.matrix = matrix;
-            this.rotate = rotate;
-            this.translate = translate;
         }
         static getTransform(node) {
-            let computedStyle = getComputedStyle(node, null);
-            let val = computedStyle.transform;
-            let matrix = Matrix.parse(val);
-            let rotateY = Math.asin(-matrix.m13);
-            let rotateX = Math.atan2(matrix.m23, matrix.m33);
-            let rotateZ = Math.atan2(matrix.m12, matrix.m11);
-            return new Transform(node, val, matrix, new Vector3(rotateX, rotateY, rotateZ), new Vector3(matrix.m41, matrix.m42, matrix.m43));
-        }
-        /**
-         * 頂点データ計算
-         * @returns 頂点データ
-         */
-        computeVertexData() {
-            let w = this.node.offsetWidth;
-            let h = this.node.offsetHeight;
-            let v = new VertexData(new Vector3(-w / 2, -h / 2, 0), new Vector3(w / 2, -h / 2, 0), new Vector3(w / 2, h / 2, 0), new Vector3(-w / 2, h / 2, 0));
-            let node = this.node;
-            let transform = null;
-            while (node.nodeType === 1) {
-                transform = Transform.getTransform(node);
-                v.a = v.a.rotateVector(transform.rotate).addVectors(transform.translate);
-                v.b = v.b.rotateVector(transform.rotate).addVectors(transform.translate);
-                v.c = v.c.rotateVector(transform.rotate).addVectors(transform.translate);
-                v.d = v.d.rotateVector(transform.rotate).addVectors(transform.translate);
-                node = transform.parentNode;
+            if (this.isInit == false) {
+                this.isInit = true;
+                this.loop();
             }
-            return v;
+            let t = Transform.nodeToIns.get(node);
+            if (t != null) {
+                return t;
+            }
+            else {
+                t = new Transform(node);
+                Transform.nodeToIns.set(node, t);
+                return t;
+            }
         }
-        ;
+        static loop() {
+            Transform.currentFrame = Transform.currentFrame + 1;
+            for (const e of Transform.nodeToIns.values()) {
+                e.patch();
+            }
+            requestAnimationFrame(Transform.loop);
+        }
+        rebuildMatrix() {
+            if (this.frame != Transform.currentFrame) {
+                const computedStyle = getComputedStyle(this.node, null);
+                const transStyle = computedStyle.transform;
+                this.matrix = Matrix.parse(transStyle);
+                this.frame = Transform.currentFrame;
+            }
+        }
+        get rotate() {
+            this.rebuildMatrix();
+            let rotateY = Math.asin(-this.matrix.m13);
+            let rotateX = Math.atan2(this.matrix.m23, this.matrix.m33);
+            let rotateZ = Math.atan2(this.matrix.m12, this.matrix.m11);
+            return new Vector3(rotateX, rotateY, rotateZ);
+        }
+        get translate() {
+            this.rebuildMatrix();
+            return new Vector3(this.matrix.m41, this.matrix.m42, this.matrix.m43);
+        }
+        // /**
+        //  * 頂点データ計算
+        //  * @returns 頂点データ
+        //  */
+        // computeVertexData(): VertexData {
+        //     let w = this.node.offsetWidth;
+        //     let h = this.node.offsetHeight;
+        //     let v = new VertexData(
+        //         new Vector3(-w / 2, -h / 2, 0),
+        //         new Vector3(w / 2, -h / 2, 0),
+        //         new Vector3(w / 2, h / 2, 0),
+        //         new Vector3(-w / 2, h / 2, 0),
+        //     );
+        //     let node: HTMLElement = this.node;
+        //     let transform: Transform = null;
+        //     while (node.nodeType === 1) {
+        //         transform = Transform.getTransform(node);
+        //         v.a = v.a.rotateVector(transform.rotate).addVectors(transform.translate);
+        //         v.b = v.b.rotateVector(transform.rotate).addVectors(transform.translate);
+        //         v.c = v.c.rotateVector(transform.rotate).addVectors(transform.translate);
+        //         v.d = v.d.rotateVector(transform.rotate).addVectors(transform.translate);
+        //         node = transform.parentNode;
+        //     }
+        //     return v;
+        // };
+        // /**
+        //  * 親ノード取得
+        //  */
+        // get parentNode(): HTMLElement {
+        //     return this.node.parentNode as HTMLElement;
+        // }
         /**
-         * 親ノード取得
+         * 座標X設定
+         * @param x X座標
          */
-        get parentNode() {
-            return this.node.parentNode;
+        setLocalPositionX(x) {
+            this.localPositionX = x;
+            this.isDirty = true;
         }
         /**
-         * 回転
-         * @param rot ラジアン
+         * 座標Y設定
+         * @param y Y座標
          */
-        setRotate(rot) {
+        setLocalPositionY(y) {
+            this.localPositionY = y;
+            this.isDirty = true;
         }
-        buildStyle() {
-            this.node.setAttribute("style", `transform: translate(${this.translate.x}px, ${this.translate.y}px) rotate(${this.rotate.z}deg) scale(, )`);
+        /**
+         * 座標指定
+         * @param x X座標
+         * @param y Y座標
+         */
+        setLocalPosition(x, y) {
+            this.setLocalPositionX(x);
+            this.setLocalPositionY(y);
+        }
+        /**
+         * 回転設定
+         * @param rad ラジアン
+         */
+        setLocalRotate(rad) {
+            this.localRotate = rad;
+            this.isDirty = true;
+        }
+        /**
+         * 拡縮X設定
+         * @param x 拡縮X
+         */
+        setLocalScaleX(x) {
+            this.localScaleX = x;
+            this.isDirty = true;
+        }
+        /**
+         * 拡縮Y設定
+         * @param y 拡縮Y
+         */
+        setLocalScaleY(y) {
+            this.localScaleY = y;
+            this.isDirty = true;
+        }
+        /**
+         * 拡縮設定
+         * @param {number} x 拡縮X
+         * @param {number} y 拡縮Y
+         */
+        setLocalScale(x, y) {
+            this.setLocalScale(x, y);
+        }
+        patch() {
+            if (this.isDirty) {
+                this.node.setAttribute("style", `
+transform: translate(${this.localPositionX}px, ${this.localPositionY}px) rotate(${this.localRotate}deg) scale(${this.localScaleX}, ${this.localScaleY})
+            `);
+            }
+            this.isDirty = false;
         }
     }
+    Transform.nodeToIns = new Map();
+    Transform.currentFrame = 0;
+    Transform.isInit = false;
 
     /* src\component\Rect.svelte generated by Svelte v3.35.0 */
     const file = "src\\component\\Rect.svelte";
 
     function create_fragment$1(ctx) {
     	let div;
+    	let current;
+    	const default_slot_template = /*#slots*/ ctx[4].default;
+    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[3], null);
 
     	const block = {
     		c: function create() {
     			div = element("div");
-    			attr_dev(div, "class", "svelte-1cpen9t");
-    			add_location(div, file, 16, 0, 396);
+    			if (default_slot) default_slot.c();
+    			attr_dev(div, "class", "svelte-u49va3");
+    			add_location(div, file, 15, 0, 334);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
-    			/*div_binding*/ ctx[3](div);
+
+    			if (default_slot) {
+    				default_slot.m(div, null);
+    			}
+
+    			/*div_binding*/ ctx[5](div);
+    			current = true;
     		},
-    		p: noop,
-    		i: noop,
-    		o: noop,
+    		p: function update(ctx, [dirty]) {
+    			if (default_slot) {
+    				if (default_slot.p && dirty & /*$$scope*/ 8) {
+    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[3], dirty, null, null);
+    				}
+    			}
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(default_slot, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(default_slot, local);
+    			current = false;
+    		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div);
-    			/*div_binding*/ ctx[3](null);
+    			if (default_slot) default_slot.d(detaching);
+    			/*div_binding*/ ctx[5](null);
     		}
     	};
 
@@ -575,7 +707,7 @@ var app = (function () {
 
     function instance$1($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("Rect", slots, []);
+    	validate_slots("Rect", slots, ['default']);
     	let element;
     	let transform;
 
@@ -604,9 +736,12 @@ var app = (function () {
     		});
     	}
 
+    	$$self.$$set = $$props => {
+    		if ("$$scope" in $$props) $$invalidate(3, $$scope = $$props.$$scope);
+    	};
+
     	$$self.$capture_state = () => ({
     		onMount,
-    		get_custom_elements_slots,
     		Transform,
     		element,
     		transform,
@@ -623,7 +758,7 @@ var app = (function () {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [element, getElement, getTransform, div_binding];
+    	return [element, getElement, getTransform, $$scope, slots, div_binding];
     }
 
     class Rect extends SvelteComponentDev {
@@ -658,14 +793,63 @@ var app = (function () {
 
     /* src\App.svelte generated by Svelte v3.35.0 */
 
-    const { console: console_1 } = globals;
-
-    function create_fragment(ctx) {
+    // (18:0) <Rect bind:this={rect}>
+    function create_default_slot(ctx) {
     	let rect_1;
     	let current;
     	let rect_1_props = {};
     	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
-    	/*rect_1_binding*/ ctx[1](rect_1);
+    	/*rect_1_binding*/ ctx[2](rect_1);
+
+    	const block = {
+    		c: function create() {
+    			create_component(rect_1.$$.fragment);
+    		},
+    		m: function mount(target, anchor) {
+    			mount_component(rect_1, target, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			const rect_1_changes = {};
+    			rect_1.$set(rect_1_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(rect_1.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(rect_1.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			/*rect_1_binding*/ ctx[2](null);
+    			destroy_component(rect_1, detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_default_slot.name,
+    		type: "slot",
+    		source: "(18:0) <Rect bind:this={rect}>",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function create_fragment(ctx) {
+    	let rect_1;
+    	let current;
+
+    	let rect_1_props = {
+    		$$slots: { default: [create_default_slot] },
+    		$$scope: { ctx }
+    	};
+
+    	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
+    	/*rect_1_binding_1*/ ctx[3](rect_1);
 
     	const block = {
     		c: function create() {
@@ -680,6 +864,11 @@ var app = (function () {
     		},
     		p: function update(ctx, [dirty]) {
     			const rect_1_changes = {};
+
+    			if (dirty & /*$$scope, rect2*/ 34) {
+    				rect_1_changes.$$scope = { dirty, ctx };
+    			}
+
     			rect_1.$set(rect_1_changes);
     		},
     		i: function intro(local) {
@@ -692,7 +881,7 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			/*rect_1_binding*/ ctx[1](null);
+    			/*rect_1_binding_1*/ ctx[3](null);
     			destroy_component(rect_1, detaching);
     		}
     	};
@@ -712,45 +901,56 @@ var app = (function () {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("App", slots, []);
     	let rect;
+    	let rect2;
 
     	onMount(() => {
     		loop();
     	});
 
     	const loop = () => {
-    		let t = rect.getTransform();
-    		let style = getComputedStyle(t.node);
+    		let t = rect === null || rect === void 0
+    		? void 0
+    		: rect.getTransform();
 
-    		// var angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
-    		console.log("p:" + style.transform);
-
+    		let t2 = rect2.getTransform();
+    		t.setLocalRotate(t.localRotate + 1);
+    		getComputedStyle(t.node);
+    		t2.setLocalPositionX(t2.localPositionX + 1);
     		requestAnimationFrame(loop);
     	};
 
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<App> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
     	function rect_1_binding($$value) {
+    		binding_callbacks[$$value ? "unshift" : "push"](() => {
+    			rect2 = $$value;
+    			$$invalidate(1, rect2);
+    		});
+    	}
+
+    	function rect_1_binding_1($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			rect = $$value;
     			$$invalidate(0, rect);
     		});
     	}
 
-    	$$self.$capture_state = () => ({ onMount, Rect, rect, loop });
+    	$$self.$capture_state = () => ({ onMount, Rect, rect, rect2, loop });
 
     	$$self.$inject_state = $$props => {
     		if ("rect" in $$props) $$invalidate(0, rect = $$props.rect);
+    		if ("rect2" in $$props) $$invalidate(1, rect2 = $$props.rect2);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [rect, rect_1_binding];
+    	return [rect, rect2, rect_1_binding, rect_1_binding_1];
     }
 
     class App extends SvelteComponentDev {

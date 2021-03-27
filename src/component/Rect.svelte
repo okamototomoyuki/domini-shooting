@@ -17,13 +17,12 @@
     });
 </script>
 
-<div bind:this={element} />
+<div bind:this={element}><slot /></div>
 
 <style lang="scss">
     div {
         background-color: black;
         width: 320px;
         height: 256px;
-        transform: rotate(45deg);
     }
 </style>

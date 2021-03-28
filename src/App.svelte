@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import Rect from "./component/Rect.svelte";
+	import Matrix from "./data/Matrix";
 
 	let rect: Rect;
 	let rect2: Rect;
@@ -13,8 +14,9 @@
 		t.rotateX(1);
 		// console.log(t.getRotate());
 
-		t2.scaleX(1.001);
-		console.log(t2.getScale());
+		t2.translateX(1.001);
+		// console.log(t2.matrix);
+		console.log(Matrix.multiply(t2.matrix, t2.matrix.inverse()));
 		requestAnimationFrame(loop);
 	};
 </script>

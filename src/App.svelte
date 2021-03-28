@@ -10,10 +10,11 @@
 	const loop = () => {
 		let t = rect?.getTransform();
 		let t2 = rect2.getTransform();
-		t.setLocalRotate(t.localRotate + 1);
+		t.rotateX(1);
+		// console.log(t.getRotate());
 
-		let style = getComputedStyle(t.node);
-		t2.setLocalPositionX(t2.localPositionX + 1);
+		t2.scaleX(1.001);
+		console.log(t2.getScale());
 		requestAnimationFrame(loop);
 	};
 </script>

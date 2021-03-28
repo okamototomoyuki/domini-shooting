@@ -193,6 +193,12 @@ var app = (function () {
             block.o(local);
         }
     }
+
+    const globals = (typeof window !== 'undefined'
+        ? window
+        : typeof globalThis !== 'undefined'
+            ? globalThis
+            : global);
     function create_component(block) {
         block && block.c();
     }
@@ -366,69 +372,6 @@ var app = (function () {
     }
 
     /**
-     * 4x4行列
-     */
-    class Matrix {
-        /**
-         * コンストラクタ
-         * @param m11 c1r1
-         * @param m21 c1r2
-         * @param m31 c1r3
-         * @param m41 c1r4
-         * @param m12 c2r1
-         * @param m22 c2r2
-         * @param m32 c2r3
-         * @param m42 c2r4
-         * @param m13 c3r1
-         * @param m23 c3r2
-         * @param m33 c3r3
-         * @param m43 c3r4
-         * @param m14 c4r1
-         * @param m24 c4r2
-         * @param m34 c4r3
-         * @param m44 c4r4
-         */
-        constructor(m11, m21, m31, m41, m12, m22, m32, m42, m13, m23, m33, m43, m14, m24, m34, m44) {
-            this.m11 = m11;
-            this.m21 = m21;
-            this.m31 = m31;
-            this.m41 = m41;
-            this.m12 = m12;
-            this.m22 = m22;
-            this.m32 = m32;
-            this.m42 = m42;
-            this.m13 = m13;
-            this.m23 = m23;
-            this.m33 = m33;
-            this.m43 = m43;
-            this.m14 = m14;
-            this.m24 = m24;
-            this.m34 = m34;
-            this.m44 = m44;
-        }
-        /**
-         * CSS Transform 文字列からパース
-         * @param matrixString CSS Transform 文字列
-         * @returns Matrix
-         */
-        static parse(matrixString) {
-            let c = matrixString.split(/\s*[(),]\s*/).slice(1, -1);
-            if (c.length === 6) {
-                // 'matrix()' (3x2)
-                return new Matrix(+c[0], +c[2], 0, +c[4], +c[1], +c[3], 0, +c[5], 0, 0, 1, 0, 0, 0, 0, 1);
-            }
-            else if (c.length === 16) {
-                // matrix3d() (4x4)
-                return new Matrix(+c[0], +c[4], +c[8], +c[12], +c[1], +c[5], +c[9], +c[13], +c[2], +c[6], +c[10], +c[14], +c[3], +c[7], +c[11], +c[15]);
-            }
-            else {
-                // handle 'none' or invalid values.
-                return new Matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-            }
-        }
-    }
-
-    /**
      * XYZベクトル
      */
     class Vector3 {
@@ -487,16 +430,234 @@ var app = (function () {
     }
 
     /**
+     * 4x4行列
+     */
+    class Matrix extends Array {
+        static format(source) {
+            if (source && source.constructor === Array) {
+                const values = source
+                    .filter(function (value) { return typeof value === 'number'; })
+                    .filter(function (value) { return !isNaN(value); });
+                if (source.length === 6 && values.length === 6) {
+                    const matrix = this.identity();
+                    matrix[0] = values[0];
+                    matrix[1] = values[1];
+                    matrix[4] = values[2];
+                    matrix[5] = values[3];
+                    matrix[12] = values[4];
+                    matrix[13] = values[5];
+                    return matrix;
+                }
+                else if (source.length === 16 && values.length === 16) {
+                    return this.fromArray(values);
+                }
+            }
+            throw new TypeError('Expected a `number[]` with length 6 or 16.');
+        }
+        static fromArray(array) {
+            const m = new Matrix();
+            array && Object.assign(m, array);
+            return m;
+        }
+        static fromString(source) {
+            if (typeof source === 'string') {
+                var match = source.match(/matrix(3d)?\(([^)]+)\)/);
+                if (match) {
+                    var raw = match[2].split(',').map(parseFloat);
+                    return this.format(raw);
+                }
+                if (source === 'none' || source === '') {
+                    return this.identity();
+                }
+            }
+            throw new TypeError('Expected a string containing `matrix()` or `matrix3d()');
+        }
+        static identity() {
+            const matrix = [];
+            for (var i = 0; i < 16; i++) {
+                i % 5 == 0 ? matrix.push(1) : matrix.push(0);
+            }
+            return Matrix.format(matrix);
+        }
+        get m00() { return this[0]; }
+        get m01() { return this[1]; }
+        get m02() { return this[2]; }
+        get m03() { return this[3]; }
+        get m10() { return this[4]; }
+        get m11() { return this[5]; }
+        get m12() { return this[6]; }
+        get m13() { return this[7]; }
+        get m20() { return this[8]; }
+        get m21() { return this[9]; }
+        get m22() { return this[10]; }
+        get m23() { return this[11]; }
+        get m30() { return this[12]; }
+        get m31() { return this[13]; }
+        get m32() { return this[14]; }
+        get m33() { return this[15]; }
+        inverse() {
+            const m = this;
+            const s0 = m[0] * m[5] - m[4] * m[1];
+            const s1 = m[0] * m[6] - m[4] * m[2];
+            const s2 = m[0] * m[7] - m[4] * m[3];
+            const s3 = m[1] * m[6] - m[5] * m[2];
+            const s4 = m[1] * m[7] - m[5] * m[3];
+            const s5 = m[2] * m[7] - m[6] * m[3];
+            const c5 = m[10] * m[15] - m[14] * m[11];
+            const c4 = m[9] * m[15] - m[13] * m[11];
+            const c3 = m[9] * m[14] - m[13] * m[10];
+            const c2 = m[8] * m[15] - m[12] * m[11];
+            const c1 = m[8] * m[14] - m[12] * m[10];
+            const c0 = m[8] * m[13] - m[12] * m[9];
+            const determinant = 1 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
+            if (isNaN(determinant) || determinant === Infinity) {
+                throw new Error('Inverse determinant attempted to divide by zero.');
+            }
+            return Matrix.format([
+                (m[5] * c5 - m[6] * c4 + m[7] * c3) * determinant,
+                (-m[1] * c5 + m[2] * c4 - m[3] * c3) * determinant,
+                (m[13] * s5 - m[14] * s4 + m[15] * s3) * determinant,
+                (-m[9] * s5 + m[10] * s4 - m[11] * s3) * determinant,
+                (-m[4] * c5 + m[6] * c2 - m[7] * c1) * determinant,
+                (m[0] * c5 - m[2] * c2 + m[3] * c1) * determinant,
+                (-m[12] * s5 + m[14] * s2 - m[15] * s1) * determinant,
+                (m[8] * s5 - m[10] * s2 + m[11] * s1) * determinant,
+                (m[4] * c4 - m[5] * c2 + m[7] * c0) * determinant,
+                (-m[0] * c4 + m[1] * c2 - m[3] * c0) * determinant,
+                (m[12] * s4 - m[13] * s2 + m[15] * s0) * determinant,
+                (-m[8] * s4 + m[9] * s2 - m[11] * s0) * determinant,
+                (-m[4] * c3 + m[5] * c1 - m[6] * c0) * determinant,
+                (m[0] * c3 - m[1] * c1 + m[2] * c0) * determinant,
+                (-m[12] * s3 + m[13] * s1 - m[14] * s0) * determinant,
+                (m[8] * s3 - m[9] * s1 + m[10] * s0) * determinant
+            ]);
+        }
+        static multiply(fma, fmb) {
+            // var fma = format(matrixA);
+            // var fmb = format(matrixB);
+            const product = new Matrix();
+            for (let i = 0; i < 4; i++) {
+                const row = [fma[i], fma[i + 4], fma[i + 8], fma[i + 12]];
+                for (let j = 0; j < 4; j++) {
+                    const k = j * 4;
+                    const col = [fmb[k], fmb[k + 1], fmb[k + 2], fmb[k + 3]];
+                    const result = row[0] * col[0] + row[1] * col[1] + row[2] * col[2] + row[3] * col[3];
+                    product[i + k] = result;
+                }
+            }
+            return product;
+        }
+        perspective(distance) {
+            const matrix = Matrix.identity();
+            matrix[11] = -1 / distance;
+            return Matrix.multiply(this, matrix);
+        }
+        getRotate() {
+            let rotateY = Math.asin(-this.m02);
+            let rotateX = Math.atan2(this.m12, this.m22);
+            let rotateZ = Math.atan2(this.m01, this.m00);
+            return new Vector3(rotateX, rotateY, rotateZ);
+        }
+        rotate(angle) {
+            return this.rotateZ(angle);
+        }
+        rotateX(angle) {
+            const theta = (Math.PI / 180) * angle;
+            const matrix = Matrix.identity();
+            matrix[5] = matrix[10] = Math.cos(theta);
+            matrix[6] = matrix[9] = Math.sin(theta);
+            matrix[9] *= -1;
+            return Matrix.multiply(this, matrix);
+        }
+        rotateY(angle) {
+            const theta = (Math.PI / 180) * angle;
+            const matrix = Matrix.identity();
+            matrix[0] = matrix[10] = Math.cos(theta);
+            matrix[2] = matrix[8] = Math.sin(theta);
+            matrix[2] *= -1;
+            return Matrix.multiply(this, matrix);
+        }
+        rotateZ(angle) {
+            const theta = (Math.PI / 180) * angle;
+            const matrix = Matrix.identity();
+            matrix[0] = matrix[5] = Math.cos(theta);
+            matrix[1] = matrix[4] = Math.sin(theta);
+            matrix[4] *= -1;
+            return Matrix.multiply(this, matrix);
+        }
+        getScale() {
+            let x = Math.sqrt(Math.pow(this.m00, 2) + Math.pow(this.m10, 2) + Math.pow(this.m20, 2));
+            let y = Math.sqrt(Math.pow(this.m01, 2) + Math.pow(this.m11, 2) + Math.pow(this.m21, 2));
+            let z = Math.sqrt(Math.pow(this.m02, 2) + Math.pow(this.m12, 2) + Math.pow(this.m22, 2));
+            return new Vector3(x, y, z);
+        }
+        scale(scalar, scalarY = undefined) {
+            const matrix = Matrix.identity();
+            matrix[0] = scalar;
+            matrix[5] = typeof scalarY === 'number' ? scalarY : scalar;
+            return Matrix.multiply(this, matrix);
+        }
+        scaleX(scalar) {
+            const matrix = Matrix.identity();
+            matrix[0] = scalar;
+            return Matrix.multiply(this, matrix);
+        }
+        scaleY(scalar) {
+            const matrix = Matrix.identity();
+            matrix[5] = scalar;
+            return Matrix.multiply(this, matrix);
+        }
+        scaleZ(scalar) {
+            const matrix = Matrix.identity();
+            matrix[10] = scalar;
+            return Matrix.multiply(this, matrix);
+        }
+        getTranslate() {
+            return new Vector3(this.m30, this.m31, this.m32);
+        }
+        translate(distanceX, distanceY) {
+            const matrix = Matrix.identity();
+            matrix[12] = distanceX;
+            if (distanceY) {
+                matrix[13] = distanceY;
+            }
+            return Matrix.multiply(this, matrix);
+        }
+        translate3d(distanceX, distanceY, distanceZ) {
+            const matrix = Matrix.identity();
+            if (distanceX !== undefined && distanceY !== undefined && distanceZ !== undefined) {
+                matrix[12] = distanceX;
+                matrix[13] = distanceY;
+                matrix[14] = distanceZ;
+            }
+            return Matrix.multiply(this, matrix);
+        }
+        translateX(distance) {
+            const matrix = Matrix.identity();
+            matrix[12] = distance;
+            return Matrix.multiply(this, matrix);
+        }
+        translateY(distance) {
+            const matrix = Matrix.identity();
+            matrix[13] = distance;
+            return Matrix.multiply(this, matrix);
+        }
+        translateZ(distance) {
+            const matrix = Matrix.identity();
+            matrix[14] = distance;
+            return Matrix.multiply(this, matrix);
+        }
+        toString() {
+            return ("matrix3d(" + (this.join(', ')) + ")");
+        }
+    }
+
+    /**
      * 矩形の Transform
      */
     class Transform {
         constructor(node) {
             this.frame = 0;
-            this.localPositionX = 0;
-            this.localPositionY = 0;
-            this.localRotate = 0;
-            this.localScaleX = 1;
-            this.localScaleY = 1;
             this.isDirty = false;
             this.node = node;
         }
@@ -525,21 +686,21 @@ var app = (function () {
         rebuildMatrix() {
             if (this.frame != Transform.currentFrame) {
                 const computedStyle = getComputedStyle(this.node, null);
-                const transStyle = computedStyle.transform;
-                this.matrix = Matrix.parse(transStyle);
+                this.matrix = Matrix.fromString(computedStyle.transform);
                 this.frame = Transform.currentFrame;
             }
         }
-        get rotate() {
+        getRotate() {
             this.rebuildMatrix();
-            let rotateY = Math.asin(-this.matrix.m13);
-            let rotateX = Math.atan2(this.matrix.m23, this.matrix.m33);
-            let rotateZ = Math.atan2(this.matrix.m12, this.matrix.m11);
-            return new Vector3(rotateX, rotateY, rotateZ);
+            return this.matrix.getRotate();
         }
-        get translate() {
+        getTranslate() {
             this.rebuildMatrix();
-            return new Vector3(this.matrix.m41, this.matrix.m42, this.matrix.m43);
+            return this.matrix.getTranslate();
+        }
+        getScale() {
+            this.rebuildMatrix();
+            return this.matrix.getScale();
         }
         // /**
         //  * 頂点データ計算
@@ -576,16 +737,18 @@ var app = (function () {
          * 座標X設定
          * @param x X座標
          */
-        setLocalPositionX(x) {
-            this.localPositionX = x;
+        translateX(x) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.translateX(x);
             this.isDirty = true;
         }
         /**
          * 座標Y設定
          * @param y Y座標
          */
-        setLocalPositionY(y) {
-            this.localPositionY = y;
+        translateY(y) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.translateY(y);
             this.isDirty = true;
         }
         /**
@@ -593,32 +756,72 @@ var app = (function () {
          * @param x X座標
          * @param y Y座標
          */
-        setLocalPosition(x, y) {
-            this.setLocalPositionX(x);
-            this.setLocalPositionY(y);
+        translate(x, y) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.translate(x, y);
+            this.isDirty = true;
         }
         /**
          * 回転設定
-         * @param rad ラジアン
+         * @param angle ラジアン
          */
-        setLocalRotate(rad) {
-            this.localRotate = rad;
+        rotate(angle) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.rotate(angle);
+            this.isDirty = true;
+        }
+        /**
+         * X回転設定
+         * @param angle ラジアン
+         */
+        rotateX(angle) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.rotateX(angle);
+            this.isDirty = true;
+        }
+        /**
+         * Y回転設定
+         * @param angle ラジアン
+         */
+        rotateY(angle) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.rotateY(angle);
+            this.isDirty = true;
+        }
+        /**
+         * Y回転設定
+         * @param angle ラジアン
+         */
+        rotateZ(angle) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.rotateZ(angle);
             this.isDirty = true;
         }
         /**
          * 拡縮X設定
          * @param x 拡縮X
          */
-        setLocalScaleX(x) {
-            this.localScaleX = x;
+        scaleX(x) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.scaleX(x);
             this.isDirty = true;
         }
         /**
          * 拡縮Y設定
          * @param y 拡縮Y
          */
-        setLocalScaleY(y) {
-            this.localScaleY = y;
+        scaleY(y) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.scaleY(y);
+            this.isDirty = true;
+        }
+        /**
+         * 拡縮Y設定
+         * @param y 拡縮Y
+         */
+        scaleZ(z) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.scaleZ(z);
             this.isDirty = true;
         }
         /**
@@ -626,14 +829,14 @@ var app = (function () {
          * @param {number} x 拡縮X
          * @param {number} y 拡縮Y
          */
-        setLocalScale(x, y) {
-            this.setLocalScale(x, y);
+        scale(x, y) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.scale(x, y);
+            this.isDirty = true;
         }
         patch() {
             if (this.isDirty) {
-                this.node.setAttribute("style", `
-transform: translate(${this.localPositionX}px, ${this.localPositionY}px) rotate(${this.localRotate}deg) scale(${this.localScaleX}, ${this.localScaleY})
-            `);
+                this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
             }
             this.isDirty = false;
         }
@@ -793,7 +996,9 @@ transform: translate(${this.localPositionX}px, ${this.localPositionY}px) rotate(
 
     /* src\App.svelte generated by Svelte v3.35.0 */
 
-    // (18:0) <Rect bind:this={rect}>
+    const { console: console_1 } = globals;
+
+    // (19:0) <Rect bind:this={rect}>
     function create_default_slot(ctx) {
     	let rect_1;
     	let current;
@@ -832,7 +1037,7 @@ transform: translate(${this.localPositionX}px, ${this.localPositionY}px) rotate(
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(18:0) <Rect bind:this={rect}>",
+    		source: "(19:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -913,16 +1118,19 @@ transform: translate(${this.localPositionX}px, ${this.localPositionY}px) rotate(
     		: rect.getTransform();
 
     		let t2 = rect2.getTransform();
-    		t.setLocalRotate(t.localRotate + 1);
-    		getComputedStyle(t.node);
-    		t2.setLocalPositionX(t2.localPositionX + 1);
+    		t.rotateX(1);
+
+    		// console.log(t.getRotate());
+    		t2.scaleX(1.001);
+
+    		console.log(t2.getScale());
     		requestAnimationFrame(loop);
     	};
 
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
     	function rect_1_binding($$value) {

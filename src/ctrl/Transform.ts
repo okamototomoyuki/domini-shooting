@@ -1,6 +1,6 @@
 import { element, loop } from "svelte/internal";
 import Matrix from "../data/Matrix";
-import Vector3 from "../data/Vector3";
+import type Vector3 from "../data/Vector3";
 import VertexData from "../data/VertexData";
 
 /**
@@ -39,11 +39,6 @@ export default class Transform {
     matrix: Matrix;
 
     frame = 0;
-    localPositionX = 0;
-    localPositionY = 0;
-    localRotate = 0;
-    localScaleX = 1;
-    localScaleY = 1;
     isDirty = false;
 
     constructor(node: HTMLElement) {
@@ -53,24 +48,26 @@ export default class Transform {
     rebuildMatrix() {
         if (this.frame != Transform.currentFrame) {
             const computedStyle = getComputedStyle(this.node, null);
-            const transStyle = computedStyle.transform
-            this.matrix = Matrix.parse(transStyle);
+            this.matrix = Matrix.fromString(computedStyle.transform);
             this.frame = Transform.currentFrame;
         }
     }
 
-    get rotate(): Vector3 {
+    getRotate(): Vector3 {
         this.rebuildMatrix();
-        let rotateY = Math.asin(-this.matrix.m13);
-        let rotateX = Math.atan2(this.matrix.m23, this.matrix.m33)
-        let rotateZ = Math.atan2(this.matrix.m12, this.matrix.m11)
-        return new Vector3(rotateX, rotateY, rotateZ);
+        return this.matrix.getRotate();
     }
 
-    get translate(): Vector3 {
+    getTranslate(): Vector3 {
         this.rebuildMatrix();
-        return new Vector3(this.matrix.m41, this.matrix.m42, this.matrix.m43);
+        return this.matrix.getTranslate();
     }
+
+    getScale() {
+        this.rebuildMatrix();
+        return this.matrix.getScale();
+    }
+
 
     // /**
     //  * 頂点データ計算
@@ -111,8 +108,9 @@ export default class Transform {
      * 座標X設定
      * @param x X座標
      */
-    setLocalPositionX(x) {
-        this.localPositionX = x;
+    translateX(x) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.translateX(x);
         this.isDirty = true;
     }
 
@@ -120,8 +118,9 @@ export default class Transform {
      * 座標Y設定
      * @param y Y座標
      */
-    setLocalPositionY(y) {
-        this.localPositionY = y;
+    translateY(y) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.translateY(y);
         this.isDirty = true;
     }
 
@@ -130,17 +129,49 @@ export default class Transform {
      * @param x X座標
      * @param y Y座標
      */
-    setLocalPosition(x, y) {
-        this.setLocalPositionX(x);
-        this.setLocalPositionY(y);
+    translate(x, y) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.translate(x, y)
+        this.isDirty = true;
     }
 
     /**
      * 回転設定
-     * @param rad ラジアン
+     * @param angle ラジアン
      */
-    setLocalRotate(rad) {
-        this.localRotate = rad;
+    rotate(angle) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.rotate(angle);
+        this.isDirty = true;
+    }
+
+    /**
+     * X回転設定
+     * @param angle ラジアン
+     */
+    rotateX(angle) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.rotateX(angle);
+        this.isDirty = true;
+    }
+
+    /**
+     * Y回転設定
+     * @param angle ラジアン
+     */
+    rotateY(angle) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.rotateY(angle);
+        this.isDirty = true;
+    }
+
+    /**
+     * Y回転設定
+     * @param angle ラジアン
+     */
+    rotateZ(angle) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.rotateZ(angle);
         this.isDirty = true;
     }
 
@@ -148,8 +179,9 @@ export default class Transform {
      * 拡縮X設定
      * @param x 拡縮X
      */
-    setLocalScaleX(x) {
-        this.localScaleX = x;
+    scaleX(x) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.scaleX(x);
         this.isDirty = true;
     }
 
@@ -157,8 +189,19 @@ export default class Transform {
      * 拡縮Y設定
      * @param y 拡縮Y
      */
-    setLocalScaleY(y) {
-        this.localScaleY = y;
+    scaleY(y) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.scaleY(y);
+        this.isDirty = true;
+    }
+
+    /**
+     * 拡縮Y設定
+     * @param y 拡縮Y
+     */
+    scaleZ(z) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.scaleZ(z);
         this.isDirty = true;
     }
 
@@ -167,15 +210,15 @@ export default class Transform {
      * @param {number} x 拡縮X
      * @param {number} y 拡縮Y
      */
-    setLocalScale(x, y) {
-        this.setLocalScale(x, y);
+    scale(x, y) {
+        this.rebuildMatrix();
+        this.matrix = this.matrix.scale(x, y);
+        this.isDirty = true;
     }
 
     patch() {
         if (this.isDirty) {
-            this.node.setAttribute("style", `
-transform: translate(${this.localPositionX}px, ${this.localPositionY}px) rotate(${this.localRotate}deg) scale(${this.localScaleX}, ${this.localScaleY})
-            `);
+            this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
         }
         this.isDirty = false;
     }

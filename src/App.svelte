@@ -8,15 +8,17 @@
 	onMount(() => {
 		loop();
 	});
+	let rot = 1;
 	const loop = () => {
 		let t = rect?.getTransform();
 		let t2 = rect2.getTransform();
-		t.rotateX(1);
+		rot += 0.1;
+		t.rotateY(0.1);
 		// console.log(t.getRotate());
 
-		t2.translateX(1.001);
+		// t2.translateX(1.001);
 		// console.log(t2.matrix);
-		console.log(Matrix.multiply(t2.matrix, t2.matrix.inverse()));
+		console.log(rot + " " + t.getRotate().y);
 		requestAnimationFrame(loop);
 	};
 </script>

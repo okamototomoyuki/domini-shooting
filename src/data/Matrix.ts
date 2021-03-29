@@ -160,9 +160,10 @@ export default class Matrix extends Array<number> {
     }
 
     getRotate(): Vector3 {
-        let rotateY = Math.asin(-this.r0c2);
-        let rotateX = Math.atan2(this.r1c2, this.r2c2)
-        let rotateZ = Math.atan2(this.r0c1, this.r0c0)
+        const toReg = (180 / Math.PI);
+        const rotateY = Math.asin(-this.r0c2) * toReg;
+        const rotateX = Math.atan2(this.r1c2, this.r2c2) * toReg;
+        const rotateZ = Math.atan2(this.r0c1, this.r0c0) * toReg;
         return new Vector3(rotateX, rotateY, rotateZ);
     }
 
@@ -204,9 +205,9 @@ export default class Matrix extends Array<number> {
     }
 
     getScale(): Vector3 {
-        let x = Math.sqrt(Math.pow(this.r0c0, 2) + Math.pow(this.r1c0, 2) + Math.pow(this.r2c0, 2));
-        let y = Math.sqrt(Math.pow(this.r0c1, 2) + Math.pow(this.r1c1, 2) + Math.pow(this.r2c1, 2));
-        let z = Math.sqrt(Math.pow(this.r0c2, 2) + Math.pow(this.r1c2, 2) + Math.pow(this.r2c2, 2));
+        const x = Math.sqrt(Math.pow(this.r0c0, 2) + Math.pow(this.r1c0, 2) + Math.pow(this.r2c0, 2));
+        const y = Math.sqrt(Math.pow(this.r0c1, 2) + Math.pow(this.r1c1, 2) + Math.pow(this.r2c1, 2));
+        const z = Math.sqrt(Math.pow(this.r0c2, 2) + Math.pow(this.r1c2, 2) + Math.pow(this.r2c2, 2));
         return new Vector3(x, y, z);
     }
 

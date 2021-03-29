@@ -1,6 +1,6 @@
 import { element, loop } from "svelte/internal";
 import Matrix from "../data/Matrix";
-import type Vector3 from "../data/Vector3";
+import Vector3 from "../data/Vector3";
 import VertexData from "../data/VertexData";
 
 /**
@@ -69,40 +69,40 @@ export default class Transform {
     }
 
 
-    // /**
-    //  * 頂点データ計算
-    //  * @returns 頂点データ
-    //  */
-    // computeVertexData(): VertexData {
-    //     let w = this.node.offsetWidth;
-    //     let h = this.node.offsetHeight;
-    //     let v = new VertexData(
-    //         new Vector3(-w / 2, -h / 2, 0),
-    //         new Vector3(w / 2, -h / 2, 0),
-    //         new Vector3(w / 2, h / 2, 0),
-    //         new Vector3(-w / 2, h / 2, 0),
-    //     );
+    /**
+     * 頂点データ計算
+     * @returns 頂点データ
+     */
+    computeVertexData(): VertexData {
+        let w = this.node.offsetWidth;
+        let h = this.node.offsetHeight;
+        let v = new VertexData(
+            new Vector3(-w / 2, -h / 2, 0),
+            new Vector3(w / 2, -h / 2, 0),
+            new Vector3(w / 2, h / 2, 0),
+            new Vector3(-w / 2, h / 2, 0),
+        );
 
-    //     let node: HTMLElement = this.node;
-    //     let transform: Transform = null;
-    //     while (node.nodeType === 1) {
-    //         transform = Transform.getTransform(node);
-    //         v.a = v.a.rotateVector(transform.rotate).addVectors(transform.translate);
-    //         v.b = v.b.rotateVector(transform.rotate).addVectors(transform.translate);
-    //         v.c = v.c.rotateVector(transform.rotate).addVectors(transform.translate);
-    //         v.d = v.d.rotateVector(transform.rotate).addVectors(transform.translate);
-    //         node = transform.parentNode;
-    //     }
-    //     return v;
-    // };
+        let node: HTMLElement = this.node;
+        let transform: Transform = null;
+        while (node.nodeType === 1) {
+            transform = Transform.getTransform(node);
+            v.a = v.a.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+            v.b = v.b.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+            v.c = v.c.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+            v.d = v.d.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+            node = transform.parentNode;
+        }
+        return v;
+    };
 
 
-    // /**
-    //  * 親ノード取得
-    //  */
-    // get parentNode(): HTMLElement {
-    //     return this.node.parentNode as HTMLElement;
-    // }
+    /**
+     * 親ノード取得
+     */
+    get parentNode(): HTMLElement {
+        return this.node.parentNode as HTMLElement;
+    }
 
     /**
      * 座標X設定

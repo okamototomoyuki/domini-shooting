@@ -569,9 +569,10 @@ var app = (function () {
             return Matrix.multiply(this, matrix);
         }
         getRotate() {
-            let rotateY = Math.asin(-this.r0c2);
-            let rotateX = Math.atan2(this.r1c2, this.r2c2);
-            let rotateZ = Math.atan2(this.r0c1, this.r0c0);
+            const toReg = (180 / Math.PI);
+            const rotateY = Math.asin(-this.r0c2) * toReg;
+            const rotateX = Math.atan2(this.r1c2, this.r2c2) * toReg;
+            const rotateZ = Math.atan2(this.r0c1, this.r0c0) * toReg;
             return new Vector3(rotateX, rotateY, rotateZ);
         }
         rotate(angle) {
@@ -602,9 +603,9 @@ var app = (function () {
             return Matrix.multiply(this, matrix);
         }
         getScale() {
-            let x = Math.sqrt(Math.pow(this.r0c0, 2) + Math.pow(this.r1c0, 2) + Math.pow(this.r2c0, 2));
-            let y = Math.sqrt(Math.pow(this.r0c1, 2) + Math.pow(this.r1c1, 2) + Math.pow(this.r2c1, 2));
-            let z = Math.sqrt(Math.pow(this.r0c2, 2) + Math.pow(this.r1c2, 2) + Math.pow(this.r2c2, 2));
+            const x = Math.sqrt(Math.pow(this.r0c0, 2) + Math.pow(this.r1c0, 2) + Math.pow(this.r2c0, 2));
+            const y = Math.sqrt(Math.pow(this.r0c1, 2) + Math.pow(this.r1c1, 2) + Math.pow(this.r2c1, 2));
+            const z = Math.sqrt(Math.pow(this.r0c2, 2) + Math.pow(this.r1c2, 2) + Math.pow(this.r2c2, 2));
             return new Vector3(x, y, z);
         }
         scale(scalar, scalarY = undefined) {
@@ -668,6 +669,25 @@ var app = (function () {
         }
     }
 
+    /*
+    * 矩形の頂点データ
+    */
+    class VertexData {
+        /**
+         * コンストラクタ
+         * @param a 点1 左上
+         * @param b 点2 右上
+         * @param c 点3 右下
+         * @param d 点4 左下
+         */
+        constructor(a, b, c, d) {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+            this.d = d;
+        }
+    }
+
     /**
      * 矩形の Transform
      */
@@ -718,37 +738,33 @@ var app = (function () {
             this.rebuildMatrix();
             return this.matrix.getScale();
         }
-        // /**
-        //  * 頂点データ計算
-        //  * @returns 頂点データ
-        //  */
-        // computeVertexData(): VertexData {
-        //     let w = this.node.offsetWidth;
-        //     let h = this.node.offsetHeight;
-        //     let v = new VertexData(
-        //         new Vector3(-w / 2, -h / 2, 0),
-        //         new Vector3(w / 2, -h / 2, 0),
-        //         new Vector3(w / 2, h / 2, 0),
-        //         new Vector3(-w / 2, h / 2, 0),
-        //     );
-        //     let node: HTMLElement = this.node;
-        //     let transform: Transform = null;
-        //     while (node.nodeType === 1) {
-        //         transform = Transform.getTransform(node);
-        //         v.a = v.a.rotateVector(transform.rotate).addVectors(transform.translate);
-        //         v.b = v.b.rotateVector(transform.rotate).addVectors(transform.translate);
-        //         v.c = v.c.rotateVector(transform.rotate).addVectors(transform.translate);
-        //         v.d = v.d.rotateVector(transform.rotate).addVectors(transform.translate);
-        //         node = transform.parentNode;
-        //     }
-        //     return v;
-        // };
-        // /**
-        //  * 親ノード取得
-        //  */
-        // get parentNode(): HTMLElement {
-        //     return this.node.parentNode as HTMLElement;
-        // }
+        /**
+         * 頂点データ計算
+         * @returns 頂点データ
+         */
+        computeVertexData() {
+            let w = this.node.offsetWidth;
+            let h = this.node.offsetHeight;
+            let v = new VertexData(new Vector3(-w / 2, -h / 2, 0), new Vector3(w / 2, -h / 2, 0), new Vector3(w / 2, h / 2, 0), new Vector3(-w / 2, h / 2, 0));
+            let node = this.node;
+            let transform = null;
+            while (node.nodeType === 1) {
+                transform = Transform.getTransform(node);
+                v.a = v.a.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+                v.b = v.b.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+                v.c = v.c.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+                v.d = v.d.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+                node = transform.parentNode;
+            }
+            return v;
+        }
+        ;
+        /**
+         * 親ノード取得
+         */
+        get parentNode() {
+            return this.node.parentNode;
+        }
         /**
          * 座標X設定
          * @param x X座標
@@ -1014,7 +1030,7 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (21:0) <Rect bind:this={rect}>
+    // (23:0) <Rect bind:this={rect}>
     function create_default_slot(ctx) {
     	let rect_1;
     	let current;
@@ -1053,7 +1069,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(21:0) <Rect bind:this={rect}>",
+    		source: "(23:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -1086,7 +1102,7 @@ var app = (function () {
     		p: function update(ctx, [dirty]) {
     			const rect_1_changes = {};
 
-    			if (dirty & /*$$scope, rect2*/ 34) {
+    			if (dirty & /*$$scope, rect2*/ 66) {
     				rect_1_changes.$$scope = { dirty, ctx };
     			}
 
@@ -1128,19 +1144,21 @@ var app = (function () {
     		loop();
     	});
 
+    	let rot = 1;
+
     	const loop = () => {
     		let t = rect === null || rect === void 0
     		? void 0
     		: rect.getTransform();
 
-    		let t2 = rect2.getTransform();
-    		t.rotateX(1);
+    		rect2.getTransform();
+    		rot += 0.1;
+    		t.rotateY(0.1);
 
     		// console.log(t.getRotate());
-    		t2.translateX(1.001);
-
+    		// t2.translateX(1.001);
     		// console.log(t2.matrix);
-    		console.log(Matrix.multiply(t2.matrix, t2.matrix.inverse()));
+    		console.log(rot + " " + t.getRotate().y);
 
     		requestAnimationFrame(loop);
     	};
@@ -1165,11 +1183,20 @@ var app = (function () {
     		});
     	}
 
-    	$$self.$capture_state = () => ({ onMount, Rect, Matrix, rect, rect2, loop });
+    	$$self.$capture_state = () => ({
+    		onMount,
+    		Rect,
+    		Matrix,
+    		rect,
+    		rect2,
+    		rot,
+    		loop
+    	});
 
     	$$self.$inject_state = $$props => {
     		if ("rect" in $$props) $$invalidate(0, rect = $$props.rect);
     		if ("rect2" in $$props) $$invalidate(1, rect2 = $$props.rect2);
+    		if ("rot" in $$props) rot = $$props.rot;
     	};
 
     	if ($$props && "$$inject" in $$props) {

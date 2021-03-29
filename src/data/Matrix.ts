@@ -160,10 +160,13 @@ export default class Matrix extends Array<number> {
     }
 
     getRotate(): Vector3 {
-        const toReg = (180 / Math.PI);
-        const rotateY = Math.asin(-this.r0c2) * toReg;
-        const rotateX = Math.atan2(this.r1c2, this.r2c2) * toReg;
-        const rotateZ = Math.atan2(this.r0c1, this.r0c0) * toReg;
+        // const toReg = (180 / Math.PI);
+        // const rotateY = Math.asin(-this.r0c2) * toReg;
+        // const rotateX = Math.atan2(this.r1c2, this.r2c2) * toReg;
+        // const rotateZ = Math.atan2(this.r0c1, this.r0c0) * toReg;
+        const rotateY = Math.asin(-this.r0c2);
+        const rotateX = Math.atan2(this.r1c2, this.r2c2);
+        const rotateZ = Math.atan2(this.r0c1, this.r0c0);
         return new Vector3(rotateX, rotateY, rotateZ);
     }
 

@@ -87,10 +87,12 @@ export default class Transform {
         let transform: Transform = null;
         while (node.nodeType === 1) {
             transform = Transform.getTransform(node);
-            v.a = v.a.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
-            v.b = v.b.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
-            v.c = v.c.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
-            v.d = v.d.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+            const rot = transform.getRotate()
+            const trans = transform.getTranslate();
+            v.a = v.a.rotateVector(rot).addVectors(trans);
+            v.b = v.b.rotateVector(rot).addVectors(trans);
+            v.c = v.c.rotateVector(rot).addVectors(trans);
+            v.d = v.d.rotateVector(rot).addVectors(trans);
             node = transform.parentNode;
         }
         return v;

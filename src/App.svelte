@@ -18,7 +18,10 @@
 
 		// t2.translateX(1.001);
 		// console.log(t2.matrix);
-		console.log(rot + " " + t.getRotate().y);
+		console.log(t2.computeVertexData().a);
+		// console.log(t.computeVertexData().b);
+		// console.log(t.computeVertexData().c);
+		// console.log(t.computeVertexData().d);
 		requestAnimationFrame(loop);
 	};
 </script>

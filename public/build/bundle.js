@@ -569,10 +569,13 @@ var app = (function () {
             return Matrix.multiply(this, matrix);
         }
         getRotate() {
-            const toReg = (180 / Math.PI);
-            const rotateY = Math.asin(-this.r0c2) * toReg;
-            const rotateX = Math.atan2(this.r1c2, this.r2c2) * toReg;
-            const rotateZ = Math.atan2(this.r0c1, this.r0c0) * toReg;
+            // const toReg = (180 / Math.PI);
+            // const rotateY = Math.asin(-this.r0c2) * toReg;
+            // const rotateX = Math.atan2(this.r1c2, this.r2c2) * toReg;
+            // const rotateZ = Math.atan2(this.r0c1, this.r0c0) * toReg;
+            const rotateY = Math.asin(-this.r0c2);
+            const rotateX = Math.atan2(this.r1c2, this.r2c2);
+            const rotateZ = Math.atan2(this.r0c1, this.r0c0);
             return new Vector3(rotateX, rotateY, rotateZ);
         }
         rotate(angle) {
@@ -750,10 +753,12 @@ var app = (function () {
             let transform = null;
             while (node.nodeType === 1) {
                 transform = Transform.getTransform(node);
-                v.a = v.a.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
-                v.b = v.b.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
-                v.c = v.c.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
-                v.d = v.d.rotateVector(transform.getRotate()).addVectors(transform.getTranslate());
+                const rot = transform.getRotate();
+                const trans = transform.getTranslate();
+                v.a = v.a.rotateVector(rot).addVectors(trans);
+                v.b = v.b.rotateVector(rot).addVectors(trans);
+                v.c = v.c.rotateVector(rot).addVectors(trans);
+                v.d = v.d.rotateVector(rot).addVectors(trans);
                 node = transform.parentNode;
             }
             return v;
@@ -1030,7 +1035,7 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (23:0) <Rect bind:this={rect}>
+    // (26:0) <Rect bind:this={rect}>
     function create_default_slot(ctx) {
     	let rect_1;
     	let current;
@@ -1069,7 +1074,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(23:0) <Rect bind:this={rect}>",
+    		source: "(26:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -1151,15 +1156,18 @@ var app = (function () {
     		? void 0
     		: rect.getTransform();
 
-    		rect2.getTransform();
+    		let t2 = rect2.getTransform();
     		rot += 0.1;
     		t.rotateY(0.1);
 
     		// console.log(t.getRotate());
     		// t2.translateX(1.001);
     		// console.log(t2.matrix);
-    		console.log(rot + " " + t.getRotate().y);
+    		console.log(t2.computeVertexData().a);
 
+    		// console.log(t.computeVertexData().b);
+    		// console.log(t.computeVertexData().c);
+    		// console.log(t.computeVertexData().d);
     		requestAnimationFrame(loop);
     	};
 

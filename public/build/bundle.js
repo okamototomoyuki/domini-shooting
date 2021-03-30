@@ -729,17 +729,40 @@ var app = (function () {
                 this.frame = Transform.currentFrame;
             }
         }
-        getRotate() {
+        getWorldMatrix() {
+            let node = this.node;
             this.rebuildMatrix();
-            return this.matrix.getRotate();
+            let wm = this.matrix;
+            node = this.parentNode;
+            while (node.nodeType === 1) {
+                let transform = Transform.getTransform(node);
+                transform.rebuildMatrix();
+                let pm = transform.matrix;
+                wm = Matrix.multiply(wm, pm);
+                node = transform.parentNode;
+            }
+            return wm;
         }
         getTranslate() {
             this.rebuildMatrix();
             return this.matrix.getTranslate();
         }
+        getRotate() {
+            this.rebuildMatrix();
+            return this.matrix.getRotate();
+        }
         getScale() {
             this.rebuildMatrix();
             return this.matrix.getScale();
+        }
+        getWorldTranslate() {
+            return this.getWorldMatrix().getTranslate();
+        }
+        getWorldRotate() {
+            return this.getWorldMatrix().getTranslate();
+        }
+        getWorldScale() {
+            return this.getWorldMatrix().getScale();
         }
         /**
          * 頂点データ計算
@@ -1035,13 +1058,13 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (26:0) <Rect bind:this={rect}>
-    function create_default_slot(ctx) {
+    // (33:1) <Rect bind:this={rect2}>
+    function create_default_slot_1(ctx) {
     	let rect_1;
     	let current;
     	let rect_1_props = {};
     	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
-    	/*rect_1_binding*/ ctx[2](rect_1);
+    	/*rect_1_binding*/ ctx[3](rect_1);
 
     	const block = {
     		c: function create() {
@@ -1065,7 +1088,63 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			/*rect_1_binding*/ ctx[2](null);
+    			/*rect_1_binding*/ ctx[3](null);
+    			destroy_component(rect_1, detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_default_slot_1.name,
+    		type: "slot",
+    		source: "(33:1) <Rect bind:this={rect2}>",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (32:0) <Rect bind:this={rect}>
+    function create_default_slot(ctx) {
+    	let rect_1;
+    	let current;
+
+    	let rect_1_props = {
+    		$$slots: { default: [create_default_slot_1] },
+    		$$scope: { ctx }
+    	};
+
+    	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
+    	/*rect_1_binding_1*/ ctx[4](rect_1);
+
+    	const block = {
+    		c: function create() {
+    			create_component(rect_1.$$.fragment);
+    		},
+    		m: function mount(target, anchor) {
+    			mount_component(rect_1, target, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			const rect_1_changes = {};
+
+    			if (dirty & /*$$scope, rect3*/ 260) {
+    				rect_1_changes.$$scope = { dirty, ctx };
+    			}
+
+    			rect_1.$set(rect_1_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(rect_1.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(rect_1.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			/*rect_1_binding_1*/ ctx[4](null);
     			destroy_component(rect_1, detaching);
     		}
     	};
@@ -1074,7 +1153,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(26:0) <Rect bind:this={rect}>",
+    		source: "(32:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -1091,7 +1170,7 @@ var app = (function () {
     	};
 
     	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
-    	/*rect_1_binding_1*/ ctx[3](rect_1);
+    	/*rect_1_binding_2*/ ctx[5](rect_1);
 
     	const block = {
     		c: function create() {
@@ -1107,7 +1186,7 @@ var app = (function () {
     		p: function update(ctx, [dirty]) {
     			const rect_1_changes = {};
 
-    			if (dirty & /*$$scope, rect2*/ 66) {
+    			if (dirty & /*$$scope, rect2, rect3*/ 262) {
     				rect_1_changes.$$scope = { dirty, ctx };
     			}
 
@@ -1123,7 +1202,7 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			/*rect_1_binding_1*/ ctx[3](null);
+    			/*rect_1_binding_2*/ ctx[5](null);
     			destroy_component(rect_1, detaching);
     		}
     	};
@@ -1144,6 +1223,7 @@ var app = (function () {
     	validate_slots("App", slots, []);
     	let rect;
     	let rect2;
+    	let rect3;
 
     	onMount(() => {
     		loop();
@@ -1152,18 +1232,24 @@ var app = (function () {
     	let rot = 1;
 
     	const loop = () => {
-    		let t = rect === null || rect === void 0
+    		let t1 = rect === null || rect === void 0
     		? void 0
     		: rect.getTransform();
 
     		let t2 = rect2.getTransform();
-    		rot += 0.1;
-    		t.rotateY(0.1);
+    		let t3 = rect3.getTransform();
+    		t1.translateX(0.1);
+    		t2.rotate(-0.1);
+    		t3.translateX(0.1);
 
     		// console.log(t.getRotate());
     		// t2.translateX(1.001);
     		// console.log(t2.matrix);
-    		console.log(t2.computeVertexData().a);
+    		// console.log("=============");
+    		// console.log(t.getRotate());
+    		console.log(t1.getTranslate());
+
+    		console.log(t3.getWorldTranslate());
 
     		// console.log(t.computeVertexData().b);
     		// console.log(t.computeVertexData().c);
@@ -1179,12 +1265,19 @@ var app = (function () {
 
     	function rect_1_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
+    			rect3 = $$value;
+    			$$invalidate(2, rect3);
+    		});
+    	}
+
+    	function rect_1_binding_1($$value) {
+    		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			rect2 = $$value;
     			$$invalidate(1, rect2);
     		});
     	}
 
-    	function rect_1_binding_1($$value) {
+    	function rect_1_binding_2($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			rect = $$value;
     			$$invalidate(0, rect);
@@ -1197,6 +1290,7 @@ var app = (function () {
     		Matrix,
     		rect,
     		rect2,
+    		rect3,
     		rot,
     		loop
     	});
@@ -1204,6 +1298,7 @@ var app = (function () {
     	$$self.$inject_state = $$props => {
     		if ("rect" in $$props) $$invalidate(0, rect = $$props.rect);
     		if ("rect2" in $$props) $$invalidate(1, rect2 = $$props.rect2);
+    		if ("rect3" in $$props) $$invalidate(2, rect3 = $$props.rect3);
     		if ("rot" in $$props) rot = $$props.rot;
     	};
 
@@ -1211,7 +1306,7 @@ var app = (function () {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [rect, rect2, rect_1_binding, rect_1_binding_1];
+    	return [rect, rect2, rect3, rect_1_binding, rect_1_binding_1, rect_1_binding_2];
     }
 
     class App extends SvelteComponentDev {

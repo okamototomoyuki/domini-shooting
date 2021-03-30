@@ -53,9 +53,20 @@ export default class Transform {
         }
     }
 
-    getRotate(): Vector3 {
+    getWorldMatrix(): Matrix {
+        let node = this.node;
         this.rebuildMatrix();
-        return this.matrix.getRotate();
+        let wm = this.matrix;
+
+        node = this.parentNode;
+        while (node.nodeType === 1) {
+            let transform = Transform.getTransform(node);
+            transform.rebuildMatrix();
+            let pm = transform.matrix;
+            wm = Matrix.multiply(wm, pm);
+            node = transform.parentNode;
+        }
+        return wm;
     }
 
     getTranslate(): Vector3 {
@@ -63,11 +74,27 @@ export default class Transform {
         return this.matrix.getTranslate();
     }
 
+    getRotate(): Vector3 {
+        this.rebuildMatrix();
+        return this.matrix.getRotate();
+    }
+
     getScale() {
         this.rebuildMatrix();
         return this.matrix.getScale();
     }
 
+    getWorldTranslate(): Vector3 {
+        return this.getWorldMatrix().getTranslate();
+    }
+
+    getWorldRotate(): Vector3 {
+        return this.getWorldMatrix().getTranslate();
+    }
+
+    getWorldScale(): Vector3 {
+        return this.getWorldMatrix().getScale();
+    }
 
     /**
      * 頂点データ計算
@@ -97,7 +124,6 @@ export default class Transform {
         }
         return v;
     };
-
 
     /**
      * 親ノード取得

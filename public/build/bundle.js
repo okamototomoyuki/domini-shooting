@@ -771,19 +771,21 @@ var app = (function () {
         computeVertexData() {
             let w = this.node.offsetWidth;
             let h = this.node.offsetHeight;
-            let v = new VertexData(new Vector3(-w / 2, -h / 2, 0), new Vector3(w / 2, -h / 2, 0), new Vector3(w / 2, h / 2, 0), new Vector3(-w / 2, h / 2, 0));
-            let node = this.node;
-            let transform = null;
-            while (node.nodeType === 1) {
-                transform = Transform.getTransform(node);
-                const rot = transform.getRotate();
-                const trans = transform.getTranslate();
-                v.a = v.a.rotateVector(rot).addVectors(trans);
-                v.b = v.b.rotateVector(rot).addVectors(trans);
-                v.c = v.c.rotateVector(rot).addVectors(trans);
-                v.d = v.d.rotateVector(rot).addVectors(trans);
-                node = transform.parentNode;
-            }
+            const im = Matrix.identity();
+            const wm = this.getWorldMatrix();
+            let v = new VertexData(Matrix.multiply(im.translate(-w / 2, -h / 2), wm).getTranslate(), Matrix.multiply(im.translate(w / 2, -h / 2), wm).getTranslate(), Matrix.multiply(im.translate(w / 2, h / 2), wm).getTranslate(), Matrix.multiply(im.translate(-w / 2, h / 2), wm).getTranslate());
+            // let node: HTMLElement = this.node;
+            // let transform: Transform = null;
+            // while (node.nodeType === 1) {
+            //     transform = Transform.getTransform(node);
+            //     const rot = transform.getRotate()
+            //     const trans = transform.getTranslate();
+            //     v.a = v.a.rotateVector(rot).addVectors(trans);
+            //     v.b = v.b.rotateVector(rot).addVectors(trans);
+            //     v.c = v.c.rotateVector(rot).addVectors(trans);
+            //     v.d = v.d.rotateVector(rot).addVectors(trans);
+            //     node = transform.parentNode;
+            // }
             return v;
         }
         ;
@@ -792,6 +794,15 @@ var app = (function () {
          */
         get parentNode() {
             return this.node.parentNode;
+        }
+        /**
+         * 衝突した対象一覧
+         */
+        get collides() {
+            this.computeVertexData();
+            for (const e of Object.values(Transform.nodeToIns)) {
+            }
+            return null;
         }
         /**
          * 座標X設定
@@ -1058,7 +1069,7 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (33:1) <Rect bind:this={rect2}>
+    // (36:1) <Rect bind:this={rect2}>
     function create_default_slot_1(ctx) {
     	let rect_1;
     	let current;
@@ -1097,14 +1108,14 @@ var app = (function () {
     		block,
     		id: create_default_slot_1.name,
     		type: "slot",
-    		source: "(33:1) <Rect bind:this={rect2}>",
+    		source: "(36:1) <Rect bind:this={rect2}>",
     		ctx
     	});
 
     	return block;
     }
 
-    // (32:0) <Rect bind:this={rect}>
+    // (35:0) <Rect bind:this={rect}>
     function create_default_slot(ctx) {
     	let rect_1;
     	let current;
@@ -1153,7 +1164,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(32:0) <Rect bind:this={rect}>",
+    		source: "(35:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -1247,9 +1258,12 @@ var app = (function () {
     		// console.log(t2.matrix);
     		// console.log("=============");
     		// console.log(t.getRotate());
-    		console.log(t1.getTranslate());
+    		// console.log(t1.getTranslate());
+    		console.log(t3.computeVertexData().a);
 
-    		console.log(t3.getWorldTranslate());
+    		console.log(t3.computeVertexData().b);
+    		console.log(t3.computeVertexData().c);
+    		console.log(t3.computeVertexData().d);
 
     		// console.log(t.computeVertexData().b);
     		// console.log(t.computeVertexData().c);

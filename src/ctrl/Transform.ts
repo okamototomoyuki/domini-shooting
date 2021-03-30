@@ -1,6 +1,6 @@
 import { element, loop } from "svelte/internal";
 import Matrix from "../data/Matrix";
-import Vector3 from "../data/Vector3";
+import type Vector3 from "../data/Vector3";
 import VertexData from "../data/VertexData";
 
 /**
@@ -103,25 +103,27 @@ export default class Transform {
     computeVertexData(): VertexData {
         let w = this.node.offsetWidth;
         let h = this.node.offsetHeight;
+        const im = Matrix.identity();
+        const wm = this.getWorldMatrix();
         let v = new VertexData(
-            new Vector3(-w / 2, -h / 2, 0),
-            new Vector3(w / 2, -h / 2, 0),
-            new Vector3(w / 2, h / 2, 0),
-            new Vector3(-w / 2, h / 2, 0),
+            Matrix.multiply(im.translate(-w / 2, -h / 2), wm).getTranslate(),
+            Matrix.multiply(im.translate(w / 2, -h / 2), wm).getTranslate(),
+            Matrix.multiply(im.translate(w / 2, h / 2), wm).getTranslate(),
+            Matrix.multiply(im.translate(-w / 2, h / 2), wm).getTranslate(),
         );
 
-        let node: HTMLElement = this.node;
-        let transform: Transform = null;
-        while (node.nodeType === 1) {
-            transform = Transform.getTransform(node);
-            const rot = transform.getRotate()
-            const trans = transform.getTranslate();
-            v.a = v.a.rotateVector(rot).addVectors(trans);
-            v.b = v.b.rotateVector(rot).addVectors(trans);
-            v.c = v.c.rotateVector(rot).addVectors(trans);
-            v.d = v.d.rotateVector(rot).addVectors(trans);
-            node = transform.parentNode;
-        }
+        // let node: HTMLElement = this.node;
+        // let transform: Transform = null;
+        // while (node.nodeType === 1) {
+        //     transform = Transform.getTransform(node);
+        //     const rot = transform.getRotate()
+        //     const trans = transform.getTranslate();
+        //     v.a = v.a.rotateVector(rot).addVectors(trans);
+        //     v.b = v.b.rotateVector(rot).addVectors(trans);
+        //     v.c = v.c.rotateVector(rot).addVectors(trans);
+        //     v.d = v.d.rotateVector(rot).addVectors(trans);
+        //     node = transform.parentNode;
+        // }
         return v;
     };
 
@@ -130,6 +132,18 @@ export default class Transform {
      */
     get parentNode(): HTMLElement {
         return this.node.parentNode as HTMLElement;
+    }
+
+    /**
+     * 衝突した対象一覧
+     */
+    get collides(): Transform[] {
+        const vs = this.computeVertexData();
+        for (const e of Object.values(Transform.nodeToIns) {
+
+
+        }
+        return null;
     }
 
     /**

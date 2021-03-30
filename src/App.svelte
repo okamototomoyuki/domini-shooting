@@ -23,8 +23,11 @@
 		// console.log(t2.matrix);
 		// console.log("=============");
 		// console.log(t.getRotate());
-		console.log(t1.getTranslate());
-		console.log(t3.getWorldTranslate());
+		// console.log(t1.getTranslate());
+		console.log(t3.computeVertexData().a);
+		console.log(t3.computeVertexData().b);
+		console.log(t3.computeVertexData().c);
+		console.log(t3.computeVertexData().d);
 		// console.log(t.computeVertexData().b);
 		// console.log(t.computeVertexData().c);
 		// console.log(t.computeVertexData().d);

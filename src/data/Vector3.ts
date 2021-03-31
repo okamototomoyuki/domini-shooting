@@ -25,6 +25,19 @@ export default class Vector3 {
     }
 
     /**
+     * 掛け算
+     * @param v 係数
+     * @returns 結果のベクトル
+     */
+    multiply(v: number): Vector3 {
+        return new Vector3(
+            this.x * v,
+            this.y * v,
+            this.z * v,
+        );
+    }
+
+    /**
      * 回転
      * @param v 回転ベクトル
      * @returns 結果のベクトル
@@ -61,5 +74,15 @@ export default class Vector3 {
             x1 * m1 + y1 * m5 + z1 * m9,
             x1 * m2 + y1 * m6 + z1 * m10,
         );
+    }
+
+    /**
+     * 外積
+     * @param va ベクトルa
+     * @param vb ベクトルb
+     * @returns 外積のベクトル
+     */
+    static cross(va: Vector3, vb: Vector3): Vector3 {
+        return new Vector3(va.y * vb.z - va.z * vb.y, va.z * vb.x - va.x * vb.z, va.x * vb.y - va.y * vb.x)
     }
 }

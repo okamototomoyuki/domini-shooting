@@ -1,6 +1,6 @@
 import { element, loop } from "svelte/internal";
 import Matrix from "../data/Matrix";
-import type Vector3 from "../data/Vector3";
+import Vector3 from "../data/Vector3";
 import VertexData from "../data/VertexData";
 
 /**
@@ -138,12 +138,38 @@ export default class Transform {
      * 衝突した対象一覧
      */
     get collides(): Transform[] {
-        const vs = this.computeVertexData();
-        for (const e of Object.values(Transform.nodeToIns) {
+        const vd = this.computeVertexData();
+        const oVecs = [vd.a.multiply(-1), vd.b.multiply(-1), vd.c.multiply(-1), vd.d.multiply(-1)];
+        const collides = new Array<Transform>();
+        for (const otherT of Transform.nodeToIns.values()) {
+            if (otherT != this) {
+                for (const oVec of oVecs) {
 
+                    const otherVs = otherT.computeVertexData();
 
+                    const otherVA = otherVs.a.addVectors(oVec);
+                    const otherVB = otherVs.b.addVectors(oVec);
+                    const otherVC = otherVs.c.addVectors(oVec);
+                    const otherVD = otherVs.d.addVectors(oVec);
+
+                    const crossAB = Vector3.cross(otherVA, otherVB);
+                    const crossBC = Vector3.cross(otherVB, otherVC);
+                    const crossCD = Vector3.cross(otherVC, otherVD);
+                    const crossDA = Vector3.cross(otherVD, otherVA);
+                    if (Math.sign(crossAB.z) == Math.sign(crossBC.z)
+                        && Math.sign(crossBC.z) == Math.sign(crossCD.z)
+                        && Math.sign(crossCD.z) == Math.sign(crossDA.z)
+                        && Math.sign(crossDA.z) == Math.sign(crossAB.z)) {
+
+                        これじゃ頂点しか見てないのでたりない
+                        線が交差してるかで判定するべき
+                        collides.push(otherT);
+                        break;
+                    }
+                }
+            }
         }
-        return null;
+        return collides;
     }
 
     /**

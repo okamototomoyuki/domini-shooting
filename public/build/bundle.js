@@ -395,6 +395,14 @@ var app = (function () {
             return new Vector3(this.x + v.x, this.y + v.y, this.z + v.z);
         }
         /**
+         * 掛け算
+         * @param v 係数
+         * @returns 結果のベクトル
+         */
+        multiply(v) {
+            return new Vector3(this.x * v, this.y * v, this.z * v);
+        }
+        /**
          * 回転
          * @param v 回転ベクトル
          * @returns 結果のベクトル
@@ -426,6 +434,15 @@ var app = (function () {
             let m9 = 2 * (y * z - x * w);
             let m10 = 1 - 2 * (x * x + y * y);
             return new Vector3(x1 * m0 + y1 * m4 + z1 * m8, x1 * m1 + y1 * m5 + z1 * m9, x1 * m2 + y1 * m6 + z1 * m10);
+        }
+        /**
+         * 外積
+         * @param va ベクトルa
+         * @param vb ベクトルb
+         * @returns 外積のベクトル
+         */
+        static cross(va, vb) {
+            return new Vector3(va.y * vb.z - va.z * vb.y, va.z * vb.x - va.x * vb.z, va.x * vb.y - va.y * vb.x);
         }
     }
 
@@ -799,10 +816,33 @@ var app = (function () {
          * 衝突した対象一覧
          */
         get collides() {
-            this.computeVertexData();
-            for (const e of Object.values(Transform.nodeToIns)) {
+            const vd = this.computeVertexData();
+            const oVecs = [vd.a.multiply(-1), vd.b.multiply(-1), vd.c.multiply(-1), vd.d.multiply(-1)];
+            const collides = new Array();
+            for (const otherT of Transform.nodeToIns.values()) {
+                if (otherT != this) {
+                    for (const oVec of oVecs) {
+                        const otherVs = otherT.computeVertexData();
+                        const otherVA = otherVs.a.addVectors(oVec);
+                        const otherVB = otherVs.b.addVectors(oVec);
+                        const otherVC = otherVs.c.addVectors(oVec);
+                        const otherVD = otherVs.d.addVectors(oVec);
+                        const crossAB = Vector3.cross(otherVA, otherVB);
+                        const crossBC = Vector3.cross(otherVB, otherVC);
+                        const crossCD = Vector3.cross(otherVC, otherVD);
+                        const crossDA = Vector3.cross(otherVD, otherVA);
+                        if (Math.sign(crossAB.z) == Math.sign(crossBC.z)
+                            && Math.sign(crossBC.z) == Math.sign(crossCD.z)
+                            && Math.sign(crossCD.z) == Math.sign(crossDA.z)
+                            && Math.sign(crossDA.z) == Math.sign(crossAB.z)) {
+                            コレジャタリン;
+                            collides.push(otherT);
+                            break;
+                        }
+                    }
+                }
             }
-            return null;
+            return collides;
         }
         /**
          * 座標X設定
@@ -1069,7 +1109,7 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (36:1) <Rect bind:this={rect2}>
+    // (38:1) <Rect bind:this={rect2}>
     function create_default_slot_1(ctx) {
     	let rect_1;
     	let current;
@@ -1108,14 +1148,14 @@ var app = (function () {
     		block,
     		id: create_default_slot_1.name,
     		type: "slot",
-    		source: "(36:1) <Rect bind:this={rect2}>",
+    		source: "(38:1) <Rect bind:this={rect2}>",
     		ctx
     	});
 
     	return block;
     }
 
-    // (35:0) <Rect bind:this={rect}>
+    // (37:0) <Rect bind:this={rect}>
     function create_default_slot(ctx) {
     	let rect_1;
     	let current;
@@ -1164,7 +1204,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(35:0) <Rect bind:this={rect}>",
+    		source: "(37:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -1248,22 +1288,26 @@ var app = (function () {
     		: rect.getTransform();
 
     		let t2 = rect2.getTransform();
-    		let t3 = rect3.getTransform();
-    		t1.translateX(0.1);
-    		t2.rotate(-0.1);
-    		t3.translateX(0.1);
 
+    		// let t3 = rect3.getTransform();
+    		t1.translateX(-0.1);
+
+    		t2.translateX(0.2);
+
+    		// t3.translateX(0.1);
     		// console.log(t.getRotate());
     		// t2.translateX(1.001);
     		// console.log(t2.matrix);
     		// console.log("=============");
     		// console.log(t.getRotate());
     		// console.log(t1.getTranslate());
-    		console.log(t3.computeVertexData().a);
+    		// console.log(t3.computeVertexData().a);
+    		// console.log(t3.computeVertexData().b);
+    		// console.log(t3.computeVertexData().c);
+    		// console.log(t3.computeVertexData().d);
+    		console.log(t1.collides);
 
-    		console.log(t3.computeVertexData().b);
-    		console.log(t3.computeVertexData().c);
-    		console.log(t3.computeVertexData().d);
+    		console.log(t2.collides);
 
     		// console.log(t.computeVertexData().b);
     		// console.log(t.computeVertexData().c);

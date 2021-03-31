@@ -13,10 +13,10 @@
 	const loop = () => {
 		let t1 = rect?.getTransform();
 		let t2 = rect2.getTransform();
-		let t3 = rect3.getTransform();
-		t1.translateX(0.1);
-		t2.rotate(-0.1);
-		t3.translateX(0.1);
+		// let t3 = rect3.getTransform();
+		t1.translateX(-0.1);
+		t2.translateX(0.2);
+		// t3.translateX(0.1);
 		// console.log(t.getRotate());
 
 		// t2.translateX(1.001);
@@ -24,10 +24,12 @@
 		// console.log("=============");
 		// console.log(t.getRotate());
 		// console.log(t1.getTranslate());
-		console.log(t3.computeVertexData().a);
-		console.log(t3.computeVertexData().b);
-		console.log(t3.computeVertexData().c);
-		console.log(t3.computeVertexData().d);
+		// console.log(t3.computeVertexData().a);
+		// console.log(t3.computeVertexData().b);
+		// console.log(t3.computeVertexData().c);
+		// console.log(t3.computeVertexData().d);
+		console.log(t1.collides);
+		console.log(t2.collides);
 		// console.log(t.computeVertexData().b);
 		// console.log(t.computeVertexData().c);
 		// console.log(t.computeVertexData().d);

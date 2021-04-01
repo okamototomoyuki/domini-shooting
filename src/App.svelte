@@ -7,6 +7,10 @@
 	let rect2: Rect;
 	let rect3: Rect;
 	onMount(() => {
+		let t1 = rect?.getTransform();
+		let t2 = rect2?.getTransform();
+		// let t3 = rect3.getTransform();
+		t2.translateX(300);
 		loop();
 	});
 	let rot = 1;
@@ -14,8 +18,8 @@
 		let t1 = rect?.getTransform();
 		let t2 = rect2.getTransform();
 		// let t3 = rect3.getTransform();
-		t1.translateX(-0.1);
-		t2.translateX(0.2);
+		t2.translateX(1);
+		t2.rotateY(1);
 		// t3.translateX(0.1);
 		// console.log(t.getRotate());
 
@@ -28,8 +32,10 @@
 		// console.log(t3.computeVertexData().b);
 		// console.log(t3.computeVertexData().c);
 		// console.log(t3.computeVertexData().d);
-		console.log(t1.collides);
-		console.log(t2.collides);
+		console.log(
+			t1.collides.map((e) => e.node.parentNode.nodeName).join(",")
+		);
+		// console.log(t2.collides.map((e) => e.node.parentNode).join(","));
 		// console.log(t.computeVertexData().b);
 		// console.log(t.computeVertexData().c);
 		// console.log(t.computeVertexData().d);

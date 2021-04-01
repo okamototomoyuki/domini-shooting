@@ -444,6 +444,21 @@ var app = (function () {
         static cross(va, vb) {
             return new Vector3(va.y * vb.z - va.z * vb.y, va.z * vb.x - va.x * vb.z, va.x * vb.y - va.y * vb.x);
         }
+        /**
+         * XY座標線分が交わっているか
+         * @param aFrom 線分A始点
+         * @param aTo 線分A終点
+         * @param bFrom 線分B始点
+         * @param bTo 線分B終点
+         * @returns true:交わっている
+         */
+        static isCrossXY(aFrom, aTo, bFrom, bTo) {
+            const ta = (bFrom.x - bTo.x) * (aFrom.y - bFrom.y) + (bFrom.y - bTo.y) * (bFrom.x - aFrom.x);
+            const tb = (bFrom.x - bTo.x) * (aTo.y - bFrom.y) + (bFrom.y - bTo.y) * (bFrom.x - aTo.x);
+            const tc = (aFrom.x - aTo.x) * (bFrom.y - aFrom.y) + (aFrom.y - aTo.y) * (aFrom.x - bFrom.x);
+            const td = (aFrom.x - aTo.x) * (bTo.y - aFrom.y) + (aFrom.y - aTo.y) * (aFrom.x - bTo.x);
+            return tc * td < 0 && ta * tb < 0;
+        }
     }
 
     /**
@@ -706,6 +721,9 @@ var app = (function () {
             this.c = c;
             this.d = d;
         }
+        get vertices() {
+            return [this.a, this.b, this.c, this.d];
+        }
     }
 
     /**
@@ -816,29 +834,54 @@ var app = (function () {
          * 衝突した対象一覧
          */
         get collides() {
-            const vd = this.computeVertexData();
-            const oVecs = [vd.a.multiply(-1), vd.b.multiply(-1), vd.c.multiply(-1), vd.d.multiply(-1)];
+            const selfVs = this.computeVertexData();
+            const oVecs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
             const collides = new Array();
             for (const otherT of Transform.nodeToIns.values()) {
                 if (otherT != this) {
-                    for (const oVec of oVecs) {
-                        const otherVs = otherT.computeVertexData();
-                        const otherVA = otherVs.a.addVectors(oVec);
-                        const otherVB = otherVs.b.addVectors(oVec);
-                        const otherVC = otherVs.c.addVectors(oVec);
-                        const otherVD = otherVs.d.addVectors(oVec);
-                        const crossAB = Vector3.cross(otherVA, otherVB);
-                        const crossBC = Vector3.cross(otherVB, otherVC);
-                        const crossCD = Vector3.cross(otherVC, otherVD);
-                        const crossDA = Vector3.cross(otherVD, otherVA);
-                        if (Math.sign(crossAB.z) == Math.sign(crossBC.z)
-                            && Math.sign(crossBC.z) == Math.sign(crossCD.z)
-                            && Math.sign(crossCD.z) == Math.sign(crossDA.z)
-                            && Math.sign(crossDA.z) == Math.sign(crossAB.z)) {
-                            コレジャタリン;
-                            collides.push(otherT);
-                            break;
+                    const otherVs = otherT.computeVertexData();
+                    // 線分が交わっているか
+                    let isCollide = false;
+                    if (Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
+                        || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
+                        || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
+                        || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
+                        || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
+                        || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
+                        || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
+                        || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
+                        || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
+                        || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
+                        || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
+                        || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
+                        || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
+                        || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
+                        || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
+                        || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
+                        isCollide = true;
+                    }
+                    else {
+                        // 点が矩形内に入っているか
+                        for (const oVec of oVecs) {
+                            const otherVA = otherVs.a.addVectors(oVec);
+                            const otherVB = otherVs.b.addVectors(oVec);
+                            const otherVC = otherVs.c.addVectors(oVec);
+                            const otherVD = otherVs.d.addVectors(oVec);
+                            const crossAB = Vector3.cross(otherVA, otherVB);
+                            const crossBC = Vector3.cross(otherVB, otherVC);
+                            const crossCD = Vector3.cross(otherVC, otherVD);
+                            const crossDA = Vector3.cross(otherVD, otherVA);
+                            if (crossAB.z * crossBC.z > 0
+                                && crossBC.z * crossCD.z > 0
+                                && crossCD.z * crossDA.z > 0
+                                && crossDA.z * crossAB.z > 0) {
+                                isCollide = true;
+                                break;
+                            }
                         }
+                    }
+                    if (isCollide) {
+                        collides.push(otherT);
                     }
                 }
             }
@@ -1109,7 +1152,7 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (38:1) <Rect bind:this={rect2}>
+    // (42:1) <Rect bind:this={rect2}>
     function create_default_slot_1(ctx) {
     	let rect_1;
     	let current;
@@ -1148,14 +1191,14 @@ var app = (function () {
     		block,
     		id: create_default_slot_1.name,
     		type: "slot",
-    		source: "(38:1) <Rect bind:this={rect2}>",
+    		source: "(42:1) <Rect bind:this={rect2}>",
     		ctx
     	});
 
     	return block;
     }
 
-    // (37:0) <Rect bind:this={rect}>
+    // (41:0) <Rect bind:this={rect}>
     function create_default_slot(ctx) {
     	let rect_1;
     	let current;
@@ -1204,7 +1247,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(37:0) <Rect bind:this={rect}>",
+    		source: "(41:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -1277,6 +1320,17 @@ var app = (function () {
     	let rect3;
 
     	onMount(() => {
+    		rect === null || rect === void 0
+    		? void 0
+    		: rect.getTransform();
+
+    		let t2 = rect2 === null || rect2 === void 0
+    		? void 0
+    		: rect2.getTransform();
+
+    		// let t3 = rect3.getTransform();
+    		t2.translateX(300);
+
     		loop();
     	});
 
@@ -1290,9 +1344,9 @@ var app = (function () {
     		let t2 = rect2.getTransform();
 
     		// let t3 = rect3.getTransform();
-    		t1.translateX(-0.1);
+    		t2.translateX(1);
 
-    		t2.translateX(0.2);
+    		t2.rotateY(1);
 
     		// t3.translateX(0.1);
     		// console.log(t.getRotate());
@@ -1305,10 +1359,9 @@ var app = (function () {
     		// console.log(t3.computeVertexData().b);
     		// console.log(t3.computeVertexData().c);
     		// console.log(t3.computeVertexData().d);
-    		console.log(t1.collides);
+    		console.log(t1.collides.map(e => e.node.parentNode.nodeName).join(","));
 
-    		console.log(t2.collides);
-
+    		// console.log(t2.collides.map((e) => e.node.parentNode).join(","));
     		// console.log(t.computeVertexData().b);
     		// console.log(t.computeVertexData().c);
     		// console.log(t.computeVertexData().d);

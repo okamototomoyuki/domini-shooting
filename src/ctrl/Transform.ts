@@ -138,34 +138,60 @@ export default class Transform {
      * 衝突した対象一覧
      */
     get collides(): Transform[] {
-        const vd = this.computeVertexData();
-        const oVecs = [vd.a.multiply(-1), vd.b.multiply(-1), vd.c.multiply(-1), vd.d.multiply(-1)];
+
+        const selfVs = this.computeVertexData();
+        const oVecs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
+
         const collides = new Array<Transform>();
         for (const otherT of Transform.nodeToIns.values()) {
             if (otherT != this) {
-                for (const oVec of oVecs) {
+                const otherVs = otherT.computeVertexData();
 
-                    const otherVs = otherT.computeVertexData();
+                // 線分が交わっているか
+                let isCollide = false;
+                if (Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
+                    || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
+                    || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
+                    || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
+                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
+                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
+                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
+                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
+                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
+                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
+                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
+                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
+                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
+                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
+                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
+                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
 
-                    const otherVA = otherVs.a.addVectors(oVec);
-                    const otherVB = otherVs.b.addVectors(oVec);
-                    const otherVC = otherVs.c.addVectors(oVec);
-                    const otherVD = otherVs.d.addVectors(oVec);
+                    isCollide = true;
+                } else {
+                    // 点が矩形内に入っているか
+                    for (const oVec of oVecs) {
+                        const otherVA = otherVs.a.addVectors(oVec);
+                        const otherVB = otherVs.b.addVectors(oVec);
+                        const otherVC = otherVs.c.addVectors(oVec);
+                        const otherVD = otherVs.d.addVectors(oVec);
 
-                    const crossAB = Vector3.cross(otherVA, otherVB);
-                    const crossBC = Vector3.cross(otherVB, otherVC);
-                    const crossCD = Vector3.cross(otherVC, otherVD);
-                    const crossDA = Vector3.cross(otherVD, otherVA);
-                    if (Math.sign(crossAB.z) == Math.sign(crossBC.z)
-                        && Math.sign(crossBC.z) == Math.sign(crossCD.z)
-                        && Math.sign(crossCD.z) == Math.sign(crossDA.z)
-                        && Math.sign(crossDA.z) == Math.sign(crossAB.z)) {
+                        const crossAB = Vector3.cross(otherVA, otherVB);
+                        const crossBC = Vector3.cross(otherVB, otherVC);
+                        const crossCD = Vector3.cross(otherVC, otherVD);
+                        const crossDA = Vector3.cross(otherVD, otherVA);
+                        if (crossAB.z * crossBC.z > 0
+                            && crossBC.z * crossCD.z > 0
+                            && crossCD.z * crossDA.z > 0
+                            && crossDA.z * crossAB.z > 0) {
 
-                        これじゃ頂点しか見てないのでたりない
-                        線が交差してるかで判定するべき
-                        collides.push(otherT);
-                        break;
+                            isCollide = true;
+                            break;
+                        }
                     }
+                }
+
+                if (isCollide) {
+                    collides.push(otherT);
                 }
             }
         }

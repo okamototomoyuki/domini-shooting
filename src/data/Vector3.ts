@@ -85,4 +85,20 @@ export default class Vector3 {
     static cross(va: Vector3, vb: Vector3): Vector3 {
         return new Vector3(va.y * vb.z - va.z * vb.y, va.z * vb.x - va.x * vb.z, va.x * vb.y - va.y * vb.x)
     }
+
+    /**
+     * XY座標線分が交わっているか
+     * @param aFrom 線分A始点
+     * @param aTo 線分A終点
+     * @param bFrom 線分B始点
+     * @param bTo 線分B終点
+     * @returns true:交わっている
+     */
+    static isCrossXY(aFrom: Vector3, aTo: Vector3, bFrom: Vector3, bTo: Vector3,): Boolean {
+        const ta = (bFrom.x - bTo.x) * (aFrom.y - bFrom.y) + (bFrom.y - bTo.y) * (bFrom.x - aFrom.x);
+        const tb = (bFrom.x - bTo.x) * (aTo.y - bFrom.y) + (bFrom.y - bTo.y) * (bFrom.x - aTo.x);
+        const tc = (aFrom.x - aTo.x) * (bFrom.y - aFrom.y) + (aFrom.y - aTo.y) * (aFrom.x - bFrom.x);
+        const td = (aFrom.x - aTo.x) * (bTo.y - aFrom.y) + (aFrom.y - aTo.y) * (aFrom.x - bTo.x);
+        return tc * td < 0 && ta * tb < 0;
+    }
 }

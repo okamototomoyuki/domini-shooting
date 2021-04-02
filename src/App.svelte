@@ -7,19 +7,49 @@
 	let rect2: Rect;
 	let rect3: Rect;
 	onMount(() => {
+		document.addEventListener("keydown", onKeyDown);
+		// document.addEventListener("keyup", onKeyUp);
+
 		let t1 = rect?.getTransform();
 		let t2 = rect2?.getTransform();
 		// let t3 = rect3.getTransform();
 		t2.translateX(300);
 		loop();
 	});
+	const onKeyDown = (e: KeyboardEvent) => {
+		console.log(e.key);
+		if (e.key == "w") {
+			rect?.getTransform().translateY(-1);
+		}
+		if (e.key == "a") {
+			rect?.getTransform().translateX(-1);
+		}
+		if (e.key == "s") {
+			rect?.getTransform().translateY(1);
+		}
+		if (e.key == "d") {
+			rect?.getTransform().translateX(1);
+		}
+		if (e.key == "[") {
+			rect2?.getTransform().translateY(-1);
+		}
+		if (e.key == ";") {
+			rect2?.getTransform().translateX(-1);
+		}
+		if (e.key == "'") {
+			rect2?.getTransform().translateX(1);
+		}
+		if (e.key == "/") {
+			rect2?.getTransform().translateY(1);
+		}
+	};
+
 	let rot = 1;
 	const loop = () => {
 		let t1 = rect?.getTransform();
 		let t2 = rect2.getTransform();
 		// let t3 = rect3.getTransform();
-		t2.translateX(1);
-		t2.rotateY(1);
+		// t2.rotateZ(1);
 		// t3.translateX(0.1);
 		// console.log(t.getRotate());
 

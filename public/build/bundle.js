@@ -1152,7 +1152,7 @@ var app = (function () {
 
     const { console: console_1 } = globals;
 
-    // (42:1) <Rect bind:this={rect2}>
+    // (70:1) <Rect bind:this={rect2}>
     function create_default_slot_1(ctx) {
     	let rect_1;
     	let current;
@@ -1191,14 +1191,14 @@ var app = (function () {
     		block,
     		id: create_default_slot_1.name,
     		type: "slot",
-    		source: "(42:1) <Rect bind:this={rect2}>",
+    		source: "(70:1) <Rect bind:this={rect2}>",
     		ctx
     	});
 
     	return block;
     }
 
-    // (41:0) <Rect bind:this={rect}>
+    // (69:0) <Rect bind:this={rect}>
     function create_default_slot(ctx) {
     	let rect_1;
     	let current;
@@ -1222,7 +1222,7 @@ var app = (function () {
     		p: function update(ctx, dirty) {
     			const rect_1_changes = {};
 
-    			if (dirty & /*$$scope, rect3*/ 260) {
+    			if (dirty & /*$$scope, rect3*/ 516) {
     				rect_1_changes.$$scope = { dirty, ctx };
     			}
 
@@ -1247,7 +1247,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(41:0) <Rect bind:this={rect}>",
+    		source: "(69:0) <Rect bind:this={rect}>",
     		ctx
     	});
 
@@ -1280,7 +1280,7 @@ var app = (function () {
     		p: function update(ctx, [dirty]) {
     			const rect_1_changes = {};
 
-    			if (dirty & /*$$scope, rect2, rect3*/ 262) {
+    			if (dirty & /*$$scope, rect2, rect3*/ 518) {
     				rect_1_changes.$$scope = { dirty, ctx };
     			}
 
@@ -1320,6 +1320,9 @@ var app = (function () {
     	let rect3;
 
     	onMount(() => {
+    		document.addEventListener("keydown", onKeyDown);
+
+    		// document.addEventListener("keyup", onKeyUp);
     		rect === null || rect === void 0
     		? void 0
     		: rect.getTransform();
@@ -1334,6 +1337,58 @@ var app = (function () {
     		loop();
     	});
 
+    	const onKeyDown = e => {
+    		console.log(e.key);
+
+    		if (e.key == "w") {
+    			rect === null || rect === void 0
+    			? void 0
+    			: rect.getTransform().translateY(-1);
+    		}
+
+    		if (e.key == "a") {
+    			rect === null || rect === void 0
+    			? void 0
+    			: rect.getTransform().translateX(-1);
+    		}
+
+    		if (e.key == "s") {
+    			rect === null || rect === void 0
+    			? void 0
+    			: rect.getTransform().translateY(1);
+    		}
+
+    		if (e.key == "d") {
+    			rect === null || rect === void 0
+    			? void 0
+    			: rect.getTransform().translateX(1);
+    		}
+
+    		if (e.key == "[") {
+    			rect2 === null || rect2 === void 0
+    			? void 0
+    			: rect2.getTransform().translateY(-1);
+    		}
+
+    		if (e.key == ";") {
+    			rect2 === null || rect2 === void 0
+    			? void 0
+    			: rect2.getTransform().translateX(-1);
+    		}
+
+    		if (e.key == "'") {
+    			rect2 === null || rect2 === void 0
+    			? void 0
+    			: rect2.getTransform().translateX(1);
+    		}
+
+    		if (e.key == "/") {
+    			rect2 === null || rect2 === void 0
+    			? void 0
+    			: rect2.getTransform().translateY(1);
+    		}
+    	};
+
     	let rot = 1;
 
     	const loop = () => {
@@ -1341,13 +1396,10 @@ var app = (function () {
     		? void 0
     		: rect.getTransform();
 
-    		let t2 = rect2.getTransform();
+    		rect2.getTransform();
 
     		// let t3 = rect3.getTransform();
-    		t2.translateX(1);
-
-    		t2.rotateY(1);
-
+    		// t2.rotateZ(1);
     		// t3.translateX(0.1);
     		// console.log(t.getRotate());
     		// t2.translateX(1.001);
@@ -1402,6 +1454,7 @@ var app = (function () {
     		rect,
     		rect2,
     		rect3,
+    		onKeyDown,
     		rot,
     		loop
     	});

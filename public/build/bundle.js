@@ -141,6 +141,12 @@ var app = (function () {
             block.i(local);
         }
     }
+
+    const globals = (typeof window !== 'undefined'
+        ? window
+        : typeof globalThis !== 'undefined'
+            ? globalThis
+            : global);
     function mount_component(component, target, anchor, customElement) {
         const { fragment, on_mount, on_destroy, after_update } = component.$$;
         fragment && fragment.m(target, anchor);
@@ -861,34 +867,48 @@ var app = (function () {
     Engine.delta = 0;
 
     class Vertex {
-        constructor(trans, index) {
+        constructor(trans, type) {
             this.trans = trans;
             const node = document.createElement('div');
             this.node = node;
-            this.index = index;
+            this.type = type;
             this.trans.node.appendChild(this.node);
             node.style.position = "absolute";
+            node.style.transformOrigin = "center";
             node.style.opacity = "0";
             node.style.width = "1px";
             node.style.height = "1px";
             this.rebuild();
         }
         rebuild() {
-            if (this.index < 2) {
-                if (this.index == 0) {
+            switch (this.type) {
+                case Vertex.TYPE_ORIGIN:
+                    this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, ${this.trans.node.offsetHeight / 2}px)`;
+                    break;
+                case Vertex.TYPE_LT:
                     this.node.style.transform = "translate(0px, 0px)";
-                }
-                else {
+                    break;
+                case Vertex.TYPE_RT:
                     this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, 0px)`;
-                }
-            }
-            else {
-                if (this.index == 2) {
+                    break;
+                case Vertex.TYPE_RB:
                     this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, ${this.trans.node.offsetHeight}px)`;
-                }
-                else {
+                    break;
+                case Vertex.TYPE_LB:
                     this.node.style.transform = `translate(0px, ${this.trans.node.offsetHeight}px)`;
-                }
+                    break;
+                case Vertex.TYPE_TOP:
+                    this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, 0px)`;
+                    break;
+                case Vertex.TYPE_RIGHT:
+                    this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, ${this.trans.node.offsetHeight / 2}px)`;
+                    break;
+                case Vertex.TYPE_BOTTOM:
+                    this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, ${this.trans.node.offsetHeight}px)`;
+                    break;
+                case Vertex.TYPE_LEFT:
+                    this.node.style.transform = `translate(0px, ${this.trans.node.offsetHeight / 2}px)`;
+                    break;
             }
         }
         getPosition() {
@@ -896,6 +916,15 @@ var app = (function () {
             return new Vector3(bound.x, bound.y, 0);
         }
     }
+    Vertex.TYPE_ORIGIN = 0;
+    Vertex.TYPE_LT = 1;
+    Vertex.TYPE_RT = 2;
+    Vertex.TYPE_RB = 3;
+    Vertex.TYPE_LB = 4;
+    Vertex.TYPE_TOP = 5;
+    Vertex.TYPE_RIGHT = 6;
+    Vertex.TYPE_BOTTOM = 7;
+    Vertex.TYPE_LEFT = 8;
     Vertex.nodeToIns = new Map();
 
     /**
@@ -906,7 +935,17 @@ var app = (function () {
             this.frame = 0;
             this.isDirty = false;
             this.node = node;
-            this.vertices = [new Vertex(this, 0), new Vertex(this, 1), new Vertex(this, 2), new Vertex(this, 3)];
+            this.vertices = [
+                new Vertex(this, Vertex.TYPE_ORIGIN),
+                new Vertex(this, Vertex.TYPE_LT),
+                new Vertex(this, Vertex.TYPE_RT),
+                new Vertex(this, Vertex.TYPE_RB),
+                new Vertex(this, Vertex.TYPE_LB),
+                new Vertex(this, Vertex.TYPE_TOP),
+                new Vertex(this, Vertex.TYPE_RIGHT),
+                new Vertex(this, Vertex.TYPE_BOTTOM),
+                new Vertex(this, Vertex.TYPE_LEFT),
+            ];
         }
         static initialize() {
             this.update();
@@ -965,7 +1004,7 @@ var app = (function () {
             return this.getWorldMatrix().getTranslate();
         }
         getWorldRotate() {
-            return this.getWorldMatrix().getTranslate();
+            return this.getWorldMatrix().getRotate();
         }
         getWorldScale() {
             return this.getWorldMatrix().getScale();
@@ -975,8 +1014,7 @@ var app = (function () {
          * @returns 頂点データ
          */
         computeVertex2D() {
-            // 計算しない　、 頂点 DOM を持たせて、 getBoundClientRect で座標を得る
-            return new VertexData(this.vertices[0].getPosition(), this.vertices[1].getPosition(), this.vertices[2].getPosition(), this.vertices[3].getPosition());
+            return new VertexData(this.vertices[Vertex.TYPE_LT].getPosition(), this.vertices[Vertex.TYPE_RT].getPosition(), this.vertices[Vertex.TYPE_RB].getPosition(), this.vertices[Vertex.TYPE_LB].getPosition());
         }
         ;
         /**
@@ -1148,6 +1186,13 @@ var app = (function () {
             this.matrix = this.matrix.scale(x, y);
             this.isDirty = true;
         }
+        loopAtZ(targetPos) {
+            const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+            const targetRad = Math.atan2(targetVec.y, targetVec.x);
+            const baseVec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+            const baseRad = Math.atan2(baseVec.y, baseVec.x);
+            this.rotate((targetRad - baseRad) / (Math.PI / 180));
+        }
         patch() {
             if (this.isDirty) {
                 this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
@@ -1158,6 +1203,8 @@ var app = (function () {
     Transform.nodeToIns = new Map();
 
     /* src\App.svelte generated by Svelte v3.35.0 */
+
+    const { console: console_1 } = globals;
     const file = "src\\App.svelte";
 
     function create_fragment(ctx) {
@@ -1170,13 +1217,13 @@ var app = (function () {
     			div2 = element("div");
     			div1 = element("div");
     			div0 = element("div");
-    			attr_dev(div0, "class", "rect svelte-jyl04j");
-    			add_location(div0, file, 75, 2, 2158);
-    			attr_dev(div1, "class", "rect svelte-jyl04j");
-    			add_location(div1, file, 74, 1, 2119);
-    			attr_dev(div2, "class", "rect svelte-jyl04j");
+    			attr_dev(div0, "class", "rect svelte-5x0uuw");
+    			add_location(div0, file, 77, 2, 2233);
+    			attr_dev(div1, "class", "rect svelte-5x0uuw");
+    			add_location(div1, file, 76, 1, 2194);
+    			attr_dev(div2, "class", "rect svelte-5x0uuw");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 73, 0, 2052);
+    			add_location(div2, file, 75, 0, 2127);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1293,6 +1340,8 @@ var app = (function () {
     			t3.rotate(Engine.delta * 100);
     		}
 
+    		console.log(t1.getTranslate());
+    		t2.loopAtZ(Input.mousePosition);
     		$$invalidate(3, isCollision = false);
 
     		for (let e of t1.collides) {
@@ -1307,7 +1356,7 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
     	function div0_binding($$value) {

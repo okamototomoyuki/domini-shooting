@@ -44,7 +44,17 @@ export default class Transform {
 
     constructor(node: HTMLElement) {
         this.node = node;
-        this.vertices = [new Vertex(this, 0), new Vertex(this, 1), new Vertex(this, 2), new Vertex(this, 3)];
+        this.vertices = [
+            new Vertex(this, Vertex.TYPE_ORIGIN),
+            new Vertex(this, Vertex.TYPE_LT),
+            new Vertex(this, Vertex.TYPE_RT),
+            new Vertex(this, Vertex.TYPE_RB),
+            new Vertex(this, Vertex.TYPE_LB),
+            new Vertex(this, Vertex.TYPE_TOP),
+            new Vertex(this, Vertex.TYPE_RIGHT),
+            new Vertex(this, Vertex.TYPE_BOTTOM),
+            new Vertex(this, Vertex.TYPE_LEFT),
+        ];
     }
 
     rebuildMatrix() {
@@ -91,7 +101,7 @@ export default class Transform {
     }
 
     getWorldRotate(): Vector3 {
-        return this.getWorldMatrix().getTranslate();
+        return this.getWorldMatrix().getRotate();
     }
 
     getWorldScale(): Vector3 {
@@ -103,11 +113,10 @@ export default class Transform {
      * @returns 頂点データ
      */
     computeVertex2D(): VertexData {
-        // 計算しない　、 頂点 DOM を持たせて、 getBoundClientRect で座標を得る
-        return new VertexData(this.vertices[0].getPosition(),
-            this.vertices[1].getPosition(),
-            this.vertices[2].getPosition(),
-            this.vertices[3].getPosition());
+        return new VertexData(this.vertices[Vertex.TYPE_LT].getPosition(),
+            this.vertices[Vertex.TYPE_RT].getPosition(),
+            this.vertices[Vertex.TYPE_RB].getPosition(),
+            this.vertices[Vertex.TYPE_LB].getPosition());
     };
 
     /**
@@ -192,7 +201,7 @@ export default class Transform {
      * 座標X設定
      * @param x X座標
      */
-    translateX(x) {
+    translateX(x: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.translateX(x);
         this.isDirty = true;
@@ -202,7 +211,7 @@ export default class Transform {
      * 座標Y設定
      * @param y Y座標
      */
-    translateY(y) {
+    translateY(y: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.translateY(y);
         this.isDirty = true;
@@ -213,7 +222,7 @@ export default class Transform {
      * @param x X座標
      * @param y Y座標
      */
-    translate(x, y) {
+    translate(x: number, y: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.translate(x, y)
         this.isDirty = true;
@@ -223,7 +232,7 @@ export default class Transform {
      * 回転設定
      * @param angle ラジアン
      */
-    rotate(angle) {
+    rotate(angle: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.rotate(angle);
         this.isDirty = true;
@@ -233,7 +242,7 @@ export default class Transform {
      * X回転設定
      * @param angle ラジアン
      */
-    rotateX(angle) {
+    rotateX(angle: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.rotateX(angle);
         this.isDirty = true;
@@ -243,7 +252,7 @@ export default class Transform {
      * Y回転設定
      * @param angle ラジアン
      */
-    rotateY(angle) {
+    rotateY(angle: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.rotateY(angle);
         this.isDirty = true;
@@ -253,7 +262,7 @@ export default class Transform {
      * Y回転設定
      * @param angle ラジアン
      */
-    rotateZ(angle) {
+    rotateZ(angle: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.rotateZ(angle);
         this.isDirty = true;
@@ -263,7 +272,7 @@ export default class Transform {
      * 拡縮X設定
      * @param x 拡縮X
      */
-    scaleX(x) {
+    scaleX(x: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.scaleX(x);
         this.isDirty = true;
@@ -273,7 +282,7 @@ export default class Transform {
      * 拡縮Y設定
      * @param y 拡縮Y
      */
-    scaleY(y) {
+    scaleY(y: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.scaleY(y);
         this.isDirty = true;
@@ -283,7 +292,7 @@ export default class Transform {
      * 拡縮Y設定
      * @param y 拡縮Y
      */
-    scaleZ(z) {
+    scaleZ(z: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.scaleZ(z);
         this.isDirty = true;
@@ -294,10 +303,18 @@ export default class Transform {
      * @param {number} x 拡縮X
      * @param {number} y 拡縮Y
      */
-    scale(x, y) {
+    scale(x: number, y: number) {
         this.rebuildMatrix();
         this.matrix = this.matrix.scale(x, y);
         this.isDirty = true;
+    }
+
+    loopAtZ(targetPos: Vector3) {
+        const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+        const targetRad = Math.atan2(targetVec.y, targetVec.x);
+        const baseVec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+        const baseRad = Math.atan2(baseVec.y, baseVec.x);
+        this.rotate((targetRad - baseRad) / (Math.PI / 180));
     }
 
     patch() {

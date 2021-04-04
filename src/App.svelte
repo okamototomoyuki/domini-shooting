@@ -68,6 +68,9 @@
 		if (Input.isPressing("BracketLeft")) {
 			t3.rotate(Engine.delta * 100);
 		}
+		console.log(t1.getTranslate());
+
+		t2.loopAtZ(Input.mousePosition);
 
 		isCollision = false;
 		for (let e of t1.collides) {
@@ -90,6 +93,7 @@
 	div.rect {
 		position: absolute;
 		background-color: black;
+		transform-origin: center;
 		width: 320px;
 		height: 256px;
 		&.collision {

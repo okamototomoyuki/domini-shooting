@@ -675,6 +675,191 @@ var app = (function () {
         }
     }
 
+    /**
+     * 入力
+     */
+    class Input {
+        static initialize() {
+            document.addEventListener("keydown", this._onKeyDown);
+            document.addEventListener("keyup", this._onKeyUp);
+            document.addEventListener("mousemove", this._onMouseMove);
+            document.body.addEventListener("mousedown", this._onMouseDown);
+            document.body.addEventListener("mouseup", this._onMouseUp);
+            document.body.addEventListener("wheel", this._onMouseWheel);
+            this.update();
+        }
+        static update() {
+            for (let key of Input.map.keys()) {
+                let v = Input.map.get(key);
+                if (v > 1) {
+                    Input.map.set(key, 1);
+                }
+                else if (v < 0) {
+                    Input.map.set(key, 0);
+                }
+            }
+            if (Input.wheelFrame < Engine.currentFrame - 1) {
+                Input.wheel = 0;
+            }
+        }
+        static _onKeyDown(e) {
+            Input.map.set(e.code, 2);
+        }
+        static _onKeyUp(e) {
+            Input.map.set(e.code, -1);
+        }
+        static _onMouseMove(e) {
+            Input.mousePosition = new Vector3(e.clientX, e.clientY, 0);
+        }
+        static _onMouseDown(e) {
+            switch (e.button) {
+                case 0:
+                    Input.map.set(this._MOUSE_LEFT, 2);
+                case 1:
+                    Input.map.set(this._MOUSE_MIDDLE, 2);
+                case 2:
+                    Input.map.set(this._MOUSE_RIGHT, 2);
+            }
+        }
+        static _onMouseUp(e) {
+            switch (e.button) {
+                case 0:
+                    Input.map.set(this._MOUSE_LEFT, -1);
+                case 1:
+                    Input.map.set(this._MOUSE_MIDDLE, -1);
+                case 2:
+                    Input.map.set(this._MOUSE_RIGHT, -1);
+            }
+        }
+        static _onMouseWheel(e) {
+            Input.wheelFrame = Engine.currentFrame;
+            Input.wheel = e.deltaY;
+        }
+        static isUp(code) {
+            if (Input.map.has(code)) {
+                return Input.map.get(code) == -1;
+            }
+            return false;
+        }
+        static isNotPress(code) {
+            if (Input.map.has(code)) {
+                return Input.map.get(code) <= 0;
+            }
+            return true;
+        }
+        static isDown(code) {
+            if (Input.map.has(code)) {
+                return Input.map.get(code) == 2;
+            }
+            return false;
+        }
+        static isPressing(code) {
+            if (Input.map.has(code)) {
+                return Input.map.get(code) > 0;
+            }
+            return false;
+        }
+        static get isUpMouseLeft() {
+            if (Input.map.has(this._MOUSE_LEFT)) {
+                return Input.map.get(this._MOUSE_LEFT) == -1;
+            }
+            return false;
+        }
+        static get isNotPressMouseLeft() {
+            if (Input.map.has(this._MOUSE_LEFT)) {
+                return Input.map.get(this._MOUSE_LEFT) <= 0;
+            }
+            return true;
+        }
+        static get isDownMouseLeft() {
+            if (Input.map.has(this._MOUSE_LEFT)) {
+                return Input.map.get(this._MOUSE_LEFT) == 2;
+            }
+            return false;
+        }
+        static get isPressingMouseLeft() {
+            if (Input.map.has(this._MOUSE_LEFT)) {
+                return Input.map.get(this._MOUSE_LEFT) > 0;
+            }
+            return false;
+        }
+        static get isUpMouseRight() {
+            if (Input.map.has(this._MOUSE_RIGHT)) {
+                return Input.map.get(this._MOUSE_RIGHT) == -1;
+            }
+            return false;
+        }
+        static get isNotPressMouseRight() {
+            if (Input.map.has(this._MOUSE_RIGHT)) {
+                return Input.map.get(this._MOUSE_RIGHT) <= 0;
+            }
+            return true;
+        }
+        static get isDownMouseRight() {
+            if (Input.map.has(this._MOUSE_RIGHT)) {
+                return Input.map.get(this._MOUSE_RIGHT) == 2;
+            }
+            return false;
+        }
+        static get isPressingMouseRight() {
+            if (Input.map.has(this._MOUSE_RIGHT)) {
+                return Input.map.get(this._MOUSE_RIGHT) > 0;
+            }
+            return false;
+        }
+        static get isUpMouseMiddle() {
+            if (Input.map.has(this._MOUSE_MIDDLE)) {
+                return Input.map.get(this._MOUSE_MIDDLE) == -1;
+            }
+            return false;
+        }
+        static get isNotPressMouseMiddle() {
+            if (Input.map.has(this._MOUSE_MIDDLE)) {
+                return Input.map.get(this._MOUSE_MIDDLE) <= 0;
+            }
+            return true;
+        }
+        static get isDownMouseMiddle() {
+            if (Input.map.has(this._MOUSE_MIDDLE)) {
+                return Input.map.get(this._MOUSE_MIDDLE) == 2;
+            }
+            return false;
+        }
+        static get isPressingMouseMiddle() {
+            if (Input.map.has(this._MOUSE_MIDDLE)) {
+                return Input.map.get(this._MOUSE_MIDDLE) > 0;
+            }
+            return false;
+        }
+    }
+    Input._MOUSE_LEFT = "_MOUSE_LEFT";
+    Input._MOUSE_RIGHT = "_MOUSE_RIGHT";
+    Input._MOUSE_MIDDLE = "_MOUSE_MIDDLE";
+    Input.map = new Map();
+    Input.mousePosition = new Vector3(0, 0, 0);
+    Input.wheelFrame = 0;
+    Input.wheel = 0;
+
+    class Engine {
+        static start() {
+            Input.initialize();
+            Transform.initialize();
+            this.loop();
+        }
+        static loop() {
+            Engine.currentFrame = Engine.currentFrame + 1;
+            const now = window.performance.now();
+            Engine.delta = (now - Engine.prevDate) / 1000;
+            Engine.prevDate = now;
+            Input.update();
+            Transform.update();
+            requestAnimationFrame(Engine.loop);
+        }
+    }
+    Engine.prevDate = window.performance.now();
+    Engine.currentFrame = 0;
+    Engine.delta = 0;
+
     class Vertex {
         constructor(trans, index) {
             this.trans = trans;
@@ -727,7 +912,6 @@ var app = (function () {
             this.update();
         }
         static update() {
-            Transform.currentFrame = Transform.currentFrame + 1;
             for (const e of Transform.nodeToIns.values()) {
                 e.patch();
             }
@@ -745,10 +929,10 @@ var app = (function () {
             }
         }
         rebuildMatrix() {
-            if (this.frame != Transform.currentFrame) {
+            if (this.frame != Engine.currentFrame) {
                 const computedStyle = getComputedStyle(this.node, null);
                 this.matrix = Matrix.fromString(computedStyle.transform);
-                this.frame = Transform.currentFrame;
+                this.frame = Engine.currentFrame;
             }
         }
         getWorldMatrix() {
@@ -972,88 +1156,6 @@ var app = (function () {
         }
     }
     Transform.nodeToIns = new Map();
-    Transform.currentFrame = 0;
-
-    /**
-     * 入力
-     */
-    class Input {
-        static initialize() {
-            document.addEventListener("keydown", this._onKeyDown);
-            document.addEventListener("keyup", this._onKeyUp);
-            this.update();
-        }
-        static update() {
-            for (let key of Input.map.keys()) {
-                let v = Input.map.get(key);
-                if (v > 1) {
-                    Input.map.set(key, 1);
-                }
-                else if (v < 0) {
-                    Input.map.set(key, 0);
-                }
-            }
-        }
-        static _onKeyDown(e) {
-            Input.map.set(e.code, 2);
-        }
-        static _onKeyUp(e) {
-            Input.map.set(e.code, -1);
-        }
-        static isUp(code) {
-            this.initialize();
-            if (Input.map.has(code)) {
-                return Input.map.get(code) == -1;
-            }
-            return false;
-        }
-        static isNotPress(code) {
-            this.initialize();
-            if (Input.map.has(code)) {
-                return Input.map.get(code) <= 0;
-            }
-            return true;
-        }
-        static isDown(code) {
-            this.initialize();
-            if (Input.map.has(code)) {
-                return Input.map.get(code) == 2;
-            }
-            return false;
-        }
-        static isPressing(code) {
-            this.initialize();
-            if (Input.map.has(code)) {
-                return Input.map.get(code) > 0;
-            }
-            return false;
-        }
-    }
-    Input.map = new Map();
-
-    class Engine {
-
-        static prevDate = window.performance.now();
-        static delta = 0;
-
-        static start() {
-            Input.initialize();
-            Transform.initialize();
-
-            this.loop();
-        }
-
-        static loop() {
-            const now = window.performance.now();
-            Engine.delta = (now - Engine.prevDate) / 1000;
-            Engine.prevDate = now;
-
-            Input.update();
-            Transform.update();
-
-            requestAnimationFrame(Engine.loop);
-        }
-    }
 
     /* src\App.svelte generated by Svelte v3.35.0 */
     const file = "src\\App.svelte";
@@ -1068,11 +1170,11 @@ var app = (function () {
     			div2 = element("div");
     			div1 = element("div");
     			div0 = element("div");
-    			attr_dev(div0, "class", "rect svelte-1ki2mr0");
+    			attr_dev(div0, "class", "rect svelte-jyl04j");
     			add_location(div0, file, 72, 2, 2079);
-    			attr_dev(div1, "class", "rect svelte-1ki2mr0");
+    			attr_dev(div1, "class", "rect svelte-jyl04j");
     			add_location(div1, file, 71, 1, 2040);
-    			attr_dev(div2, "class", "rect svelte-1ki2mr0");
+    			attr_dev(div2, "class", "rect svelte-jyl04j");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
     			add_location(div2, file, 70, 0, 1973);
     		},

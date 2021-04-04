@@ -2,6 +2,7 @@ import { element, loop } from "svelte/internal";
 import Matrix from "../data/Matrix";
 import Vector3 from "../data/Vector3";
 import VertexData from "../data/VertexData";
+import Engine from "../Engine";
 import Vertex from "./Vertex";
 
 /**
@@ -10,14 +11,12 @@ import Vertex from "./Vertex";
 export default class Transform {
 
     static nodeToIns = new Map<HTMLElement, Transform>();
-    static currentFrame = 0;
 
     static initialize() {
         this.update();
     }
 
     static update() {
-        Transform.currentFrame = Transform.currentFrame + 1;
         for (const e of Transform.nodeToIns.values()) {
             e.patch();
         }
@@ -49,10 +48,10 @@ export default class Transform {
     }
 
     rebuildMatrix() {
-        if (this.frame != Transform.currentFrame) {
+        if (this.frame != Engine.currentFrame) {
             const computedStyle = getComputedStyle(this.node, null);
             this.matrix = Matrix.fromString(computedStyle.transform);
-            this.frame = Transform.currentFrame;
+            this.frame = Engine.currentFrame;
         }
     }
 

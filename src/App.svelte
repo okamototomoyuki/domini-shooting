@@ -85,7 +85,7 @@
 
 <style lang="scss">
 	div.rect {
-		// position: absolute;
+		position: absolute;
 		background-color: black;
 		width: 320px;
 		height: 256px;

@@ -1,80 +1,98 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import Rect from "./component/Rect.svelte";
+	import Transform from "./ctrl/Transform";
+	import Input from "./data/Input";
 	import Matrix from "./data/Matrix";
 
-	let rect: Rect;
-	let rect2: Rect;
-	let rect3: Rect;
-	onMount(() => {
-		document.addEventListener("keydown", onKeyDown);
-		// document.addEventListener("keyup", onKeyUp);
+	let rect: HTMLElement;
+	let rect2: HTMLElement;
+	let rect3: HTMLElement;
 
-		let t1 = rect?.getTransform();
-		let t2 = rect2?.getTransform();
-		// let t3 = rect3.getTransform();
-		t2.translateX(300);
+	let isCollision = false;
+	onMount(() => {
+		const t2 = Transform.getTransform(rect2);
+		const t3 = Transform.getTransform(rect3);
+
+		t2.translateX(350);
+		t3.translateX(350);
 		loop();
 	});
-	const onKeyDown = (e: KeyboardEvent) => {
-		console.log(e.key);
-		if (e.key == "w") {
-			rect?.getTransform().translateY(-1);
-		}
-		if (e.key == "a") {
-			rect?.getTransform().translateX(-1);
-		}
-		if (e.key == "s") {
-			rect?.getTransform().translateY(1);
-		}
-		if (e.key == "d") {
-			rect?.getTransform().translateX(1);
-		}
-		if (e.key == "[") {
-			rect2?.getTransform().translateY(-1);
-		}
-		if (e.key == ";") {
-			rect2?.getTransform().translateX(-1);
-		}
-		if (e.key == "'") {
-			rect2?.getTransform().translateX(1);
-		}
-		if (e.key == "/") {
-			rect2?.getTransform().translateY(1);
-		}
-	};
 
-	let rot = 1;
 	const loop = () => {
-		let t1 = rect?.getTransform();
-		let t2 = rect2.getTransform();
-		// let t3 = rect3.getTransform();
-		// t2.rotateZ(1);
-		// t3.translateX(0.1);
-		// console.log(t.getRotate());
+		const t1 = Transform.getTransform(rect);
+		const t2 = Transform.getTransform(rect2);
+		const t3 = Transform.getTransform(rect3);
 
-		// t2.translateX(1.001);
-		// console.log(t2.matrix);
-		// console.log("=============");
-		// console.log(t.getRotate());
-		// console.log(t1.getTranslate());
-		// console.log(t3.computeVertexData().a);
-		// console.log(t3.computeVertexData().b);
-		// console.log(t3.computeVertexData().c);
-		// console.log(t3.computeVertexData().d);
-		console.log(
-			t1.collides.map((e) => e.node.parentNode.nodeName).join(",")
-		);
-		// console.log(t2.collides.map((e) => e.node.parentNode).join(","));
-		// console.log(t.computeVertexData().b);
-		// console.log(t.computeVertexData().c);
-		// console.log(t.computeVertexData().d);
+		if (Input.isPressing("KeyW")) {
+			t1.translateY(-1);
+		}
+		if (Input.isPressing("KeyA")) {
+			t1.translateX(-1);
+		}
+		if (Input.isPressing("KeyS")) {
+			t1.translateY(1);
+		}
+		if (Input.isPressing("KeyD")) {
+			t1.translateX(1);
+		}
+		if (Input.isPressing("KeyQ")) {
+			t1.rotate(-1);
+		}
+		if (Input.isPressing("KeyE")) {
+			t1.rotate(1);
+		}
+
+		if (Input.isPressing("KeyI")) {
+			t2.translateY(-1);
+		}
+		if (Input.isPressing("KeyJ")) {
+			t2.translateX(-1);
+		}
+		if (Input.isPressing("KeyK")) {
+			t2.translateY(1);
+		}
+		if (Input.isPressing("KeyL")) {
+			t2.translateX(1);
+		}
+		if (Input.isPressing("KeyU")) {
+			t2.rotate(-1);
+		}
+		if (Input.isPressing("KeyO")) {
+			t2.rotate(1);
+		}
+		if (Input.isPressing("KeyP")) {
+			t3.rotate(-1);
+		}
+		if (Input.isPressing("BracketLeft")) {
+			t3.rotate(1);
+		}
+
+		isCollision = false;
+		for (let e of t1.collides) {
+			if (e.node == t3.node) {
+				isCollision = true;
+			}
+		}
+
 		requestAnimationFrame(loop);
 	};
 </script>
 
-<Rect bind:this={rect}>
-	<Rect bind:this={rect2}>
-		<Rect bind:this={rect3} />
-	</Rect>
-</Rect>
+<div class="rect" bind:this={rect} class:collision={isCollision}>
+	<div class="rect" bind:this={rect2}>
+		<div class="rect" bind:this={rect3} />
+	</div>
+</div>
+
+<style lang="scss">
+	div.rect {
+		position: absolute;
+		background-color: black;
+		width: 320px;
+		height: 256px;
+		&.collision {
+			background-color: red;
+		}
+	}
+</style>

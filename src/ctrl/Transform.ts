@@ -2,6 +2,7 @@ import { element, loop } from "svelte/internal";
 import Matrix from "../data/Matrix";
 import Vector3 from "../data/Vector3";
 import VertexData from "../data/VertexData";
+import Vertex from "./Vertex";
 
 /**
  * 矩形の Transform
@@ -13,10 +14,7 @@ export default class Transform {
     static isInit = false;
 
     static getTransform(node: HTMLElement) {
-        if (this.isInit == false) {
-            this.isInit = true;
-            this.loop();
-        }
+        this.initializeIfNotYet();
         let t = Transform.nodeToIns.get(node)
         if (t != null) {
             return t;
@@ -24,6 +22,13 @@ export default class Transform {
             t = new Transform(node)
             Transform.nodeToIns.set(node, t);
             return t;
+        }
+    }
+
+    static initializeIfNotYet() {
+        if (this.isInit == false) {
+            this.isInit = true
+            this.loop();
         }
     }
 
@@ -37,12 +42,14 @@ export default class Transform {
 
     node: HTMLElement;
     matrix: Matrix;
+    vertices: Vertex[];
 
     frame = 0;
     isDirty = false;
 
     constructor(node: HTMLElement) {
         this.node = node;
+        this.vertices = [new Vertex(this, 0), new Vertex(this, 1), new Vertex(this, 2), new Vertex(this, 3)];
     }
 
     rebuildMatrix() {
@@ -63,7 +70,7 @@ export default class Transform {
             let transform = Transform.getTransform(node);
             transform.rebuildMatrix();
             let pm = transform.matrix;
-            wm = Matrix.multiply(wm, pm);
+            wm = Matrix.multiply(pm, wm);
             node = transform.parentNode;
         }
         return wm;
@@ -97,34 +104,29 @@ export default class Transform {
     }
 
     /**
-     * 頂点データ計算
+     * 画面に対しての頂点データ計算
      * @returns 頂点データ
      */
-    computeVertexData(): VertexData {
-        let w = this.node.offsetWidth;
-        let h = this.node.offsetHeight;
-        const im = Matrix.identity();
-        const wm = this.getWorldMatrix();
-        let v = new VertexData(
-            Matrix.multiply(im.translate(-w / 2, -h / 2), wm).getTranslate(),
-            Matrix.multiply(im.translate(w / 2, -h / 2), wm).getTranslate(),
-            Matrix.multiply(im.translate(w / 2, h / 2), wm).getTranslate(),
-            Matrix.multiply(im.translate(-w / 2, h / 2), wm).getTranslate(),
-        );
+    computeVertex2D(): VertexData {
+        // 計算しない　、 頂点 DOM を持たせて、 getBoundClientRect で座標を得る
 
-        // let node: HTMLElement = this.node;
-        // let transform: Transform = null;
-        // while (node.nodeType === 1) {
-        //     transform = Transform.getTransform(node);
-        //     const rot = transform.getRotate()
-        //     const trans = transform.getTranslate();
-        //     v.a = v.a.rotateVector(rot).addVectors(trans);
-        //     v.b = v.b.rotateVector(rot).addVectors(trans);
-        //     v.c = v.c.rotateVector(rot).addVectors(trans);
-        //     v.d = v.d.rotateVector(rot).addVectors(trans);
-        //     node = transform.parentNode;
-        // }
-        return v;
+        // let w = this.node.offsetWidth;
+        // let h = this.node.offsetHeight;
+        // const im = Matrix.identity();
+        // const wm = this.getWorldMatrix();
+        // let v = new VertexData(
+        //     Matrix.multiply(im.translate(0, 0), wm).getTranslate(),
+        //     Matrix.multiply(im.translate(w, 0), wm).getTranslate(),
+        //     Matrix.multiply(im.translate(w, h), wm).getTranslate(),
+        //     Matrix.multiply(im.translate(0, h), wm).getTranslate(),
+        // );
+
+        // return v;
+
+        return new VertexData(this.vertices[0].getPosition(),
+            this.vertices[1].getPosition(),
+            this.vertices[2].getPosition(),
+            this.vertices[3].getPosition());
     };
 
     /**
@@ -139,13 +141,13 @@ export default class Transform {
      */
     get collides(): Transform[] {
 
-        const selfVs = this.computeVertexData();
+        const selfVs = this.computeVertex2D();
         const oVecs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
 
         const collides = new Array<Transform>();
         for (const otherT of Transform.nodeToIns.values()) {
             if (otherT != this) {
-                const otherVs = otherT.computeVertexData();
+                const otherVs = otherT.computeVertex2D();
 
                 // 線分が交わっているか
                 let isCollide = false;
@@ -197,6 +199,13 @@ export default class Transform {
         }
         return collides;
     }
+
+    setTranslate(v: Vector3) {
+        this.rebuildMatrix();
+        this.matrix.setTranslate(v);
+        this.isDirty = true;
+    }
+
 
     /**
      * 座標X設定

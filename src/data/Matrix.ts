@@ -246,6 +246,13 @@ export default class Matrix extends Array<number> {
         return new Vector3(this.r3c0, this.r3c1, this.r3c2);
     }
 
+    setTranslate(v: Vector3) {
+        this.r3c0 = v.x;
+        this.r3c1 = v.y;
+        this.r3c2 = v.z;
+        return this;
+    }
+
     translate(distanceX: number, distanceY: number): Matrix {
         const matrix = Matrix.identity();
         matrix.r3c0 = distanceX;

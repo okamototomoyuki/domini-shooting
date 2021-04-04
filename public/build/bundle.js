@@ -69,6 +69,10 @@ var app = (function () {
             slot.p(slot_context, slot_changes);
         }
     }
+
+    function append(target, node) {
+        target.appendChild(node);
+    }
     function insert(target, node, anchor) {
         target.insertBefore(node, anchor || null);
     }
@@ -86,6 +90,9 @@ var app = (function () {
     }
     function children(element) {
         return Array.from(element.childNodes);
+    }
+    function toggle_class(element, name, toggle) {
+        element.classList[toggle ? 'add' : 'remove'](name);
     }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
@@ -192,15 +199,6 @@ var app = (function () {
             });
             block.o(local);
         }
-    }
-
-    const globals = (typeof window !== 'undefined'
-        ? window
-        : typeof globalThis !== 'undefined'
-            ? globalThis
-            : global);
-    function create_component(block) {
-        block && block.c();
     }
     function mount_component(component, target, anchor, customElement) {
         const { fragment, on_mount, on_destroy, after_update } = component.$$;
@@ -328,6 +326,10 @@ var app = (function () {
 
     function dispatch_dev(type, detail) {
         document.dispatchEvent(custom_event(type, Object.assign({ version: '3.35.0' }, detail)));
+    }
+    function append_dev(target, node) {
+        dispatch_dev('SvelteDOMInsert', { target, node });
+        append(target, node);
     }
     function insert_dev(target, node, anchor) {
         dispatch_dev('SvelteDOMInsert', { target, node, anchor });
@@ -667,6 +669,12 @@ var app = (function () {
         getTranslate() {
             return new Vector3(this.r3c0, this.r3c1, this.r3c2);
         }
+        setTranslate(v) {
+            this.r3c0 = v.x;
+            this.r3c1 = v.y;
+            this.r3c2 = v.z;
+            return this;
+        }
         translate(distanceX, distanceY) {
             const matrix = Matrix.identity();
             matrix.r3c0 = distanceX;
@@ -726,6 +734,44 @@ var app = (function () {
         }
     }
 
+    class Vertex {
+        constructor(trans, index) {
+            this.trans = trans;
+            const node = document.createElement('div');
+            this.node = node;
+            this.index = index;
+            this.trans.node.appendChild(this.node);
+            node.style.position = "absolute";
+            node.style.opacity = "0";
+            node.style.width = "1px";
+            node.style.height = "1px";
+            this.rebuild();
+        }
+        rebuild() {
+            if (this.index < 2) {
+                if (this.index == 0) {
+                    this.node.style.transform = "translate(0px, 0px)";
+                }
+                else {
+                    this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, 0px)`;
+                }
+            }
+            else {
+                if (this.index == 2) {
+                    this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, ${this.trans.node.offsetHeight}px)`;
+                }
+                else {
+                    this.node.style.transform = `translate(0px, ${this.trans.node.offsetHeight}px)`;
+                }
+            }
+        }
+        getPosition() {
+            let bound = this.node.getBoundingClientRect();
+            return new Vector3(bound.x, bound.y, 0);
+        }
+    }
+    Vertex.nodeToIns = new Map();
+
     /**
      * 矩形の Transform
      */
@@ -734,12 +780,10 @@ var app = (function () {
             this.frame = 0;
             this.isDirty = false;
             this.node = node;
+            this.vertices = [new Vertex(this, 0), new Vertex(this, 1), new Vertex(this, 2), new Vertex(this, 3)];
         }
         static getTransform(node) {
-            if (this.isInit == false) {
-                this.isInit = true;
-                this.loop();
-            }
+            this.initializeIfNotYet();
             let t = Transform.nodeToIns.get(node);
             if (t != null) {
                 return t;
@@ -748,6 +792,12 @@ var app = (function () {
                 t = new Transform(node);
                 Transform.nodeToIns.set(node, t);
                 return t;
+            }
+        }
+        static initializeIfNotYet() {
+            if (this.isInit == false) {
+                this.isInit = true;
+                this.loop();
             }
         }
         static loop() {
@@ -773,7 +823,7 @@ var app = (function () {
                 let transform = Transform.getTransform(node);
                 transform.rebuildMatrix();
                 let pm = transform.matrix;
-                wm = Matrix.multiply(wm, pm);
+                wm = Matrix.multiply(pm, wm);
                 node = transform.parentNode;
             }
             return wm;
@@ -800,28 +850,23 @@ var app = (function () {
             return this.getWorldMatrix().getScale();
         }
         /**
-         * 頂点データ計算
+         * 画面に対しての頂点データ計算
          * @returns 頂点データ
          */
-        computeVertexData() {
-            let w = this.node.offsetWidth;
-            let h = this.node.offsetHeight;
-            const im = Matrix.identity();
-            const wm = this.getWorldMatrix();
-            let v = new VertexData(Matrix.multiply(im.translate(-w / 2, -h / 2), wm).getTranslate(), Matrix.multiply(im.translate(w / 2, -h / 2), wm).getTranslate(), Matrix.multiply(im.translate(w / 2, h / 2), wm).getTranslate(), Matrix.multiply(im.translate(-w / 2, h / 2), wm).getTranslate());
-            // let node: HTMLElement = this.node;
-            // let transform: Transform = null;
-            // while (node.nodeType === 1) {
-            //     transform = Transform.getTransform(node);
-            //     const rot = transform.getRotate()
-            //     const trans = transform.getTranslate();
-            //     v.a = v.a.rotateVector(rot).addVectors(trans);
-            //     v.b = v.b.rotateVector(rot).addVectors(trans);
-            //     v.c = v.c.rotateVector(rot).addVectors(trans);
-            //     v.d = v.d.rotateVector(rot).addVectors(trans);
-            //     node = transform.parentNode;
-            // }
-            return v;
+        computeVertex2D() {
+            // 計算しない　、 頂点 DOM を持たせて、 getBoundClientRect で座標を得る
+            // let w = this.node.offsetWidth;
+            // let h = this.node.offsetHeight;
+            // const im = Matrix.identity();
+            // const wm = this.getWorldMatrix();
+            // let v = new VertexData(
+            //     Matrix.multiply(im.translate(0, 0), wm).getTranslate(),
+            //     Matrix.multiply(im.translate(w, 0), wm).getTranslate(),
+            //     Matrix.multiply(im.translate(w, h), wm).getTranslate(),
+            //     Matrix.multiply(im.translate(0, h), wm).getTranslate(),
+            // );
+            // return v;
+            return new VertexData(this.vertices[0].getPosition(), this.vertices[1].getPosition(), this.vertices[2].getPosition(), this.vertices[3].getPosition());
         }
         ;
         /**
@@ -834,12 +879,12 @@ var app = (function () {
          * 衝突した対象一覧
          */
         get collides() {
-            const selfVs = this.computeVertexData();
+            const selfVs = this.computeVertex2D();
             const oVecs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
             const collides = new Array();
             for (const otherT of Transform.nodeToIns.values()) {
                 if (otherT != this) {
-                    const otherVs = otherT.computeVertexData();
+                    const otherVs = otherT.computeVertex2D();
                     // 線分が交わっているか
                     let isCollide = false;
                     if (Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
@@ -886,6 +931,11 @@ var app = (function () {
                 }
             }
             return collides;
+        }
+        setTranslate(v) {
+            this.rebuildMatrix();
+            this.matrix.setTranslate(v);
+            this.isDirty = true;
         }
         /**
          * 座標X設定
@@ -1000,7 +1050,7 @@ var app = (function () {
     Transform.isInit = false;
 
     /* src\component\Rect.svelte generated by Svelte v3.35.0 */
-    const file = "src\\component\\Rect.svelte";
+    const file$1 = "src\\component\\Rect.svelte";
 
     function create_fragment$1(ctx) {
     	let div;
@@ -1013,7 +1063,7 @@ var app = (function () {
     			div = element("div");
     			if (default_slot) default_slot.c();
     			attr_dev(div, "class", "svelte-u49va3");
-    			add_location(div, file, 15, 0, 334);
+    			add_location(div, file$1, 15, 0, 334);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1148,156 +1198,108 @@ var app = (function () {
     	}
     }
 
+    /**
+     * 矩形の Transform
+     */
+    class Input {
+        static initializeIfNot() {
+            document.addEventListener("keydown", this._onKeyDown);
+            document.addEventListener("keyup", this._onKeyUp);
+            requestAnimationFrame(this.loop);
+        }
+        static loop() {
+            for (let key in Input.map.keys()) {
+                let v = Input.map.get(key);
+                if (v > 1) {
+                    Input.map.set(key, 1);
+                }
+                else if (v < 0) {
+                    Input.map.set(key, 0);
+                }
+            }
+            requestAnimationFrame(Input.loop);
+        }
+        static _onKeyDown(e) {
+            Input.map.set(e.code, 2);
+        }
+        static _onKeyUp(e) {
+            Input.map.set(e.code, -1);
+        }
+        static isUp(code) {
+            this.initializeIfNot();
+            if (Input.map.has(code)) {
+                return Input.map.get(code) == -1;
+            }
+            return false;
+        }
+        static isNotPress(code) {
+            this.initializeIfNot();
+            if (Input.map.has(code)) {
+                return Input.map.get(code) <= 0;
+            }
+            return true;
+        }
+        static isDown(code) {
+            this.initializeIfNot();
+            if (Input.map.has(code)) {
+                return Input.map.get(code) == 2;
+            }
+            return false;
+        }
+        static isPressing(code) {
+            this.initializeIfNot();
+            if (Input.map.has(code)) {
+                return Input.map.get(code) > 0;
+            }
+            return false;
+        }
+    }
+    Input.map = new Map();
+
     /* src\App.svelte generated by Svelte v3.35.0 */
-
-    const { console: console_1 } = globals;
-
-    // (70:1) <Rect bind:this={rect2}>
-    function create_default_slot_1(ctx) {
-    	let rect_1;
-    	let current;
-    	let rect_1_props = {};
-    	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
-    	/*rect_1_binding*/ ctx[3](rect_1);
-
-    	const block = {
-    		c: function create() {
-    			create_component(rect_1.$$.fragment);
-    		},
-    		m: function mount(target, anchor) {
-    			mount_component(rect_1, target, anchor);
-    			current = true;
-    		},
-    		p: function update(ctx, dirty) {
-    			const rect_1_changes = {};
-    			rect_1.$set(rect_1_changes);
-    		},
-    		i: function intro(local) {
-    			if (current) return;
-    			transition_in(rect_1.$$.fragment, local);
-    			current = true;
-    		},
-    		o: function outro(local) {
-    			transition_out(rect_1.$$.fragment, local);
-    			current = false;
-    		},
-    		d: function destroy(detaching) {
-    			/*rect_1_binding*/ ctx[3](null);
-    			destroy_component(rect_1, detaching);
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_default_slot_1.name,
-    		type: "slot",
-    		source: "(70:1) <Rect bind:this={rect2}>",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    // (69:0) <Rect bind:this={rect}>
-    function create_default_slot(ctx) {
-    	let rect_1;
-    	let current;
-
-    	let rect_1_props = {
-    		$$slots: { default: [create_default_slot_1] },
-    		$$scope: { ctx }
-    	};
-
-    	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
-    	/*rect_1_binding_1*/ ctx[4](rect_1);
-
-    	const block = {
-    		c: function create() {
-    			create_component(rect_1.$$.fragment);
-    		},
-    		m: function mount(target, anchor) {
-    			mount_component(rect_1, target, anchor);
-    			current = true;
-    		},
-    		p: function update(ctx, dirty) {
-    			const rect_1_changes = {};
-
-    			if (dirty & /*$$scope, rect3*/ 516) {
-    				rect_1_changes.$$scope = { dirty, ctx };
-    			}
-
-    			rect_1.$set(rect_1_changes);
-    		},
-    		i: function intro(local) {
-    			if (current) return;
-    			transition_in(rect_1.$$.fragment, local);
-    			current = true;
-    		},
-    		o: function outro(local) {
-    			transition_out(rect_1.$$.fragment, local);
-    			current = false;
-    		},
-    		d: function destroy(detaching) {
-    			/*rect_1_binding_1*/ ctx[4](null);
-    			destroy_component(rect_1, detaching);
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_default_slot.name,
-    		type: "slot",
-    		source: "(69:0) <Rect bind:this={rect}>",
-    		ctx
-    	});
-
-    	return block;
-    }
+    const file = "src\\App.svelte";
 
     function create_fragment(ctx) {
-    	let rect_1;
-    	let current;
-
-    	let rect_1_props = {
-    		$$slots: { default: [create_default_slot] },
-    		$$scope: { ctx }
-    	};
-
-    	rect_1 = new Rect({ props: rect_1_props, $$inline: true });
-    	/*rect_1_binding_2*/ ctx[5](rect_1);
+    	let div2;
+    	let div1;
+    	let div0;
 
     	const block = {
     		c: function create() {
-    			create_component(rect_1.$$.fragment);
+    			div2 = element("div");
+    			div1 = element("div");
+    			div0 = element("div");
+    			attr_dev(div0, "class", "rect svelte-jyl04j");
+    			add_location(div0, file, 74, 2, 1899);
+    			attr_dev(div1, "class", "rect svelte-jyl04j");
+    			add_location(div1, file, 73, 1, 1860);
+    			attr_dev(div2, "class", "rect svelte-jyl04j");
+    			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
+    			add_location(div2, file, 72, 0, 1793);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			mount_component(rect_1, target, anchor);
-    			current = true;
+    			insert_dev(target, div2, anchor);
+    			append_dev(div2, div1);
+    			append_dev(div1, div0);
+    			/*div0_binding*/ ctx[4](div0);
+    			/*div1_binding*/ ctx[5](div1);
+    			/*div2_binding*/ ctx[6](div2);
     		},
     		p: function update(ctx, [dirty]) {
-    			const rect_1_changes = {};
-
-    			if (dirty & /*$$scope, rect2, rect3*/ 518) {
-    				rect_1_changes.$$scope = { dirty, ctx };
+    			if (dirty & /*isCollision*/ 8) {
+    				toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
     			}
-
-    			rect_1.$set(rect_1_changes);
     		},
-    		i: function intro(local) {
-    			if (current) return;
-    			transition_in(rect_1.$$.fragment, local);
-    			current = true;
-    		},
-    		o: function outro(local) {
-    			transition_out(rect_1.$$.fragment, local);
-    			current = false;
-    		},
+    		i: noop,
+    		o: noop,
     		d: function destroy(detaching) {
-    			/*rect_1_binding_2*/ ctx[5](null);
-    			destroy_component(rect_1, detaching);
+    			if (detaching) detach_dev(div2);
+    			/*div0_binding*/ ctx[4](null);
+    			/*div1_binding*/ ctx[5](null);
+    			/*div2_binding*/ ctx[6](null);
     		}
     	};
 
@@ -1318,129 +1320,109 @@ var app = (function () {
     	let rect;
     	let rect2;
     	let rect3;
+    	let isCollision = false;
 
     	onMount(() => {
-    		document.addEventListener("keydown", onKeyDown);
-
-    		// document.addEventListener("keyup", onKeyUp);
-    		rect === null || rect === void 0
-    		? void 0
-    		: rect.getTransform();
-
-    		let t2 = rect2 === null || rect2 === void 0
-    		? void 0
-    		: rect2.getTransform();
-
-    		// let t3 = rect3.getTransform();
-    		t2.translateX(300);
-
+    		const t2 = Transform.getTransform(rect2);
+    		const t3 = Transform.getTransform(rect3);
+    		t2.translateX(350);
+    		t3.translateX(350);
     		loop();
     	});
 
-    	const onKeyDown = e => {
-    		console.log(e.key);
-
-    		if (e.key == "w") {
-    			rect === null || rect === void 0
-    			? void 0
-    			: rect.getTransform().translateY(-1);
-    		}
-
-    		if (e.key == "a") {
-    			rect === null || rect === void 0
-    			? void 0
-    			: rect.getTransform().translateX(-1);
-    		}
-
-    		if (e.key == "s") {
-    			rect === null || rect === void 0
-    			? void 0
-    			: rect.getTransform().translateY(1);
-    		}
-
-    		if (e.key == "d") {
-    			rect === null || rect === void 0
-    			? void 0
-    			: rect.getTransform().translateX(1);
-    		}
-
-    		if (e.key == "[") {
-    			rect2 === null || rect2 === void 0
-    			? void 0
-    			: rect2.getTransform().translateY(-1);
-    		}
-
-    		if (e.key == ";") {
-    			rect2 === null || rect2 === void 0
-    			? void 0
-    			: rect2.getTransform().translateX(-1);
-    		}
-
-    		if (e.key == "'") {
-    			rect2 === null || rect2 === void 0
-    			? void 0
-    			: rect2.getTransform().translateX(1);
-    		}
-
-    		if (e.key == "/") {
-    			rect2 === null || rect2 === void 0
-    			? void 0
-    			: rect2.getTransform().translateY(1);
-    		}
-    	};
-
-    	let rot = 1;
-
     	const loop = () => {
-    		let t1 = rect === null || rect === void 0
-    		? void 0
-    		: rect.getTransform();
+    		const t1 = Transform.getTransform(rect);
+    		const t2 = Transform.getTransform(rect2);
+    		const t3 = Transform.getTransform(rect3);
 
-    		rect2.getTransform();
+    		if (Input.isPressing("KeyW")) {
+    			t1.translateY(-1);
+    		}
 
-    		// let t3 = rect3.getTransform();
-    		// t2.rotateZ(1);
-    		// t3.translateX(0.1);
-    		// console.log(t.getRotate());
-    		// t2.translateX(1.001);
-    		// console.log(t2.matrix);
-    		// console.log("=============");
-    		// console.log(t.getRotate());
-    		// console.log(t1.getTranslate());
-    		// console.log(t3.computeVertexData().a);
-    		// console.log(t3.computeVertexData().b);
-    		// console.log(t3.computeVertexData().c);
-    		// console.log(t3.computeVertexData().d);
-    		console.log(t1.collides.map(e => e.node.parentNode.nodeName).join(","));
+    		if (Input.isPressing("KeyA")) {
+    			t1.translateX(-1);
+    		}
 
-    		// console.log(t2.collides.map((e) => e.node.parentNode).join(","));
-    		// console.log(t.computeVertexData().b);
-    		// console.log(t.computeVertexData().c);
-    		// console.log(t.computeVertexData().d);
+    		if (Input.isPressing("KeyS")) {
+    			t1.translateY(1);
+    		}
+
+    		if (Input.isPressing("KeyD")) {
+    			t1.translateX(1);
+    		}
+
+    		if (Input.isPressing("KeyQ")) {
+    			t1.rotate(-1);
+    		}
+
+    		if (Input.isPressing("KeyE")) {
+    			t1.rotate(1);
+    		}
+
+    		if (Input.isPressing("KeyI")) {
+    			t2.translateY(-1);
+    		}
+
+    		if (Input.isPressing("KeyJ")) {
+    			t2.translateX(-1);
+    		}
+
+    		if (Input.isPressing("KeyK")) {
+    			t2.translateY(1);
+    		}
+
+    		if (Input.isPressing("KeyL")) {
+    			t2.translateX(1);
+    		}
+
+    		if (Input.isPressing("KeyU")) {
+    			t2.rotate(-1);
+    		}
+
+    		if (Input.isPressing("KeyO")) {
+    			t2.rotate(1);
+    		}
+
+    		if (Input.isPressing("KeyP")) {
+    			t3.rotate(-1);
+    		}
+
+    		if (Input.isPressing("BracketLeft")) {
+    			t3.rotate(1);
+    		}
+
+    		$$invalidate(3, isCollision = false);
+
+    		for (let e of t1.collides) {
+    			if (e.node == t3.node) {
+    				$$invalidate(3, isCollision = true);
+    			}
+    		}
+
     		requestAnimationFrame(loop);
     	};
 
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<App> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
-    	function rect_1_binding($$value) {
+    	function div0_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			rect3 = $$value;
     			$$invalidate(2, rect3);
     		});
     	}
 
-    	function rect_1_binding_1($$value) {
+    	function div1_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			rect2 = $$value;
     			$$invalidate(1, rect2);
     		});
     	}
 
-    	function rect_1_binding_2($$value) {
+    	function div2_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			rect = $$value;
     			$$invalidate(0, rect);
@@ -1450,12 +1432,13 @@ var app = (function () {
     	$$self.$capture_state = () => ({
     		onMount,
     		Rect,
+    		Transform,
+    		Input,
     		Matrix,
     		rect,
     		rect2,
     		rect3,
-    		onKeyDown,
-    		rot,
+    		isCollision,
     		loop
     	});
 
@@ -1463,14 +1446,14 @@ var app = (function () {
     		if ("rect" in $$props) $$invalidate(0, rect = $$props.rect);
     		if ("rect2" in $$props) $$invalidate(1, rect2 = $$props.rect2);
     		if ("rect3" in $$props) $$invalidate(2, rect3 = $$props.rect3);
-    		if ("rot" in $$props) rot = $$props.rot;
+    		if ("isCollision" in $$props) $$invalidate(3, isCollision = $$props.isCollision);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [rect, rect2, rect3, rect_1_binding, rect_1_binding_1, rect_1_binding_2];
+    	return [rect, rect2, rect3, isCollision, div0_binding, div1_binding, div2_binding];
     }
 
     class App extends SvelteComponentDev {

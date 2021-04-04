@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import Rect from "./component/Rect.svelte";
-	import Transform from "./ctrl/Transform";
-	import Input from "./data/Input";
-	import Matrix from "./data/Matrix";
+	import Transform from "./engine/ctrl/Transform";
+	import Input from "./engine/data/Input";
 
 	let rect: HTMLElement;
 	let rect2: HTMLElement;

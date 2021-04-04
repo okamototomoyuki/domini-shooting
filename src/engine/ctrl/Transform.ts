@@ -13,7 +13,7 @@ export default class Transform {
     static currentFrame = 0;
     static isInit = false;
 
-    static initializeIfNotYet() {
+    static initializeIfNot() {
         if (this.isInit == false) {
             this.isInit = true
             this.loop();
@@ -29,7 +29,7 @@ export default class Transform {
     }
 
     static getTransform(node: HTMLElement) {
-        this.initializeIfNotYet();
+        this.initializeIfNot();
         let t = Transform.nodeToIns.get(node)
         if (t != null) {
             return t;
@@ -110,20 +110,6 @@ export default class Transform {
      */
     computeVertex2D(): VertexData {
         // 計算しない　、 頂点 DOM を持たせて、 getBoundClientRect で座標を得る
-
-        // let w = this.node.offsetWidth;
-        // let h = this.node.offsetHeight;
-        // const im = Matrix.identity();
-        // const wm = this.getWorldMatrix();
-        // let v = new VertexData(
-        //     Matrix.multiply(im.translate(0, 0), wm).getTranslate(),
-        //     Matrix.multiply(im.translate(w, 0), wm).getTranslate(),
-        //     Matrix.multiply(im.translate(w, h), wm).getTranslate(),
-        //     Matrix.multiply(im.translate(0, h), wm).getTranslate(),
-        // );
-
-        // return v;
-
         return new VertexData(this.vertices[0].getPosition(),
             this.vertices[1].getPosition(),
             this.vertices[2].getPosition(),

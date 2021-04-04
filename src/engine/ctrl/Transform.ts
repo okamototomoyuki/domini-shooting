@@ -194,7 +194,7 @@ export default class Transform {
      */
     translateX(x) {
         this.rebuildMatrix();
-        this.matrix.translateX(x);
+        this.matrix = this.matrix.translateX(x);
         this.isDirty = true;
     }
 
@@ -204,7 +204,7 @@ export default class Transform {
      */
     translateY(y) {
         this.rebuildMatrix();
-        this.matrix.translateY(y);
+        this.matrix = this.matrix.translateY(y);
         this.isDirty = true;
     }
 
@@ -215,7 +215,7 @@ export default class Transform {
      */
     translate(x, y) {
         this.rebuildMatrix();
-        this.matrix.translate(x, y)
+        this.matrix = this.matrix.translate(x, y)
         this.isDirty = true;
     }
 
@@ -225,7 +225,7 @@ export default class Transform {
      */
     rotate(angle) {
         this.rebuildMatrix();
-        this.matrix.rotate(angle);
+        this.matrix = this.matrix.rotate(angle);
         this.isDirty = true;
     }
 
@@ -235,7 +235,7 @@ export default class Transform {
      */
     rotateX(angle) {
         this.rebuildMatrix();
-        this.matrix.rotateX(angle);
+        this.matrix = this.matrix.rotateX(angle);
         this.isDirty = true;
     }
 
@@ -245,7 +245,7 @@ export default class Transform {
      */
     rotateY(angle) {
         this.rebuildMatrix();
-        this.matrix.rotateY(angle);
+        this.matrix = this.matrix.rotateY(angle);
         this.isDirty = true;
     }
 
@@ -255,7 +255,7 @@ export default class Transform {
      */
     rotateZ(angle) {
         this.rebuildMatrix();
-        this.matrix.rotateZ(angle);
+        this.matrix = this.matrix.rotateZ(angle);
         this.isDirty = true;
     }
 
@@ -265,7 +265,7 @@ export default class Transform {
      */
     scaleX(x) {
         this.rebuildMatrix();
-        this.matrix.scaleX(x);
+        this.matrix = this.matrix.scaleX(x);
         this.isDirty = true;
     }
 
@@ -275,7 +275,7 @@ export default class Transform {
      */
     scaleY(y) {
         this.rebuildMatrix();
-        this.matrix.scaleY(y);
+        this.matrix = this.matrix.scaleY(y);
         this.isDirty = true;
     }
 
@@ -285,7 +285,7 @@ export default class Transform {
      */
     scaleZ(z) {
         this.rebuildMatrix();
-        this.matrix.scaleZ(z);
+        this.matrix = this.matrix.scaleZ(z);
         this.isDirty = true;
     }
 
@@ -296,7 +296,7 @@ export default class Transform {
      */
     scale(x, y) {
         this.rebuildMatrix();
-        this.matrix.scale(x, y);
+        this.matrix = this.matrix.scale(x, y);
         this.isDirty = true;
     }
 

@@ -524,6 +524,8 @@ var app = (function () {
             ]);
         }
         static multiply(fma, fmb) {
+            // var fma = format(matrixA);
+            // var fmb = format(matrixB);
             const product = new Matrix();
             for (let i = 0; i < 4; i++) {
                 const row = [fma[i], fma[i + 4], fma[i + 8], fma[i + 12]];
@@ -536,14 +538,10 @@ var app = (function () {
             }
             return product;
         }
-        _multiply(m) {
-            const result = Matrix.multiply(this, m);
-            Object.assign(this, result);
-        }
         perspective(distance) {
             const matrix = Matrix.identity();
             matrix.r2c3 = -1 / distance;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         getRotate() {
             // const toReg = (180 / Math.PI);
@@ -556,7 +554,7 @@ var app = (function () {
             return new Vector3(rotateX, rotateY, rotateZ);
         }
         rotate(angle) {
-            this.rotateZ(angle);
+            return this.rotateZ(angle);
         }
         rotateX(angle) {
             const theta = (Math.PI / 180) * angle;
@@ -564,7 +562,7 @@ var app = (function () {
             matrix.r1c1 = matrix.r2c2 = Math.cos(theta);
             matrix.r1c2 = matrix.r2c1 = Math.sin(theta);
             matrix.r2c1 *= -1;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         rotateY(angle) {
             const theta = (Math.PI / 180) * angle;
@@ -572,7 +570,7 @@ var app = (function () {
             matrix.r0c0 = matrix.r2c2 = Math.cos(theta);
             matrix.r0c2 = matrix.r2c0 = Math.sin(theta);
             matrix.r0c2 *= -1;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         rotateZ(angle) {
             const theta = (Math.PI / 180) * angle;
@@ -580,7 +578,7 @@ var app = (function () {
             matrix.r0c0 = matrix.r1c1 = Math.cos(theta);
             matrix.r0c1 = matrix.r1c0 = Math.sin(theta);
             matrix.r1c0 *= -1;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         getScale() {
             const x = Math.sqrt(Math.pow(this.r0c0, 2) + Math.pow(this.r1c0, 2) + Math.pow(this.r2c0, 2));
@@ -592,22 +590,22 @@ var app = (function () {
             const matrix = Matrix.identity();
             matrix.r0c0 = scalar;
             matrix.r1c1 = typeof scalarY === 'number' ? scalarY : scalar;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         scaleX(scalar) {
             const matrix = Matrix.identity();
             matrix.r0c0 = scalar;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         scaleY(scalar) {
             const matrix = Matrix.identity();
             matrix.r1c1 = scalar;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         scaleZ(scalar) {
             const matrix = Matrix.identity();
             matrix.r2c2 = scalar;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         getTranslate() {
             return new Vector3(this.r3c0, this.r3c1, this.r3c2);
@@ -616,6 +614,7 @@ var app = (function () {
             this.r3c0 = v.x;
             this.r3c1 = v.y;
             this.r3c2 = v.z;
+            return this;
         }
         translate(distanceX, distanceY) {
             const matrix = Matrix.identity();
@@ -623,7 +622,7 @@ var app = (function () {
             if (distanceY) {
                 matrix.r3c1 = distanceY;
             }
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         translate3d(distanceX, distanceY, distanceZ) {
             const matrix = Matrix.identity();
@@ -632,22 +631,22 @@ var app = (function () {
                 matrix.r3c1 = distanceY;
                 matrix.r3c2 = distanceZ;
             }
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         translateX(distance) {
             const matrix = Matrix.identity();
             matrix.r3c0 = distance;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         translateY(distance) {
             const matrix = Matrix.identity();
             matrix.r3c1 = distance;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         translateZ(distance) {
             const matrix = Matrix.identity();
             matrix.r3c2 = distance;
-            this._multiply(matrix);
+            return Matrix.multiply(this, matrix);
         }
         toString() {
             return ("matrix3d(" + (this.join(', ')) + ")");
@@ -1054,7 +1053,7 @@ var app = (function () {
          */
         translateX(x) {
             this.rebuildMatrix();
-            this.matrix.translateX(x);
+            this.matrix = this.matrix.translateX(x);
             this.isDirty = true;
         }
         /**
@@ -1063,7 +1062,7 @@ var app = (function () {
          */
         translateY(y) {
             this.rebuildMatrix();
-            this.matrix.translateY(y);
+            this.matrix = this.matrix.translateY(y);
             this.isDirty = true;
         }
         /**
@@ -1073,7 +1072,7 @@ var app = (function () {
          */
         translate(x, y) {
             this.rebuildMatrix();
-            this.matrix.translate(x, y);
+            this.matrix = this.matrix.translate(x, y);
             this.isDirty = true;
         }
         /**
@@ -1082,7 +1081,7 @@ var app = (function () {
          */
         rotate(angle) {
             this.rebuildMatrix();
-            this.matrix.rotate(angle);
+            this.matrix = this.matrix.rotate(angle);
             this.isDirty = true;
         }
         /**
@@ -1091,7 +1090,7 @@ var app = (function () {
          */
         rotateX(angle) {
             this.rebuildMatrix();
-            this.matrix.rotateX(angle);
+            this.matrix = this.matrix.rotateX(angle);
             this.isDirty = true;
         }
         /**
@@ -1100,7 +1099,7 @@ var app = (function () {
          */
         rotateY(angle) {
             this.rebuildMatrix();
-            this.matrix.rotateY(angle);
+            this.matrix = this.matrix.rotateY(angle);
             this.isDirty = true;
         }
         /**
@@ -1109,7 +1108,7 @@ var app = (function () {
          */
         rotateZ(angle) {
             this.rebuildMatrix();
-            this.matrix.rotateZ(angle);
+            this.matrix = this.matrix.rotateZ(angle);
             this.isDirty = true;
         }
         /**
@@ -1118,7 +1117,7 @@ var app = (function () {
          */
         scaleX(x) {
             this.rebuildMatrix();
-            this.matrix.scaleX(x);
+            this.matrix = this.matrix.scaleX(x);
             this.isDirty = true;
         }
         /**
@@ -1127,7 +1126,7 @@ var app = (function () {
          */
         scaleY(y) {
             this.rebuildMatrix();
-            this.matrix.scaleY(y);
+            this.matrix = this.matrix.scaleY(y);
             this.isDirty = true;
         }
         /**
@@ -1136,7 +1135,7 @@ var app = (function () {
          */
         scaleZ(z) {
             this.rebuildMatrix();
-            this.matrix.scaleZ(z);
+            this.matrix = this.matrix.scaleZ(z);
             this.isDirty = true;
         }
         /**
@@ -1146,7 +1145,7 @@ var app = (function () {
          */
         scale(x, y) {
             this.rebuildMatrix();
-            this.matrix.scale(x, y);
+            this.matrix = this.matrix.scale(x, y);
             this.isDirty = true;
         }
         patch() {

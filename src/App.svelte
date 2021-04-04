@@ -2,6 +2,7 @@
 	import { onMount } from "svelte";
 	import Transform from "./engine/ctrl/Transform";
 	import Input from "./engine/data/Input";
+	import Engine from "./engine/Engine";
 
 	let rect: HTMLElement;
 	let rect2: HTMLElement;
@@ -9,11 +10,10 @@
 
 	let isCollision = false;
 	onMount(() => {
+		Engine.start();
 		const t2 = Transform.getTransform(rect2);
 		const t3 = Transform.getTransform(rect3);
 
-		t2.translateX(350);
-		t3.translateX(350);
 		loop();
 	});
 
@@ -23,47 +23,47 @@
 		const t3 = Transform.getTransform(rect3);
 
 		if (Input.isPressing("KeyW")) {
-			t1.translateY(-1);
+			t1.translateY(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyA")) {
-			t1.translateX(-1);
+			t1.translateX(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyS")) {
-			t1.translateY(1);
+			t1.translateY(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyD")) {
-			t1.translateX(1);
+			t1.translateX(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyQ")) {
-			t1.rotate(-1);
+			t1.rotate(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyE")) {
-			t1.rotate(1);
+			t1.rotate(Engine.delta * 100);
 		}
 
 		if (Input.isPressing("KeyI")) {
-			t2.translateY(-1);
+			t2.translateY(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyJ")) {
-			t2.translateX(-1);
+			t2.translateX(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyK")) {
-			t2.translateY(1);
+			t2.translateY(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyL")) {
-			t2.translateX(1);
+			t2.translateX(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyU")) {
-			t2.rotate(-1);
+			t2.rotate(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyO")) {
-			t2.rotate(1);
+			t2.rotate(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyP")) {
-			t3.rotate(-1);
+			t3.rotate(-Engine.delta * 100);
 		}
 		if (Input.isPressing("BracketLeft")) {
-			t3.rotate(1);
+			t3.rotate(Engine.delta * 100);
 		}
 
 		isCollision = false;
@@ -85,7 +85,7 @@
 
 <style lang="scss">
 	div.rect {
-		position: absolute;
+		// position: absolute;
 		background-color: black;
 		width: 320px;
 		height: 256px;

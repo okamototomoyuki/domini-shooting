@@ -11,25 +11,20 @@ export default class Transform {
 
     static nodeToIns = new Map<HTMLElement, Transform>();
     static currentFrame = 0;
-    static isInit = false;
 
-    static initializeIfNot() {
-        if (this.isInit == false) {
-            this.isInit = true
-            this.loop();
-        }
+    static initialize() {
+        this.update();
     }
 
-    static loop() {
+    static update() {
         Transform.currentFrame = Transform.currentFrame + 1;
         for (const e of Transform.nodeToIns.values()) {
             e.patch();
         }
-        requestAnimationFrame(Transform.loop);
     }
 
     static getTransform(node: HTMLElement) {
-        this.initializeIfNot();
+        this.initialize();
         let t = Transform.nodeToIns.get(node)
         if (t != null) {
             return t;

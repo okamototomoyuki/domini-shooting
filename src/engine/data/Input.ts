@@ -1,21 +1,16 @@
 /**
- * 矩形の Transform
+ * 入力
  */
 export default class Input {
     static map = new Map<string, number>();
-    static isInit = false;
 
-    static initializeIfNot() {
-        if (this.isInit == false) {
-            this.isInit = true;
-            document.addEventListener("keydown", this._onKeyDown);
-            document.addEventListener("keyup", this._onKeyUp);
-
-            this.loop();
-        }
+    static initialize() {
+        document.addEventListener("keydown", this._onKeyDown);
+        document.addEventListener("keyup", this._onKeyUp);
+        this.update();
     }
 
-    static loop() {
+    static update() {
         for (let key of Input.map.keys()) {
             let v = Input.map.get(key);
             if (v > 1) {
@@ -24,8 +19,6 @@ export default class Input {
                 Input.map.set(key, 0);
             }
         }
-
-        requestAnimationFrame(Input.loop);
     }
 
     static _onKeyDown(e: KeyboardEvent) {
@@ -37,7 +30,7 @@ export default class Input {
     }
 
     static isUp(code: string): boolean {
-        this.initializeIfNot();
+        this.initialize();
         if (Input.map.has(code)) {
             return Input.map.get(code) == -1;
         }
@@ -45,7 +38,7 @@ export default class Input {
     }
 
     static isNotPress(code: string): boolean {
-        this.initializeIfNot();
+        this.initialize();
         if (Input.map.has(code)) {
             return Input.map.get(code) <= 0;
         }
@@ -53,7 +46,7 @@ export default class Input {
     }
 
     static isDown(code: string): boolean {
-        this.initializeIfNot();
+        this.initialize();
         if (Input.map.has(code)) {
             return Input.map.get(code) == 2;
         }
@@ -61,7 +54,7 @@ export default class Input {
     }
 
     static isPressing(code: string): boolean {
-        this.initializeIfNot();
+        this.initialize();
         if (Input.map.has(code)) {
             return Input.map.get(code) > 0;
         }

@@ -13,6 +13,8 @@
 		Engine.start();
 		const t2 = Transform.getTransform(rect2);
 		const t3 = Transform.getTransform(rect3);
+		t2.translateX(330);
+		t3.translateX(330);
 
 		loop();
 	});
@@ -22,6 +24,7 @@
 		const t2 = Transform.getTransform(rect2);
 		const t3 = Transform.getTransform(rect3);
 
+		const d = Engine.delta;
 		if (Input.isPressing("KeyW")) {
 			t1.translateY(-Engine.delta * 100);
 		}

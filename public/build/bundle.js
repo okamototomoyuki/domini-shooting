@@ -524,8 +524,6 @@ var app = (function () {
             ]);
         }
         static multiply(fma, fmb) {
-            // var fma = format(matrixA);
-            // var fmb = format(matrixB);
             const product = new Matrix();
             for (let i = 0; i < 4; i++) {
                 const row = [fma[i], fma[i + 4], fma[i + 8], fma[i + 12]];
@@ -538,10 +536,14 @@ var app = (function () {
             }
             return product;
         }
+        _multiply(m) {
+            const result = Matrix.multiply(this, m);
+            Object.assign(this, result);
+        }
         perspective(distance) {
             const matrix = Matrix.identity();
             matrix.r2c3 = -1 / distance;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         getRotate() {
             // const toReg = (180 / Math.PI);
@@ -554,7 +556,7 @@ var app = (function () {
             return new Vector3(rotateX, rotateY, rotateZ);
         }
         rotate(angle) {
-            return this.rotateZ(angle);
+            this.rotateZ(angle);
         }
         rotateX(angle) {
             const theta = (Math.PI / 180) * angle;
@@ -562,7 +564,7 @@ var app = (function () {
             matrix.r1c1 = matrix.r2c2 = Math.cos(theta);
             matrix.r1c2 = matrix.r2c1 = Math.sin(theta);
             matrix.r2c1 *= -1;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         rotateY(angle) {
             const theta = (Math.PI / 180) * angle;
@@ -570,7 +572,7 @@ var app = (function () {
             matrix.r0c0 = matrix.r2c2 = Math.cos(theta);
             matrix.r0c2 = matrix.r2c0 = Math.sin(theta);
             matrix.r0c2 *= -1;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         rotateZ(angle) {
             const theta = (Math.PI / 180) * angle;
@@ -578,7 +580,7 @@ var app = (function () {
             matrix.r0c0 = matrix.r1c1 = Math.cos(theta);
             matrix.r0c1 = matrix.r1c0 = Math.sin(theta);
             matrix.r1c0 *= -1;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         getScale() {
             const x = Math.sqrt(Math.pow(this.r0c0, 2) + Math.pow(this.r1c0, 2) + Math.pow(this.r2c0, 2));
@@ -590,22 +592,22 @@ var app = (function () {
             const matrix = Matrix.identity();
             matrix.r0c0 = scalar;
             matrix.r1c1 = typeof scalarY === 'number' ? scalarY : scalar;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         scaleX(scalar) {
             const matrix = Matrix.identity();
             matrix.r0c0 = scalar;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         scaleY(scalar) {
             const matrix = Matrix.identity();
             matrix.r1c1 = scalar;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         scaleZ(scalar) {
             const matrix = Matrix.identity();
             matrix.r2c2 = scalar;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         getTranslate() {
             return new Vector3(this.r3c0, this.r3c1, this.r3c2);
@@ -614,7 +616,6 @@ var app = (function () {
             this.r3c0 = v.x;
             this.r3c1 = v.y;
             this.r3c2 = v.z;
-            return this;
         }
         translate(distanceX, distanceY) {
             const matrix = Matrix.identity();
@@ -622,7 +623,7 @@ var app = (function () {
             if (distanceY) {
                 matrix.r3c1 = distanceY;
             }
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         translate3d(distanceX, distanceY, distanceZ) {
             const matrix = Matrix.identity();
@@ -631,22 +632,22 @@ var app = (function () {
                 matrix.r3c1 = distanceY;
                 matrix.r3c2 = distanceZ;
             }
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         translateX(distance) {
             const matrix = Matrix.identity();
             matrix.r3c0 = distance;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         translateY(distance) {
             const matrix = Matrix.identity();
             matrix.r3c1 = distance;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         translateZ(distance) {
             const matrix = Matrix.identity();
             matrix.r3c2 = distance;
-            return Matrix.multiply(this, matrix);
+            this._multiply(matrix);
         }
         toString() {
             return ("matrix3d(" + (this.join(', ')) + ")");
@@ -1053,7 +1054,7 @@ var app = (function () {
          */
         translateX(x) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.translateX(x);
+            this.matrix.translateX(x);
             this.isDirty = true;
         }
         /**
@@ -1062,7 +1063,7 @@ var app = (function () {
          */
         translateY(y) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.translateY(y);
+            this.matrix.translateY(y);
             this.isDirty = true;
         }
         /**
@@ -1072,7 +1073,7 @@ var app = (function () {
          */
         translate(x, y) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.translate(x, y);
+            this.matrix.translate(x, y);
             this.isDirty = true;
         }
         /**
@@ -1081,7 +1082,7 @@ var app = (function () {
          */
         rotate(angle) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.rotate(angle);
+            this.matrix.rotate(angle);
             this.isDirty = true;
         }
         /**
@@ -1090,7 +1091,7 @@ var app = (function () {
          */
         rotateX(angle) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.rotateX(angle);
+            this.matrix.rotateX(angle);
             this.isDirty = true;
         }
         /**
@@ -1099,7 +1100,7 @@ var app = (function () {
          */
         rotateY(angle) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.rotateY(angle);
+            this.matrix.rotateY(angle);
             this.isDirty = true;
         }
         /**
@@ -1108,7 +1109,7 @@ var app = (function () {
          */
         rotateZ(angle) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.rotateZ(angle);
+            this.matrix.rotateZ(angle);
             this.isDirty = true;
         }
         /**
@@ -1117,7 +1118,7 @@ var app = (function () {
          */
         scaleX(x) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.scaleX(x);
+            this.matrix.scaleX(x);
             this.isDirty = true;
         }
         /**
@@ -1126,7 +1127,7 @@ var app = (function () {
          */
         scaleY(y) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.scaleY(y);
+            this.matrix.scaleY(y);
             this.isDirty = true;
         }
         /**
@@ -1135,7 +1136,7 @@ var app = (function () {
          */
         scaleZ(z) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.scaleZ(z);
+            this.matrix.scaleZ(z);
             this.isDirty = true;
         }
         /**
@@ -1145,7 +1146,7 @@ var app = (function () {
          */
         scale(x, y) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.scale(x, y);
+            this.matrix.scale(x, y);
             this.isDirty = true;
         }
         patch() {
@@ -1171,12 +1172,12 @@ var app = (function () {
     			div1 = element("div");
     			div0 = element("div");
     			attr_dev(div0, "class", "rect svelte-jyl04j");
-    			add_location(div0, file, 72, 2, 2079);
+    			add_location(div0, file, 75, 2, 2158);
     			attr_dev(div1, "class", "rect svelte-jyl04j");
-    			add_location(div1, file, 71, 1, 2040);
+    			add_location(div1, file, 74, 1, 2119);
     			attr_dev(div2, "class", "rect svelte-jyl04j");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 70, 0, 1973);
+    			add_location(div2, file, 73, 0, 2052);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1225,8 +1226,10 @@ var app = (function () {
 
     	onMount(() => {
     		Engine.start();
-    		Transform.getTransform(rect2);
-    		Transform.getTransform(rect3);
+    		const t2 = Transform.getTransform(rect2);
+    		const t3 = Transform.getTransform(rect3);
+    		t2.translateX(330);
+    		t3.translateX(330);
     		loop();
     	});
 

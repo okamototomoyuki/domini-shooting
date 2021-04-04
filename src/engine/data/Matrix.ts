@@ -135,8 +135,6 @@ export default class Matrix extends Array<number> {
     }
 
     static multiply(fma: Matrix, fmb: Matrix): Matrix {
-        // var fma = format(matrixA);
-        // var fmb = format(matrixB);
         const product = new Matrix();
 
         for (let i = 0; i < 4; i++) {
@@ -153,10 +151,15 @@ export default class Matrix extends Array<number> {
         return product;
     }
 
-    perspective(distance: number): Matrix {
+    _multiply(m: Matrix) {
+        const result = Matrix.multiply(this, m);
+        Object.assign(this, result);
+    }
+
+    perspective(distance: number) {
         const matrix = Matrix.identity();
         matrix.r2c3 = -1 / distance;
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
     getRotate(): Vector3 {
@@ -170,11 +173,11 @@ export default class Matrix extends Array<number> {
         return new Vector3(rotateX, rotateY, rotateZ);
     }
 
-    rotate(angle: number): Matrix {
-        return this.rotateZ(angle)
+    rotate(angle: number) {
+        this.rotateZ(angle)
     }
 
-    rotateX(angle: number): Matrix {
+    rotateX(angle: number) {
         const theta = (Math.PI / 180) * angle;
         const matrix = Matrix.identity();
 
@@ -182,10 +185,10 @@ export default class Matrix extends Array<number> {
         matrix.r1c2 = matrix.r2c1 = Math.sin(theta);
         matrix.r2c1 *= -1;
 
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    rotateY(angle: number): Matrix {
+    rotateY(angle: number) {
         const theta = (Math.PI / 180) * angle;
         const matrix = Matrix.identity();
 
@@ -193,10 +196,10 @@ export default class Matrix extends Array<number> {
         matrix.r0c2 = matrix.r2c0 = Math.sin(theta);
         matrix.r0c2 *= -1;
 
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    rotateZ(angle: number): Matrix {
+    rotateZ(angle: number) {
         const theta = (Math.PI / 180) * angle;
         const matrix = Matrix.identity();
 
@@ -204,7 +207,7 @@ export default class Matrix extends Array<number> {
         matrix.r0c1 = matrix.r1c0 = Math.sin(theta);
         matrix.r1c0 *= -1;
 
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
     getScale(): Vector3 {
@@ -214,32 +217,31 @@ export default class Matrix extends Array<number> {
         return new Vector3(x, y, z);
     }
 
-    scale(scalar: number, scalarY: number = undefined): Matrix {
+    scale(scalar: number, scalarY: number = undefined) {
         const matrix = Matrix.identity();
 
         matrix.r0c0 = scalar;
         matrix.r1c1 = typeof scalarY === 'number' ? scalarY : scalar;
 
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    scaleX(scalar: number): Matrix {
+    scaleX(scalar: number) {
         const matrix = Matrix.identity();
         matrix.r0c0 = scalar;
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    scaleY(scalar: number): Matrix {
+    scaleY(scalar: number) {
         const matrix = Matrix.identity();
         matrix.r1c1 = scalar;
-        return Matrix.multiply(this, matrix);
-
+        this._multiply(matrix);
     }
 
-    scaleZ(scalar: number): Matrix {
+    scaleZ(scalar: number) {
         const matrix = Matrix.identity();
         matrix.r2c2 = scalar;
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
     getTranslate(): Vector3 {
@@ -250,10 +252,9 @@ export default class Matrix extends Array<number> {
         this.r3c0 = v.x;
         this.r3c1 = v.y;
         this.r3c2 = v.z;
-        return this;
     }
 
-    translate(distanceX: number, distanceY: number): Matrix {
+    translate(distanceX: number, distanceY: number) {
         const matrix = Matrix.identity();
         matrix.r3c0 = distanceX;
 
@@ -261,35 +262,35 @@ export default class Matrix extends Array<number> {
             matrix.r3c1 = distanceY;
         }
 
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    translate3d(distanceX: number, distanceY: number, distanceZ: number): Matrix {
+    translate3d(distanceX: number, distanceY: number, distanceZ: number) {
         const matrix = Matrix.identity();
         if (distanceX !== undefined && distanceY !== undefined && distanceZ !== undefined) {
             matrix.r3c0 = distanceX;
             matrix.r3c1 = distanceY;
             matrix.r3c2 = distanceZ;
         }
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    translateX(distance: number): Matrix {
+    translateX(distance: number) {
         const matrix = Matrix.identity();
         matrix.r3c0 = distance;
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    translateY(distance: number): Matrix {
+    translateY(distance: number) {
         const matrix = Matrix.identity();
         matrix.r3c1 = distance;
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
-    translateZ(distance: number): Matrix {
+    translateZ(distance: number) {
         const matrix = Matrix.identity();
         matrix.r3c2 = distance;
-        return Matrix.multiply(this, matrix);
+        this._multiply(matrix);
     }
 
     toString() {

@@ -3,16 +3,20 @@
  */
 export default class Input {
     static map = new Map<string, number>();
+    static isInit = false;
 
     static initializeIfNot() {
-        document.addEventListener("keydown", this._onKeyDown);
-        document.addEventListener("keyup", this._onKeyUp);
+        if (this.isInit == false) {
+            this.isInit = true;
+            document.addEventListener("keydown", this._onKeyDown);
+            document.addEventListener("keyup", this._onKeyUp);
 
-        requestAnimationFrame(this.loop);
+            this.loop();
+        }
     }
 
     static loop() {
-        for (let key in Input.map.keys()) {
+        for (let key of Input.map.keys()) {
             let v = Input.map.get(key);
             if (v > 1) {
                 Input.map.set(key, 1);

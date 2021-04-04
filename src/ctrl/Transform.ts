@@ -13,18 +13,6 @@ export default class Transform {
     static currentFrame = 0;
     static isInit = false;
 
-    static getTransform(node: HTMLElement) {
-        this.initializeIfNotYet();
-        let t = Transform.nodeToIns.get(node)
-        if (t != null) {
-            return t;
-        } else {
-            t = new Transform(node)
-            Transform.nodeToIns.set(node, t);
-            return t;
-        }
-    }
-
     static initializeIfNotYet() {
         if (this.isInit == false) {
             this.isInit = true
@@ -39,6 +27,19 @@ export default class Transform {
         }
         requestAnimationFrame(Transform.loop);
     }
+
+    static getTransform(node: HTMLElement) {
+        this.initializeIfNotYet();
+        let t = Transform.nodeToIns.get(node)
+        if (t != null) {
+            return t;
+        } else {
+            t = new Transform(node)
+            Transform.nodeToIns.set(node, t);
+            return t;
+        }
+    }
+
 
     node: HTMLElement;
     matrix: Matrix;

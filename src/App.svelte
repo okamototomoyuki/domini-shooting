@@ -26,51 +26,50 @@
 
 		const d = Engine.delta;
 		if (Input.isPressing("KeyW")) {
-			t1.translateY(-Engine.delta * 100);
+			t1.translateScreenY(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyA")) {
-			t1.translateX(-Engine.delta * 100);
+			t1.translateScreenX(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyS")) {
-			t1.translateY(Engine.delta * 100);
+			t1.translateScreenY(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyD")) {
-			t1.translateX(Engine.delta * 100);
+			t1.translateScreenX(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyQ")) {
-			t1.rotate(-Engine.delta * 100);
+			t1.rotateZ(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyE")) {
-			t1.rotate(Engine.delta * 100);
+			t1.rotateZ(Engine.delta * 100);
 		}
 
 		if (Input.isPressing("KeyI")) {
-			t2.translateY(-Engine.delta * 100);
+			t2.translateScreenY(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyJ")) {
-			t2.translateX(-Engine.delta * 100);
+			t2.translateScreenX(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyK")) {
-			t2.translateY(Engine.delta * 100);
+			t2.translateScreenY(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyL")) {
-			t2.translateX(Engine.delta * 100);
+			t2.translateScreenX(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyU")) {
-			t2.rotate(-Engine.delta * 100);
+			t2.rotateZ(-Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyO")) {
-			t2.rotate(Engine.delta * 100);
+			t2.rotateZ(Engine.delta * 100);
 		}
 		if (Input.isPressing("KeyP")) {
-			t3.rotate(-Engine.delta * 100);
+			t3.rotateZ(-Engine.delta * 100);
 		}
 		if (Input.isPressing("BracketLeft")) {
-			t3.rotate(Engine.delta * 100);
+			t3.rotateZ(Engine.delta * 100);
 		}
-		console.log(t1.getTranslate());
 
-		t2.loopAtZ(Input.mousePosition);
+		t1.loopAtScreen(Input.mousePosition);
 
 		isCollision = false;
 		for (let e of t1.collides) {

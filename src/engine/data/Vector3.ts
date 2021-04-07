@@ -77,6 +77,15 @@ export default class Vector3 {
     }
 
     /**
+     * 長さ
+     * @returns 長さ
+     */
+    length(): number {
+        return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2) + Math.pow(this.z, 2));
+    }
+
+
+    /**
      * 外積
      * @param va ベクトルa
      * @param vb ベクトルb

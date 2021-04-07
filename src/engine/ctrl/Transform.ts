@@ -96,16 +96,23 @@ export default class Transform {
         return this.matrix.getScale();
     }
 
-    getWorldTranslate(): Vector3 {
-        return this.getWorldMatrix().getTranslate();
+    getTranslateScreen(): Vector3 {
+        return this.vertices[Vertex.TYPE_ORIGIN].getPosition();
     }
 
-    getWorldRotate(): Vector3 {
-        return this.getWorldMatrix().getRotate();
+    getRotateScreen(): number {
+        const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+        return Math.atan2(vec.y, vec.x);
     }
 
-    getWorldScale(): Vector3 {
-        return this.getWorldMatrix().getScale();
+    getScaleScreenX(): number {
+        const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_LEFT].getPosition().multiply(-1));
+        return vec.length();
+    }
+
+    getScaleScreenY(): number {
+        const vec = this.vertices[Vertex.TYPE_BOTTOM].getPosition().addVectors(this.vertices[Vertex.TYPE_TOP].getPosition().multiply(-1));
+        return vec.length();
     }
 
     /**
@@ -198,7 +205,7 @@ export default class Transform {
 
 
     /**
-     * 座標X設定
+     * 座標X移動
      * @param x X座標
      */
     translateX(x: number) {
@@ -208,7 +215,7 @@ export default class Transform {
     }
 
     /**
-     * 座標Y設定
+     * 座標Y移動
      * @param y Y座標
      */
     translateY(y: number) {
@@ -218,7 +225,49 @@ export default class Transform {
     }
 
     /**
-     * 座標指定
+     * 座標X移動
+     * @param x X座標
+     */
+    translateScreenX(x: number) {
+        this.rebuildMatrix();
+        let m = Matrix.identity();
+        m.r3c0 = x;
+        let gm = this.getWorldMatrix();
+        console.log(this.getWorldMatrix());
+        console.log(gm);
+        gm.r0c3 = 0;
+        gm.r1c3 = 0;
+        gm.r2c3 = 0;
+        gm.r3c0 = 0;
+        gm.r3c1 = 0;
+        gm.r3c2 = 0;
+        let cm = Matrix.multiply(m, gm)
+        this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+        this.isDirty = true;
+    }
+
+    /**
+     * 座標Y移動
+     * @param y Y座標
+     */
+    translateScreenY(y: number) {
+        this.rebuildMatrix();
+        let m = Matrix.identity();
+        m.r3c1 = y;
+        let gm = this.getWorldMatrix();
+        gm.r0c3 = 0;
+        gm.r1c3 = 0;
+        gm.r2c3 = 0;
+        gm.r3c0 = 0;
+        gm.r3c1 = 0;
+        gm.r3c2 = 0;
+        let cm = Matrix.multiply(m, gm)
+        this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+        this.isDirty = true;
+    }
+
+    /**
+     * 座標移動
      * @param x X座標
      * @param y Y座標
      */
@@ -229,17 +278,7 @@ export default class Transform {
     }
 
     /**
-     * 回転設定
-     * @param angle ラジアン
-     */
-    rotate(angle: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.rotate(angle);
-        this.isDirty = true;
-    }
-
-    /**
-     * X回転設定
+     * X回転
      * @param angle ラジアン
      */
     rotateX(angle: number) {
@@ -249,7 +288,7 @@ export default class Transform {
     }
 
     /**
-     * Y回転設定
+     * Y回転
      * @param angle ラジアン
      */
     rotateY(angle: number) {
@@ -259,7 +298,7 @@ export default class Transform {
     }
 
     /**
-     * Y回転設定
+     * Z回転
      * @param angle ラジアン
      */
     rotateZ(angle: number) {
@@ -269,8 +308,8 @@ export default class Transform {
     }
 
     /**
-     * 拡縮X設定
-     * @param x 拡縮X
+     * 拡大X
+     * @param x 増加値
      */
     scaleX(x: number) {
         this.rebuildMatrix();
@@ -279,8 +318,8 @@ export default class Transform {
     }
 
     /**
-     * 拡縮Y設定
-     * @param y 拡縮Y
+     * 拡大Y
+     * @param y 増加値
      */
     scaleY(y: number) {
         this.rebuildMatrix();
@@ -289,8 +328,8 @@ export default class Transform {
     }
 
     /**
-     * 拡縮Y設定
-     * @param y 拡縮Y
+     * 拡大Z
+     * @param z 増加値
      */
     scaleZ(z: number) {
         this.rebuildMatrix();
@@ -299,9 +338,9 @@ export default class Transform {
     }
 
     /**
-     * 拡縮設定
-     * @param {number} x 拡縮X
-     * @param {number} y 拡縮Y
+     * 拡大
+     * @param {number} x 増加値X
+     * @param {number} y 増加値Y
      */
     scale(x: number, y: number) {
         this.rebuildMatrix();
@@ -309,12 +348,12 @@ export default class Transform {
         this.isDirty = true;
     }
 
-    loopAtZ(targetPos: Vector3) {
+    loopAtScreen(targetPos: Vector3) {
         const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
         const targetRad = Math.atan2(targetVec.y, targetVec.x);
         const baseVec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
-        this.rotate((targetRad - baseRad) / (Math.PI / 180));
+        this.rotateZ((targetRad - baseRad) / (Math.PI / 180));
     }
 
     patch() {

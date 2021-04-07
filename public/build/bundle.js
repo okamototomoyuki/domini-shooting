@@ -141,12 +141,6 @@ var app = (function () {
             block.i(local);
         }
     }
-
-    const globals = (typeof window !== 'undefined'
-        ? window
-        : typeof globalThis !== 'undefined'
-            ? globalThis
-            : global);
     function mount_component(component, target, anchor, customElement) {
         const { fragment, on_mount, on_destroy, after_update } = component.$$;
         fragment && fragment.m(target, anchor);
@@ -383,6 +377,13 @@ var app = (function () {
             let m9 = 2 * (y * z - x * w);
             let m10 = 1 - 2 * (x * x + y * y);
             return new Vector3(x1 * m0 + y1 * m4 + z1 * m8, x1 * m1 + y1 * m5 + z1 * m9, x1 * m2 + y1 * m6 + z1 * m10);
+        }
+        /**
+         * 長さ
+         * @returns 長さ
+         */
+        length() {
+            return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2) + Math.pow(this.z, 2));
         }
         /**
          * 外積
@@ -1000,14 +1001,20 @@ var app = (function () {
             this.rebuildMatrix();
             return this.matrix.getScale();
         }
-        getWorldTranslate() {
-            return this.getWorldMatrix().getTranslate();
+        getTranslateScreen() {
+            return this.vertices[Vertex.TYPE_ORIGIN].getPosition();
         }
-        getWorldRotate() {
-            return this.getWorldMatrix().getRotate();
+        getRotateScreen() {
+            const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+            return Math.atan2(vec.y, vec.x);
         }
-        getWorldScale() {
-            return this.getWorldMatrix().getScale();
+        getScaleScreenX() {
+            const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_LEFT].getPosition().multiply(-1));
+            return vec.length();
+        }
+        getScaleScreenY() {
+            const vec = this.vertices[Vertex.TYPE_BOTTOM].getPosition().addVectors(this.vertices[Vertex.TYPE_TOP].getPosition().multiply(-1));
+            return vec.length();
         }
         /**
          * 画面に対しての頂点データ計算
@@ -1086,7 +1093,7 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 座標X設定
+         * 座標X移動
          * @param x X座標
          */
         translateX(x) {
@@ -1095,7 +1102,7 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 座標Y設定
+         * 座標Y移動
          * @param y Y座標
          */
         translateY(y) {
@@ -1104,7 +1111,47 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 座標指定
+         * 座標X移動
+         * @param x X座標
+         */
+        translateScreenX(x) {
+            this.rebuildMatrix();
+            let m = Matrix.identity();
+            m.r3c0 = x;
+            let gm = this.getWorldMatrix();
+            console.log(this.getWorldMatrix());
+            console.log(gm);
+            gm.r0c3 = 0;
+            gm.r1c3 = 0;
+            gm.r2c3 = 0;
+            gm.r3c0 = 0;
+            gm.r3c1 = 0;
+            gm.r3c2 = 0;
+            let cm = Matrix.multiply(m, gm);
+            this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+            this.isDirty = true;
+        }
+        /**
+         * 座標Y移動
+         * @param y Y座標
+         */
+        translateScreenY(y) {
+            this.rebuildMatrix();
+            let m = Matrix.identity();
+            m.r3c1 = y;
+            let gm = this.getWorldMatrix();
+            gm.r0c3 = 0;
+            gm.r1c3 = 0;
+            gm.r2c3 = 0;
+            gm.r3c0 = 0;
+            gm.r3c1 = 0;
+            gm.r3c2 = 0;
+            let cm = Matrix.multiply(m, gm);
+            this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+            this.isDirty = true;
+        }
+        /**
+         * 座標移動
          * @param x X座標
          * @param y Y座標
          */
@@ -1114,16 +1161,7 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 回転設定
-         * @param angle ラジアン
-         */
-        rotate(angle) {
-            this.rebuildMatrix();
-            this.matrix = this.matrix.rotate(angle);
-            this.isDirty = true;
-        }
-        /**
-         * X回転設定
+         * X回転
          * @param angle ラジアン
          */
         rotateX(angle) {
@@ -1132,7 +1170,7 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * Y回転設定
+         * Y回転
          * @param angle ラジアン
          */
         rotateY(angle) {
@@ -1141,7 +1179,7 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * Y回転設定
+         * Z回転
          * @param angle ラジアン
          */
         rotateZ(angle) {
@@ -1150,8 +1188,8 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 拡縮X設定
-         * @param x 拡縮X
+         * 拡大X
+         * @param x 増加値
          */
         scaleX(x) {
             this.rebuildMatrix();
@@ -1159,8 +1197,8 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 拡縮Y設定
-         * @param y 拡縮Y
+         * 拡大Y
+         * @param y 増加値
          */
         scaleY(y) {
             this.rebuildMatrix();
@@ -1168,8 +1206,8 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 拡縮Y設定
-         * @param y 拡縮Y
+         * 拡大Z
+         * @param z 増加値
          */
         scaleZ(z) {
             this.rebuildMatrix();
@@ -1177,21 +1215,21 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 拡縮設定
-         * @param {number} x 拡縮X
-         * @param {number} y 拡縮Y
+         * 拡大
+         * @param {number} x 増加値X
+         * @param {number} y 増加値Y
          */
         scale(x, y) {
             this.rebuildMatrix();
             this.matrix = this.matrix.scale(x, y);
             this.isDirty = true;
         }
-        loopAtZ(targetPos) {
+        loopAtScreen(targetPos) {
             const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
             const targetRad = Math.atan2(targetVec.y, targetVec.x);
             const baseVec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
-            this.rotate((targetRad - baseRad) / (Math.PI / 180));
+            this.rotateZ((targetRad - baseRad) / (Math.PI / 180));
         }
         patch() {
             if (this.isDirty) {
@@ -1203,8 +1241,6 @@ var app = (function () {
     Transform.nodeToIns = new Map();
 
     /* src\App.svelte generated by Svelte v3.35.0 */
-
-    const { console: console_1 } = globals;
     const file = "src\\App.svelte";
 
     function create_fragment(ctx) {
@@ -1218,12 +1254,12 @@ var app = (function () {
     			div1 = element("div");
     			div0 = element("div");
     			attr_dev(div0, "class", "rect svelte-5x0uuw");
-    			add_location(div0, file, 77, 2, 2233);
+    			add_location(div0, file, 76, 2, 2255);
     			attr_dev(div1, "class", "rect svelte-5x0uuw");
-    			add_location(div1, file, 76, 1, 2194);
+    			add_location(div1, file, 75, 1, 2216);
     			attr_dev(div2, "class", "rect svelte-5x0uuw");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 75, 0, 2127);
+    			add_location(div2, file, 74, 0, 2149);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1285,63 +1321,62 @@ var app = (function () {
     		const t3 = Transform.getTransform(rect3);
 
     		if (Input.isPressing("KeyW")) {
-    			t1.translateY(-Engine.delta * 100);
+    			t1.translateScreenY(-Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyA")) {
-    			t1.translateX(-Engine.delta * 100);
+    			t1.translateScreenX(-Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyS")) {
-    			t1.translateY(Engine.delta * 100);
+    			t1.translateScreenY(Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyD")) {
-    			t1.translateX(Engine.delta * 100);
+    			t1.translateScreenX(Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyQ")) {
-    			t1.rotate(-Engine.delta * 100);
+    			t1.rotateZ(-Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyE")) {
-    			t1.rotate(Engine.delta * 100);
+    			t1.rotateZ(Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyI")) {
-    			t2.translateY(-Engine.delta * 100);
+    			t2.translateScreenY(-Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyJ")) {
-    			t2.translateX(-Engine.delta * 100);
+    			t2.translateScreenX(-Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyK")) {
-    			t2.translateY(Engine.delta * 100);
+    			t2.translateScreenY(Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyL")) {
-    			t2.translateX(Engine.delta * 100);
+    			t2.translateScreenX(Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyU")) {
-    			t2.rotate(-Engine.delta * 100);
+    			t2.rotateZ(-Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyO")) {
-    			t2.rotate(Engine.delta * 100);
+    			t2.rotateZ(Engine.delta * 100);
     		}
 
     		if (Input.isPressing("KeyP")) {
-    			t3.rotate(-Engine.delta * 100);
+    			t3.rotateZ(-Engine.delta * 100);
     		}
 
     		if (Input.isPressing("BracketLeft")) {
-    			t3.rotate(Engine.delta * 100);
+    			t3.rotateZ(Engine.delta * 100);
     		}
 
-    		console.log(t1.getTranslate());
-    		t2.loopAtZ(Input.mousePosition);
+    		t1.loopAtScreen(Input.mousePosition);
     		$$invalidate(3, isCollision = false);
 
     		for (let e of t1.collides) {
@@ -1356,7 +1391,7 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<App> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
     	function div0_binding($$value) {

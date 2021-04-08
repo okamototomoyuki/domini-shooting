@@ -107,12 +107,12 @@ export default class Transform {
 
     getScaleScreenX(): number {
         const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_LEFT].getPosition().multiply(-1));
-        return vec.length();
+        return vec.length() / this.node.offsetWidth;
     }
 
     getScaleScreenY(): number {
         const vec = this.vertices[Vertex.TYPE_BOTTOM].getPosition().addVectors(this.vertices[Vertex.TYPE_TOP].getPosition().multiply(-1));
-        return vec.length();
+        return vec.length() / this.node.offsetHeight;
     }
 
     /**
@@ -205,7 +205,7 @@ export default class Transform {
 
 
     /**
-     * 座標X移動
+     * ローカル座標X移動
      * @param x X座標
      */
     translateX(x: number) {
@@ -215,7 +215,7 @@ export default class Transform {
     }
 
     /**
-     * 座標Y移動
+     * ローカル座標Y移動
      * @param y Y座標
      */
     translateY(y: number) {
@@ -225,44 +225,28 @@ export default class Transform {
     }
 
     /**
-     * 座標X移動
+     * スクリーン座標X移動
      * @param x X座標
      */
     translateScreenX(x: number) {
         this.rebuildMatrix();
-        let m = Matrix.identity();
-        m.r3c0 = x;
-        let gm = this.getWorldMatrix();
-        console.log(this.getWorldMatrix());
-        console.log(gm);
-        gm.r0c3 = 0;
-        gm.r1c3 = 0;
-        gm.r2c3 = 0;
-        gm.r3c0 = 0;
-        gm.r3c1 = 0;
-        gm.r3c2 = 0;
-        let cm = Matrix.multiply(m, gm)
-        this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+        let rad = this.getRotateScreen();
+        let vx = x * Math.cos(-rad);
+        let vy = x * Math.sin(-rad);
+        this.matrix = this.matrix.translate3d(vx, vy, 0);
         this.isDirty = true;
     }
 
     /**
-     * 座標Y移動
+     * スクリーン座標Y移動
      * @param y Y座標
      */
     translateScreenY(y: number) {
         this.rebuildMatrix();
-        let m = Matrix.identity();
-        m.r3c1 = y;
-        let gm = this.getWorldMatrix();
-        gm.r0c3 = 0;
-        gm.r1c3 = 0;
-        gm.r2c3 = 0;
-        gm.r3c0 = 0;
-        gm.r3c1 = 0;
-        gm.r3c2 = 0;
-        let cm = Matrix.multiply(m, gm)
-        this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+        let rad = this.getRotateScreen();
+        let vx = y * Math.cos(- (rad + Math.PI / 2));
+        let vy = y * Math.sin(- (rad + Math.PI / 2));
+        this.matrix = this.matrix.translate3d(vx, vy, 0);
         this.isDirty = true;
     }
 
@@ -348,14 +332,21 @@ export default class Transform {
         this.isDirty = true;
     }
 
-    loopAtScreen(targetPos: Vector3) {
-        const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+    /**
+     * スクリーン座標の点を見る
+     * @param screenPos スクリーン座標
+     */
+    loopAtScreen(screenPos: Vector3) {
+        const targetVec = screenPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
         const targetRad = Math.atan2(targetVec.y, targetVec.x);
         const baseVec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
         this.rotateZ((targetRad - baseRad) / (Math.PI / 180));
     }
 
+    /**
+     * 更新された情報で変形反映
+     */
     patch() {
         if (this.isDirty) {
             this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);

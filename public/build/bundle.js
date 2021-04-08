@@ -1010,11 +1010,11 @@ var app = (function () {
         }
         getScaleScreenX() {
             const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_LEFT].getPosition().multiply(-1));
-            return vec.length();
+            return vec.length() / this.node.offsetWidth;
         }
         getScaleScreenY() {
             const vec = this.vertices[Vertex.TYPE_BOTTOM].getPosition().addVectors(this.vertices[Vertex.TYPE_TOP].getPosition().multiply(-1));
-            return vec.length();
+            return vec.length() / this.node.offsetHeight;
         }
         /**
          * 画面に対しての頂点データ計算
@@ -1093,7 +1093,7 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 座標X移動
+         * ローカル座標X移動
          * @param x X座標
          */
         translateX(x) {
@@ -1102,7 +1102,7 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 座標Y移動
+         * ローカル座標Y移動
          * @param y Y座標
          */
         translateY(y) {
@@ -1111,43 +1111,27 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 座標X移動
+         * スクリーン座標X移動
          * @param x X座標
          */
         translateScreenX(x) {
             this.rebuildMatrix();
-            let m = Matrix.identity();
-            m.r3c0 = x;
-            let gm = this.getWorldMatrix();
-            console.log(this.getWorldMatrix());
-            console.log(gm);
-            gm.r0c3 = 0;
-            gm.r1c3 = 0;
-            gm.r2c3 = 0;
-            gm.r3c0 = 0;
-            gm.r3c1 = 0;
-            gm.r3c2 = 0;
-            let cm = Matrix.multiply(m, gm);
-            this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+            let rad = this.getRotateScreen();
+            let vx = x * Math.cos(-rad);
+            let vy = x * Math.sin(-rad);
+            this.matrix = this.matrix.translate3d(vx, vy, 0);
             this.isDirty = true;
         }
         /**
-         * 座標Y移動
+         * スクリーン座標Y移動
          * @param y Y座標
          */
         translateScreenY(y) {
             this.rebuildMatrix();
-            let m = Matrix.identity();
-            m.r3c1 = y;
-            let gm = this.getWorldMatrix();
-            gm.r0c3 = 0;
-            gm.r1c3 = 0;
-            gm.r2c3 = 0;
-            gm.r3c0 = 0;
-            gm.r3c1 = 0;
-            gm.r3c2 = 0;
-            let cm = Matrix.multiply(m, gm);
-            this.matrix = this.matrix.translate3d(cm.r3c0, cm.r3c1, cm.r3c2);
+            let rad = this.getRotateScreen();
+            let vx = y * Math.cos(-(rad + Math.PI / 2));
+            let vy = y * Math.sin(-(rad + Math.PI / 2));
+            this.matrix = this.matrix.translate3d(vx, vy, 0);
             this.isDirty = true;
         }
         /**
@@ -1224,13 +1208,20 @@ var app = (function () {
             this.matrix = this.matrix.scale(x, y);
             this.isDirty = true;
         }
-        loopAtScreen(targetPos) {
-            const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+        /**
+         * スクリーン座標の点を見る
+         * @param screenPos スクリーン座標
+         */
+        loopAtScreen(screenPos) {
+            const targetVec = screenPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
             const targetRad = Math.atan2(targetVec.y, targetVec.x);
             const baseVec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
             this.rotateZ((targetRad - baseRad) / (Math.PI / 180));
         }
+        /**
+         * 更新された情報で変形反映
+         */
         patch() {
             if (this.isDirty) {
                 this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
@@ -1254,12 +1245,12 @@ var app = (function () {
     			div1 = element("div");
     			div0 = element("div");
     			attr_dev(div0, "class", "rect svelte-5x0uuw");
-    			add_location(div0, file, 76, 2, 2255);
+    			add_location(div0, file, 76, 2, 2104);
     			attr_dev(div1, "class", "rect svelte-5x0uuw");
-    			add_location(div1, file, 75, 1, 2216);
+    			add_location(div1, file, 75, 1, 2065);
     			attr_dev(div2, "class", "rect svelte-5x0uuw");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 74, 0, 2149);
+    			add_location(div2, file, 74, 0, 1998);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1319,64 +1310,65 @@ var app = (function () {
     		const t1 = Transform.getTransform(rect);
     		const t2 = Transform.getTransform(rect2);
     		const t3 = Transform.getTransform(rect3);
+    		const d = Engine.delta;
 
     		if (Input.isPressing("KeyW")) {
-    			t1.translateScreenY(-Engine.delta * 100);
+    			t1.translateScreenY(-d * 100);
     		}
 
     		if (Input.isPressing("KeyA")) {
-    			t1.translateScreenX(-Engine.delta * 100);
+    			t1.translateScreenX(-d * 100);
     		}
 
     		if (Input.isPressing("KeyS")) {
-    			t1.translateScreenY(Engine.delta * 100);
+    			t1.translateScreenY(d * 100);
     		}
 
     		if (Input.isPressing("KeyD")) {
-    			t1.translateScreenX(Engine.delta * 100);
+    			t1.translateScreenX(d * 100);
     		}
 
     		if (Input.isPressing("KeyQ")) {
-    			t1.rotateZ(-Engine.delta * 100);
+    			t1.rotateZ(-d * 100);
     		}
 
     		if (Input.isPressing("KeyE")) {
-    			t1.rotateZ(Engine.delta * 100);
+    			t1.rotateZ(d * 100);
     		}
 
     		if (Input.isPressing("KeyI")) {
-    			t2.translateScreenY(-Engine.delta * 100);
+    			t2.translateScreenY(-d * 100);
     		}
 
     		if (Input.isPressing("KeyJ")) {
-    			t2.translateScreenX(-Engine.delta * 100);
+    			t2.translateScreenX(-d * 100);
     		}
 
     		if (Input.isPressing("KeyK")) {
-    			t2.translateScreenY(Engine.delta * 100);
+    			t2.translateScreenY(d * 100);
     		}
 
     		if (Input.isPressing("KeyL")) {
-    			t2.translateScreenX(Engine.delta * 100);
+    			t2.translateScreenX(d * 100);
     		}
 
     		if (Input.isPressing("KeyU")) {
-    			t2.rotateZ(-Engine.delta * 100);
+    			t2.rotateZ(-d * 100);
     		}
 
     		if (Input.isPressing("KeyO")) {
-    			t2.rotateZ(Engine.delta * 100);
+    			t2.rotateZ(d * 100);
     		}
 
     		if (Input.isPressing("KeyP")) {
-    			t3.rotateZ(-Engine.delta * 100);
+    			t3.rotateZ(-d * 100);
     		}
 
     		if (Input.isPressing("BracketLeft")) {
-    			t3.rotateZ(Engine.delta * 100);
+    			t3.rotateZ(d * 100);
     		}
 
-    		t1.loopAtScreen(Input.mousePosition);
+    		// t1.loopAtScreen(Input.mousePosition);
     		$$invalidate(3, isCollision = false);
 
     		for (let e of t1.collides) {

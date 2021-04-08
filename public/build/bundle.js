@@ -1152,6 +1152,16 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
+         * 座標移動
+         * @param x X座標
+         * @param y Y座標
+         */
+        translate(x, y) {
+            this.rebuildMatrix();
+            this.matrix = this.matrix.translate(x, y);
+            this.isDirty = true;
+        }
+        /**
          * スクリーン座標X移動
          * @param x X座標
          */
@@ -1176,13 +1186,16 @@ var app = (function () {
             this.isDirty = true;
         }
         /**
-         * 座標移動
+         * スクリーン座標X移動
          * @param x X座標
-         * @param y Y座標
+         * @param y y座標
          */
-        translate(x, y) {
+        translateScreen(x, y) {
             this.rebuildMatrix();
-            this.matrix = this.matrix.translate(x, y);
+            let rad = this.getRotateScreen();
+            let vx = x * Math.cos(-rad) - y * Math.cos(-(rad + Math.PI / 2));
+            let vy = x * Math.sin(-rad) - y * Math.sin(-(rad + Math.PI / 2));
+            this.matrix = this.matrix.translate3d(vx, vy, 0);
             this.isDirty = true;
         }
         /**

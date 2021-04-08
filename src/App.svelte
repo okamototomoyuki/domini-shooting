@@ -69,7 +69,7 @@
 			t3.rotateZ(d * 100);
 		}
 
-		// t1.loopAtScreen(Input.mousePosition);
+		t1.loopAtScreen(Input.mousePosition);
 
 		isCollision = false;
 		for (let e of t1.collides) {

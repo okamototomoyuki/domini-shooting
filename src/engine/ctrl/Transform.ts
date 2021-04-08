@@ -107,12 +107,12 @@ export default class Transform {
 
     getScaleScreenX(): number {
         const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_LEFT].getPosition().multiply(-1));
-        return vec.length() / this.node.offsetWidth;
+        return vec.distance() / this.node.offsetWidth;
     }
 
     getScaleScreenY(): number {
         const vec = this.vertices[Vertex.TYPE_BOTTOM].getPosition().addVectors(this.vertices[Vertex.TYPE_TOP].getPosition().multiply(-1));
-        return vec.length() / this.node.offsetHeight;
+        return vec.distance() / this.node.offsetHeight;
     }
 
     /**
@@ -244,8 +244,8 @@ export default class Transform {
     translateScreenY(y: number) {
         this.rebuildMatrix();
         let rad = this.getRotateScreen();
-        let vx = y * Math.cos(- (rad + Math.PI / 2));
-        let vy = y * Math.sin(- (rad + Math.PI / 2));
+        let vx = - y * Math.cos(- (rad + Math.PI / 2));
+        let vy = - y * Math.sin(- (rad + Math.PI / 2));
         this.matrix = this.matrix.translate3d(vx, vy, 0);
         this.isDirty = true;
     }

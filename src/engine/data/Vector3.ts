@@ -1,7 +1,7 @@
 /**
  * XYZベクトル
  */
-export default class Vector3 {
+export default class Vector3 extends Array<number> {
 
     /**
      * コンストラクタ
@@ -9,7 +9,32 @@ export default class Vector3 {
      * @param y Y
      * @param z Z
      */
-    constructor(public x: number, public y: number, public z: number) { }
+    constructor(x: number, y: number, z: number) {
+        super();
+        this[0] = x;
+        this[1] = y;
+        this[2] = z;
+    }
+
+    get x(): number {
+        return this[0]
+    }
+    get y(): number {
+        return this[1]
+    }
+    get z(): number {
+        return this[2]
+    }
+
+    set x(v: number) {
+        this[0] = v;
+    }
+    set y(v: number) {
+        this[1] = v;
+    }
+    set z(v: number) {
+        this[2] = v;
+    }
 
     /**
      * 移動
@@ -80,7 +105,7 @@ export default class Vector3 {
      * 長さ
      * @returns 長さ
      */
-    length(): number {
+    distance(): number {
         return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2) + Math.pow(this.z, 2));
     }
 

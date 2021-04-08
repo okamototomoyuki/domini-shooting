@@ -317,7 +317,7 @@ var app = (function () {
     /**
      * XYZベクトル
      */
-    class Vector3 {
+    class Vector3 extends Array {
         /**
          * コンストラクタ
          * @param x X
@@ -325,9 +325,28 @@ var app = (function () {
          * @param z Z
          */
         constructor(x, y, z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
+            super();
+            this[0] = x;
+            this[1] = y;
+            this[2] = z;
+        }
+        get x() {
+            return this[0];
+        }
+        get y() {
+            return this[1];
+        }
+        get z() {
+            return this[2];
+        }
+        set x(v) {
+            this[0] = v;
+        }
+        set y(v) {
+            this[1] = v;
+        }
+        set z(v) {
+            this[2] = v;
         }
         /**
          * 移動
@@ -382,7 +401,7 @@ var app = (function () {
          * 長さ
          * @returns 長さ
          */
-        length() {
+        distance() {
             return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2) + Math.pow(this.z, 2));
         }
         /**
@@ -663,7 +682,7 @@ var app = (function () {
     /*
     * 矩形の頂点データ
     */
-    class VertexData {
+    class VertexData extends Array {
         /**
          * コンストラクタ
          * @param a 点1 左上
@@ -672,13 +691,35 @@ var app = (function () {
          * @param d 点4 左下
          */
         constructor(a, b, c, d) {
-            this.a = a;
-            this.b = b;
-            this.c = c;
-            this.d = d;
+            super();
+            this[0] = a;
+            this[1] = b;
+            this[2] = c;
+            this[3] = d;
         }
-        get vertices() {
-            return [this.a, this.b, this.c, this.d];
+        get a() {
+            return this[0];
+        }
+        get b() {
+            return this[1];
+        }
+        get c() {
+            return this[2];
+        }
+        get d() {
+            return this[3];
+        }
+        set a(v) {
+            this[0] = v;
+        }
+        set b(v) {
+            this[1] = v;
+        }
+        set c(v) {
+            this[2] = v;
+        }
+        set d(v) {
+            this[3] = v;
         }
     }
 
@@ -1010,11 +1051,11 @@ var app = (function () {
         }
         getScaleScreenX() {
             const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_LEFT].getPosition().multiply(-1));
-            return vec.length() / this.node.offsetWidth;
+            return vec.distance() / this.node.offsetWidth;
         }
         getScaleScreenY() {
             const vec = this.vertices[Vertex.TYPE_BOTTOM].getPosition().addVectors(this.vertices[Vertex.TYPE_TOP].getPosition().multiply(-1));
-            return vec.length() / this.node.offsetHeight;
+            return vec.distance() / this.node.offsetHeight;
         }
         /**
          * 画面に対しての頂点データ計算
@@ -1129,8 +1170,8 @@ var app = (function () {
         translateScreenY(y) {
             this.rebuildMatrix();
             let rad = this.getRotateScreen();
-            let vx = y * Math.cos(-(rad + Math.PI / 2));
-            let vy = y * Math.sin(-(rad + Math.PI / 2));
+            let vx = -y * Math.cos(-(rad + Math.PI / 2));
+            let vy = -y * Math.sin(-(rad + Math.PI / 2));
             this.matrix = this.matrix.translate3d(vx, vy, 0);
             this.isDirty = true;
         }
@@ -1245,12 +1286,12 @@ var app = (function () {
     			div1 = element("div");
     			div0 = element("div");
     			attr_dev(div0, "class", "rect svelte-5x0uuw");
-    			add_location(div0, file, 76, 2, 2104);
+    			add_location(div0, file, 76, 2, 2101);
     			attr_dev(div1, "class", "rect svelte-5x0uuw");
-    			add_location(div1, file, 75, 1, 2065);
+    			add_location(div1, file, 75, 1, 2062);
     			attr_dev(div2, "class", "rect svelte-5x0uuw");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 74, 0, 1998);
+    			add_location(div2, file, 74, 0, 1995);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1368,7 +1409,7 @@ var app = (function () {
     			t3.rotateZ(d * 100);
     		}
 
-    		// t1.loopAtScreen(Input.mousePosition);
+    		t1.loopAtScreen(Input.mousePosition);
     		$$invalidate(3, isCollision = false);
 
     		for (let e of t1.collides) {

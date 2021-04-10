@@ -1,1 +1,1 @@
-div.rect.svelte-5x0uuw{position:absolute;background-color:black;transform-origin:center;width:320px;height:256px}div.rect.collision.svelte-5x0uuw{background-color:red}
+div.svelte-tpimf0{transform:translate(var(--x, 0), var(--y, 0)) rotate(var(--r, 0)) scaleX(var(--sx, 1)) scaleY(var(--sy, 1));position:absolute;background-color:black;transform-origin:center;width:var(--w, 320px);height:var(--h, 256px)}div.collision.svelte-tpimf0{background-color:red}

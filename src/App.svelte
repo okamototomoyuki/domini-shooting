@@ -38,10 +38,10 @@
 			t1.translateScreenX(d * 100);
 		}
 		if (Input.isPressing("KeyQ")) {
-			t1.rotateZ(-d * 100);
+			t1.addRotate(-d * 100);
 		}
 		if (Input.isPressing("KeyE")) {
-			t1.rotateZ(d * 100);
+			t1.addRotate(d * 100);
 		}
 
 		if (Input.isPressing("KeyI")) {
@@ -57,19 +57,19 @@
 			t2.translateScreenX(d * 100);
 		}
 		if (Input.isPressing("KeyU")) {
-			t2.rotateZ(-d * 100);
+			t2.addRotate(-d * 100);
 		}
 		if (Input.isPressing("KeyO")) {
-			t2.rotateZ(d * 100);
+			t2.addRotate(d * 100);
 		}
 		if (Input.isPressing("KeyP")) {
-			t3.rotateZ(-d * 100);
+			t3.addRotate(-d * 100);
 		}
 		if (Input.isPressing("BracketLeft")) {
-			t3.rotateZ(d * 100);
+			t3.addRotate(d * 100);
 		}
 
-		t1.loopAtScreen(Input.mousePosition);
+		// t1.loopAtScreen(Input.mousePosition);
 
 		isCollision = false;
 		for (let e of t1.collides) {
@@ -82,19 +82,25 @@
 	};
 </script>
 
-<div class="rect" bind:this={rect} class:collision={isCollision}>
-	<div class="rect" bind:this={rect2}>
-		<div class="rect" bind:this={rect3} />
+<div
+	style="--w:320px;--h:256px;"
+	bind:this={rect}
+	class:collision={isCollision}
+>
+	<div bind:this={rect2}>
+		<div bind:this={rect3} />
 	</div>
 </div>
 
 <style lang="scss">
-	div.rect {
+	div {
+		transform: translate(var(--x, 0), var(--y, 0)) rotate(var(--r, 0))
+			scaleX(var(--sx, 1)) scaleY(var(--sy, 1));
 		position: absolute;
 		background-color: black;
 		transform-origin: center;
-		width: 320px;
-		height: 256px;
+		width: var(--w, 320px);
+		height: var(--h, 256px);
 		&.collision {
 			background-color: red;
 		}

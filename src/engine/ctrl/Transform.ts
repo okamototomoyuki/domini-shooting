@@ -1,6 +1,5 @@
 import { element, loop } from "svelte/internal";
-import Matrix from "../data/Matrix";
-import Vector3 from "../data/Vector3";
+import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
 import Engine from "../Engine";
 import Vertex from "./Vertex";
@@ -36,8 +35,15 @@ export default class Transform {
 
 
     node: HTMLElement;
-    matrix: Matrix;
     vertices: Vertex[];
+
+    #x = 0;
+    #y = 0;
+    #r = 0;
+    #sx = 1;
+    #sy = 1;
+    #w = 100;
+    #h = 100;
 
     frame = 0;
     isDirty = false;
@@ -59,71 +65,225 @@ export default class Transform {
 
     rebuildMatrix() {
         if (this.frame != Engine.currentFrame) {
-            const computedStyle = getComputedStyle(this.node, null);
-            this.matrix = Matrix.fromString(computedStyle.transform);
+            // const computedStyle = getComputedStyle(this.node, null);
+            // this.matrix = Matrix.fromString(computedStyle.transform);
+            var style = this.node.style;
+            const x = style.getPropertyValue("--x");
+            const y = style.getPropertyValue("--y");
+            const r = style.getPropertyValue("--r");
+            const sx = style.getPropertyValue("--sx");
+            const sy = style.getPropertyValue("--sy");
+            const w = style.getPropertyValue("--w");
+            const h = style.getPropertyValue("--h");
+            this.#x = x ? Number(x.replace("px", "")) : this.#x;
+            this.#y = y ? Number(y.replace("px", "")) : this.#y;
+            this.#r = r ? Number(r.replace("deg", "")) : this.#r;
+            this.#sx = sx ? Number(sx) : this.#sx;
+            this.#sy = sy ? Number(sy) : this.#sy;
+            this.#w = w ? Number(w.replace("px", "")) : this.#w;
+            this.#h = h ? Number(h.replace("px", "")) : this.#h;
             this.frame = Engine.currentFrame;
         }
     }
 
-    getWorldMatrix(): Matrix {
-        let node = this.node;
+    get x(): number {
         this.rebuildMatrix();
-        let wm = this.matrix;
-
-        node = this.parentNode;
-        while (node.nodeType === 1) {
-            let transform = Transform.getTransform(node);
-            transform.rebuildMatrix();
-            let pm = transform.matrix;
-            wm = Matrix.multiply(pm, wm);
-            node = transform.parentNode;
-        }
-        return wm;
+        return this.#x;
     }
-
-    getTranslate(): Vector3 {
+    set x(x: number) {
         this.rebuildMatrix();
-        return this.matrix.getTranslate();
+        this.#x = x;
+        this.isDirty = true;
     }
-
-    getRotate(): Vector3 {
+    get y(): number {
         this.rebuildMatrix();
-        return this.matrix.getRotate();
+        return this.#y;
     }
-
-    getScale() {
+    set y(y: number) {
         this.rebuildMatrix();
-        return this.matrix.getScale();
+        this.#y = y;
+        this.isDirty = true;
+    }
+    get r(): number {
+        this.rebuildMatrix();
+        return this.#r;
+    }
+    set r(r: number) {
+        this.rebuildMatrix();
+        this.#r = r;
+        this.isDirty = true;
+    }
+    get sx(): number {
+        this.rebuildMatrix();
+        return this.#sx;
+    }
+    set sx(sx: number) {
+        this.rebuildMatrix();
+        this.#sx = sx;
+        this.isDirty = true;
+    }
+    get sy(): number {
+        this.rebuildMatrix();
+        return this.#sy;
+    }
+    set sy(sy: number) {
+        this.rebuildMatrix();
+        this.#sy = sy;
+        this.isDirty = true;
+    }
+    get w(): number {
+        this.rebuildMatrix();
+        return this.#w;
+    }
+    set w(w: number) {
+        this.rebuildMatrix();
+        this.#w = w;
+        this.isDirty = true;
+    }
+    get h(): number {
+        this.rebuildMatrix();
+        return this.#h;
+    }
+    set h(h: number) {
+        this.rebuildMatrix();
+        this.#h = h;
+        this.isDirty = true;
+    }
+    get position(): Vector2 {
+        this.rebuildMatrix();
+        return new Vector2(this.#x, this.#y);
+    }
+    set position(v: Vector2) {
+        this.rebuildMatrix();
+        this.#x = v.x;
+        this.#y = v.y;
+        this.isDirty = true;
+    }
+    setPosition(x: number, y: number) {
+        this.rebuildMatrix();
+        this.#x = x;
+        this.#y = y;
+        this.isDirty = true;
+    }
+    get scale(): Vector2 {
+        this.rebuildMatrix();
+        return new Vector2(this.#sx, this.#sy);
+    }
+    set scale(v: Vector2) {
+        this.rebuildMatrix();
+        this.#sx = v.x;
+        this.#sy = v.y;
+        this.isDirty = true;
+    }
+    setScale(sx: number, sy: number) {
+        this.rebuildMatrix();
+        this.#sx = sx;
+        this.#sy = sy;
+        this.isDirty = true;
     }
 
-    getTranslateScreen(): Vector3 {
-        return this.vertices[Vertex.TYPE_ORIGIN].getPosition();
+    get positionScreen(): Vector2 {
+        return this.vertices[Vertex.TYPE_ORIGIN].positionScreen;
     }
 
-    getRotateScreen(): number {
-        const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+    get rotateScreen(): number {
+        const vec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
         return Math.atan2(vec.y, vec.x);
     }
 
-    getScaleScreenX(): number {
-        const vec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_LEFT].getPosition().multiply(-1));
-        return vec.distance() / this.node.offsetWidth;
+    get scaleScreenX(): number {
+        const vec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LEFT].positionScreen.multiply(-1));
+        return vec.distance / this.node.offsetWidth;
     }
 
-    getScaleScreenY(): number {
-        const vec = this.vertices[Vertex.TYPE_BOTTOM].getPosition().addVectors(this.vertices[Vertex.TYPE_TOP].getPosition().multiply(-1));
-        return vec.distance() / this.node.offsetHeight;
+    get scaleScreenY(): number {
+        const vec = this.vertices[Vertex.TYPE_BOTTOM].positionScreen.addVectors(this.vertices[Vertex.TYPE_TOP].positionScreen.multiply(-1));
+        return vec.distance / this.node.offsetHeight;
+    }
+
+    /**
+     * ローカル座標X移動
+     * @param dx X座標
+     */
+    translateX(dx: number) {
+        this.x += dx;
+    }
+
+    /**
+     * ローカル座標Y移動
+     * @param dy Y座標
+     */
+    translateY(dy: number) {
+        this.y += this.y + dy;
+    }
+
+    /**
+     * 座標移動
+     * @param dx X座標
+     * @param dy Y座標
+     */
+    translate(dx: number, dy: number) {
+        this.setPosition(this.x + dx, this.y + dy);
+    }
+
+    /**
+     * 回転
+     * @param angle ラジアン
+     */
+    addRotate(angle: number) {
+        this.r = this.r + angle;
+    }
+
+    degToRad(d: number): number {
+        return d * (Math.PI / 180);
+    }
+
+    /**
+     * スクリーン座標X移動
+     * @param x X座標
+     */
+    translateScreenX(x: number) {
+        this.rebuildMatrix();
+        let rad = this.degToRad(this.rotateScreen);
+        this.x += x * Math.cos(-rad) * this.scaleScreenX;
+        this.y += x * Math.sin(-rad) * this.scaleScreenY;
+        this.isDirty = true;
+    }
+
+    /**
+     * スクリーン座標Y移動
+     * @param y Y座標
+     */
+    translateScreenY(y: number) {
+        this.rebuildMatrix();
+        let rad = this.degToRad(this.rotateScreen);
+        this.x += - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
+        this.y += - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
+        this.isDirty = true;
+    }
+
+    /**
+     * スクリーン座標X移動
+     * @param x X座標
+     * @param y y座標
+     */
+    translateScreen(x: number, y: number) {
+        this.rebuildMatrix();
+        let rad = this.degToRad(this.rotateScreen);
+        this.x += x * Math.cos(-rad) - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
+        this.y += x * Math.sin(-rad) - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
+        this.isDirty = true;
     }
 
     /**
      * 画面に対しての頂点データ計算
      * @returns 頂点データ
      */
-    computeVertex2D(): VertexData {
-        return new VertexData(this.vertices[Vertex.TYPE_LT].getPosition(),
-            this.vertices[Vertex.TYPE_RT].getPosition(),
-            this.vertices[Vertex.TYPE_RB].getPosition(),
-            this.vertices[Vertex.TYPE_LB].getPosition());
+    computeVertexScreen(): VertexData {
+        return new VertexData(this.vertices[Vertex.TYPE_LT].positionScreen,
+            this.vertices[Vertex.TYPE_RT].positionScreen,
+            this.vertices[Vertex.TYPE_RB].positionScreen,
+            this.vertices[Vertex.TYPE_LB].positionScreen);
     };
 
     /**
@@ -138,32 +298,32 @@ export default class Transform {
      */
     get collides(): Transform[] {
 
-        const selfVs = this.computeVertex2D();
+        const selfVs = this.computeVertexScreen();
         const oVecs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
 
         const collides = new Array<Transform>();
         for (const otherT of Transform.nodeToIns.values()) {
             if (otherT != this) {
-                const otherVs = otherT.computeVertex2D();
+                const otherVs = otherT.computeVertexScreen();
 
                 // 線分が交わっているか
                 let isCollide = false;
-                if (Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
-                    || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
-                    || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
-                    || Vector3.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
-                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
-                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
-                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
-                    || Vector3.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
-                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
-                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
-                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
-                    || Vector3.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
-                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
-                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
-                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
-                    || Vector3.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
+                if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
+                    || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
+                    || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
+                    || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
+                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
+                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
+                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
+                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
+                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
+                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
+                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
+                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
+                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
+                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
+                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
+                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
 
                     isCollide = true;
                 } else {
@@ -174,14 +334,14 @@ export default class Transform {
                         const otherVC = otherVs.c.addVectors(oVec);
                         const otherVD = otherVs.d.addVectors(oVec);
 
-                        const crossAB = Vector3.cross(otherVA, otherVB);
-                        const crossBC = Vector3.cross(otherVB, otherVC);
-                        const crossCD = Vector3.cross(otherVC, otherVD);
-                        const crossDA = Vector3.cross(otherVD, otherVA);
-                        if (crossAB.z * crossBC.z > 0
-                            && crossBC.z * crossCD.z > 0
-                            && crossCD.z * crossDA.z > 0
-                            && crossDA.z * crossAB.z > 0) {
+                        const crossAB = Vector2.cross(otherVA, otherVB);
+                        const crossBC = Vector2.cross(otherVB, otherVC);
+                        const crossCD = Vector2.cross(otherVC, otherVD);
+                        const crossDA = Vector2.cross(otherVD, otherVA);
+                        if (crossAB * crossBC > 0
+                            && crossBC * crossCD > 0
+                            && crossCD * crossDA > 0
+                            && crossDA * crossAB > 0) {
 
                             isCollide = true;
                             break;
@@ -197,165 +357,12 @@ export default class Transform {
         return collides;
     }
 
-    setTranslate(v: Vector3) {
-        this.rebuildMatrix();
-        this.matrix.setTranslate(v);
-        this.isDirty = true;
-    }
-
-
-    /**
-     * ローカル座標X移動
-     * @param x X座標
-     */
-    translateX(x: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.translateX(x);
-        this.isDirty = true;
-    }
-
-    /**
-     * ローカル座標Y移動
-     * @param y Y座標
-     */
-    translateY(y: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.translateY(y);
-        this.isDirty = true;
-    }
-
-    /**
-     * 座標移動
-     * @param x X座標
-     * @param y Y座標
-     */
-    translate(x: number, y: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.translate(x, y)
-        this.isDirty = true;
-    }
-
-    /**
-     * スクリーン座標X移動
-     * @param x X座標
-     */
-    translateScreenX(x: number) {
-        this.rebuildMatrix();
-        let rad = this.getRotateScreen();
-        let vx = x * Math.cos(-rad);
-        let vy = x * Math.sin(-rad);
-        this.matrix = this.matrix.translate3d(vx, vy, 0);
-        this.isDirty = true;
-    }
-
-    /**
-     * スクリーン座標Y移動
-     * @param y Y座標
-     */
-    translateScreenY(y: number) {
-        this.rebuildMatrix();
-        let rad = this.getRotateScreen();
-        let vx = - y * Math.cos(- (rad + Math.PI / 2));
-        let vy = - y * Math.sin(- (rad + Math.PI / 2));
-        this.matrix = this.matrix.translate3d(vx, vy, 0);
-        this.isDirty = true;
-    }
-
-    /**
-     * スクリーン座標X移動
-     * @param x X座標
-     * @param y y座標
-     */
-    translateScreen(x: number, y: number) {
-        this.rebuildMatrix();
-        let rad = this.getRotateScreen();
-        let vx = x * Math.cos(-rad) - y * Math.cos(- (rad + Math.PI / 2));
-        let vy = x * Math.sin(-rad) - y * Math.sin(- (rad + Math.PI / 2));
-        this.matrix = this.matrix.translate3d(vx, vy, 0);
-        this.isDirty = true;
-    }
-
-    /**
-     * X回転
-     * @param angle ラジアン
-     */
-    rotateX(angle: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.rotateX(angle);
-        this.isDirty = true;
-    }
-
-    /**
-     * Y回転
-     * @param angle ラジアン
-     */
-    rotateY(angle: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.rotateY(angle);
-        this.isDirty = true;
-    }
-
-    /**
-     * Z回転
-     * @param angle ラジアン
-     */
-    rotateZ(angle: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.rotateZ(angle);
-        this.isDirty = true;
-    }
-
-    /**
-     * 拡大X
-     * @param x 増加値
-     */
-    scaleX(x: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.scaleX(x);
-        this.isDirty = true;
-    }
-
-    /**
-     * 拡大Y
-     * @param y 増加値
-     */
-    scaleY(y: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.scaleY(y);
-        this.isDirty = true;
-    }
-
-    /**
-     * 拡大Z
-     * @param z 増加値
-     */
-    scaleZ(z: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.scaleZ(z);
-        this.isDirty = true;
-    }
-
-    /**
-     * 拡大
-     * @param {number} x 増加値X
-     * @param {number} y 増加値Y
-     */
-    scale(x: number, y: number) {
-        this.rebuildMatrix();
-        this.matrix = this.matrix.scale(x, y);
-        this.isDirty = true;
-    }
-
-    /**
-     * スクリーン座標の点を見る
-     * @param screenPos スクリーン座標
-     */
-    loopAtScreen(screenPos: Vector3) {
-        const targetVec = screenPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+    loopAtScreen(targetPos: Vector2) {
+        const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
         const targetRad = Math.atan2(targetVec.y, targetVec.x);
-        const baseVec = this.vertices[Vertex.TYPE_RIGHT].getPosition().addVectors(this.vertices[Vertex.TYPE_ORIGIN].getPosition().multiply(-1));
+        const baseVec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
-        this.rotateZ((targetRad - baseRad) / (Math.PI / 180));
+        this.addRotate((targetRad - baseRad) / (Math.PI / 180));
     }
 
     /**
@@ -363,7 +370,15 @@ export default class Transform {
      */
     patch() {
         if (this.isDirty) {
-            this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
+            // this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
+            var style = this.node.style;
+            style.setProperty("--x", `${this.#x}px`);
+            style.setProperty("--y", `${this.#y}px`);
+            style.setProperty("--r", `${this.#r}deg`);
+            style.setProperty("--sx", String(this.#sx));
+            style.setProperty("--sy", String(this.#sy));
+            style.setProperty("--w", `${this.#w}px`);
+            style.setProperty("--h", `${this.#h}px`);
         }
         this.isDirty = false;
     }

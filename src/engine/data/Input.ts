@@ -1,6 +1,6 @@
 import Transform from "../ctrl/Transform";
 import Engine from "../Engine";
-import Vector3 from "./Vector3";
+import Vector2 from "./Vector2";
 
 /**
  * 入力
@@ -11,7 +11,7 @@ export default class Input {
     static _MOUSE_MIDDLE = "_MOUSE_MIDDLE";
 
     static map = new Map<string, number>();
-    static mousePosition = new Vector3(0, 0, 0);
+    static mousePosition = new Vector2(0, 0);
     static wheelFrame = 0
     static wheel = 0
 
@@ -49,7 +49,7 @@ export default class Input {
     }
 
     static _onMouseMove(e: MouseEvent) {
-        Input.mousePosition = new Vector3(e.clientX, e.clientY, 0);
+        Input.mousePosition = new Vector2(e.clientX, e.clientY);
     }
 
     static _onMouseDown(e: MouseEvent) {

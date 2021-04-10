@@ -1,4 +1,4 @@
-import Vector3 from "../data/Vector3";
+import Vector2 from "../data/Vector2";
 import type Transform from "./Transform";
 
 export default class Vertex {
@@ -29,8 +29,8 @@ export default class Vertex {
         node.style.position = "absolute";
         node.style.transformOrigin = "center";
         node.style.opacity = "0";
-        node.style.width = "1px";
-        node.style.height = "1px";
+        node.style.width = "0px";
+        node.style.height = "0px";
 
         this.rebuild();
     }
@@ -68,8 +68,8 @@ export default class Vertex {
         }
     }
 
-    getPosition(): Vector3 {
+    get positionScreen(): Vector2 {
         let bound = this.node.getBoundingClientRect();
-        return new Vector3(bound.x, bound.y, 0);
+        return new Vector2(bound.x, bound.y);
     }
 }

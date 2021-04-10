@@ -3,15 +3,10 @@ import type Transform from "./Transform";
 
 export default class Vertex {
 
-    static TYPE_ORIGIN = 0;
-    static TYPE_LT = 1;
-    static TYPE_RT = 2;
-    static TYPE_RB = 3;
-    static TYPE_LB = 4;
-    static TYPE_TOP = 5;
-    static TYPE_RIGHT = 6;
-    static TYPE_BOTTOM = 7;
-    static TYPE_LEFT = 8;
+    static TYPE_LT = 0;
+    static TYPE_RT = 1;
+    static TYPE_RB = 2;
+    static TYPE_LB = 3;
 
     static nodeToIns = new Map<HTMLDivElement, Vertex>();
 
@@ -27,8 +22,6 @@ export default class Vertex {
         this.type = type;
         this.trans.node.appendChild(this.node);
         node.style.position = "absolute";
-        node.style.transformOrigin = "center";
-        node.style.opacity = "0";
         node.style.width = "0px";
         node.style.height = "0px";
 
@@ -36,34 +29,19 @@ export default class Vertex {
     }
 
     rebuild() {
+        var style = getComputedStyle(this.trans.node)
         switch (this.type) {
-            case Vertex.TYPE_ORIGIN:
-                this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, ${this.trans.node.offsetHeight / 2}px)`;
-                break;
             case Vertex.TYPE_LT:
                 this.node.style.transform = "translate(0px, 0px)";
                 break;
             case Vertex.TYPE_RT:
-                this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, 0px)`;
+                this.node.style.transform = `translate(${style.width}, 0px)`;
                 break;
             case Vertex.TYPE_RB:
-                this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, ${this.trans.node.offsetHeight}px)`;
+                this.node.style.transform = `translate(${style.width}, ${style.height})`;
                 break;
             case Vertex.TYPE_LB:
-                this.node.style.transform = `translate(0px, ${this.trans.node.offsetHeight}px)`;
-                break;
-
-            case Vertex.TYPE_TOP:
-                this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, 0px)`;
-                break;
-            case Vertex.TYPE_RIGHT:
-                this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, ${this.trans.node.offsetHeight / 2}px)`;
-                break;
-            case Vertex.TYPE_BOTTOM:
-                this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, ${this.trans.node.offsetHeight}px)`;
-                break;
-            case Vertex.TYPE_LEFT:
-                this.node.style.transform = `translate(0px, ${this.trans.node.offsetHeight / 2}px)`;
+                this.node.style.transform = `translate(0px, ${style.height})`;
                 break;
         }
     }

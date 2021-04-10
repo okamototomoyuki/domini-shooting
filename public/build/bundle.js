@@ -624,40 +624,24 @@ var app = (function () {
             this.type = type;
             this.trans.node.appendChild(this.node);
             node.style.position = "absolute";
-            node.style.transformOrigin = "center";
-            node.style.opacity = "0";
             node.style.width = "0px";
             node.style.height = "0px";
             this.rebuild();
         }
         rebuild() {
+            var style = getComputedStyle(this.trans.node);
             switch (this.type) {
-                case Vertex.TYPE_ORIGIN:
-                    this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, ${this.trans.node.offsetHeight / 2}px)`;
-                    break;
                 case Vertex.TYPE_LT:
                     this.node.style.transform = "translate(0px, 0px)";
                     break;
                 case Vertex.TYPE_RT:
-                    this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, 0px)`;
+                    this.node.style.transform = `translate(${style.width}, 0px)`;
                     break;
                 case Vertex.TYPE_RB:
-                    this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, ${this.trans.node.offsetHeight}px)`;
+                    this.node.style.transform = `translate(${style.width}, ${style.height})`;
                     break;
                 case Vertex.TYPE_LB:
-                    this.node.style.transform = `translate(0px, ${this.trans.node.offsetHeight}px)`;
-                    break;
-                case Vertex.TYPE_TOP:
-                    this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, 0px)`;
-                    break;
-                case Vertex.TYPE_RIGHT:
-                    this.node.style.transform = `translate(${this.trans.node.offsetWidth}px, ${this.trans.node.offsetHeight / 2}px)`;
-                    break;
-                case Vertex.TYPE_BOTTOM:
-                    this.node.style.transform = `translate(${this.trans.node.offsetWidth / 2}px, ${this.trans.node.offsetHeight}px)`;
-                    break;
-                case Vertex.TYPE_LEFT:
-                    this.node.style.transform = `translate(0px, ${this.trans.node.offsetHeight / 2}px)`;
+                    this.node.style.transform = `translate(0px, ${style.height})`;
                     break;
             }
         }
@@ -666,15 +650,10 @@ var app = (function () {
             return new Vector2(bound.x, bound.y);
         }
     }
-    Vertex.TYPE_ORIGIN = 0;
-    Vertex.TYPE_LT = 1;
-    Vertex.TYPE_RT = 2;
-    Vertex.TYPE_RB = 3;
-    Vertex.TYPE_LB = 4;
-    Vertex.TYPE_TOP = 5;
-    Vertex.TYPE_RIGHT = 6;
-    Vertex.TYPE_BOTTOM = 7;
-    Vertex.TYPE_LEFT = 8;
+    Vertex.TYPE_LT = 0;
+    Vertex.TYPE_RT = 1;
+    Vertex.TYPE_RB = 2;
+    Vertex.TYPE_LB = 3;
     Vertex.nodeToIns = new Map();
 
     var _x, _y, _r, _sx, _sy, _w, _h;
@@ -692,17 +671,13 @@ var app = (function () {
             _h.set(this, 100);
             this.frame = 0;
             this.isDirty = false;
+            this.isDirtyRect = true; // true:矩形要素の w または h が更新された。頂点を再計算するため ※ 初回は必ず更新
             this.node = node;
             this.vertices = [
-                new Vertex(this, Vertex.TYPE_ORIGIN),
                 new Vertex(this, Vertex.TYPE_LT),
                 new Vertex(this, Vertex.TYPE_RT),
                 new Vertex(this, Vertex.TYPE_RB),
                 new Vertex(this, Vertex.TYPE_LB),
-                new Vertex(this, Vertex.TYPE_TOP),
-                new Vertex(this, Vertex.TYPE_RIGHT),
-                new Vertex(this, Vertex.TYPE_BOTTOM),
-                new Vertex(this, Vertex.TYPE_LEFT),
             ];
         }
         static initialize() {
@@ -800,6 +775,7 @@ var app = (function () {
             this.rebuildMatrix();
             __classPrivateFieldSet(this, _w, w);
             this.isDirty = true;
+            this.isDirtyRect = true;
         }
         get h() {
             this.rebuildMatrix();
@@ -809,6 +785,7 @@ var app = (function () {
             this.rebuildMatrix();
             __classPrivateFieldSet(this, _h, h);
             this.isDirty = true;
+            this.isDirtyRect = true;
         }
         get position() {
             this.rebuildMatrix();
@@ -842,19 +819,34 @@ var app = (function () {
             __classPrivateFieldSet(this, _sy, sy);
             this.isDirty = true;
         }
+        get origin() {
+            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LT].positionScreen).multiply(0.5);
+        }
+        get top() {
+            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RT].positionScreen).multiply(0.5);
+        }
+        get bottom() {
+            return this.vertices[Vertex.TYPE_LB].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+        }
+        get left() {
+            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LB].positionScreen).multiply(0.5);
+        }
+        get right() {
+            return this.vertices[Vertex.TYPE_RT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+        }
         get positionScreen() {
-            return this.vertices[Vertex.TYPE_ORIGIN].positionScreen;
+            return this.origin;
         }
         get rotateScreen() {
-            const vec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
+            const vec = this.right.addVectors(this.origin.multiply(-1));
             return Math.atan2(vec.y, vec.x);
         }
         get scaleScreenX() {
-            const vec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LEFT].positionScreen.multiply(-1));
+            const vec = this.right.addVectors(this.left.multiply(-1));
             return vec.distance / this.node.offsetWidth;
         }
         get scaleScreenY() {
-            const vec = this.vertices[Vertex.TYPE_BOTTOM].positionScreen.addVectors(this.vertices[Vertex.TYPE_TOP].positionScreen.multiply(-1));
+            const vec = this.bottom.addVectors(this.top.multiply(-1));
             return vec.distance / this.node.offsetHeight;
         }
         /**
@@ -942,11 +934,12 @@ var app = (function () {
          */
         get collides() {
             const selfVs = this.computeVertexScreen();
-            const oVecs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
+            const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
             const collides = new Array();
             for (const otherT of Transform.nodeToIns.values()) {
                 if (otherT != this) {
                     const otherVs = otherT.computeVertexScreen();
+                    const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
                     // 線分が交わっているか
                     let isCollide = false;
                     if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
@@ -967,17 +960,37 @@ var app = (function () {
                         || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
                         isCollide = true;
                     }
-                    else {
-                        // 点が矩形内に入っているか
-                        for (const oVec of oVecs) {
-                            const otherVA = otherVs.a.addVectors(oVec);
-                            const otherVB = otherVs.b.addVectors(oVec);
-                            const otherVC = otherVs.c.addVectors(oVec);
-                            const otherVD = otherVs.d.addVectors(oVec);
+                    if (isCollide == false) {
+                        // 自身が相手の矩形内に入っているか
+                        for (const subSV of subSVs) {
+                            const otherVA = otherVs.a.addVectors(subSV);
+                            const otherVB = otherVs.b.addVectors(subSV);
+                            const otherVC = otherVs.c.addVectors(subSV);
+                            const otherVD = otherVs.d.addVectors(subSV);
                             const crossAB = Vector2.cross(otherVA, otherVB);
                             const crossBC = Vector2.cross(otherVB, otherVC);
                             const crossCD = Vector2.cross(otherVC, otherVD);
                             const crossDA = Vector2.cross(otherVD, otherVA);
+                            if (crossAB * crossBC > 0
+                                && crossBC * crossCD > 0
+                                && crossCD * crossDA > 0
+                                && crossDA * crossAB > 0) {
+                                isCollide = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isCollide == false) {
+                        // 相手が自身の矩形内に入っているか
+                        for (const subOV of subOVs) {
+                            const selfVA = selfVs.a.addVectors(subOV);
+                            const selfVB = selfVs.b.addVectors(subOV);
+                            const selfVC = selfVs.c.addVectors(subOV);
+                            const selfVD = selfVs.d.addVectors(subOV);
+                            const crossAB = Vector2.cross(selfVA, selfVB);
+                            const crossBC = Vector2.cross(selfVB, selfVC);
+                            const crossCD = Vector2.cross(selfVC, selfVD);
+                            const crossDA = Vector2.cross(selfVD, selfVA);
                             if (crossAB * crossBC > 0
                                 && crossBC * crossCD > 0
                                 && crossCD * crossDA > 0
@@ -995,9 +1008,9 @@ var app = (function () {
             return collides;
         }
         loopAtScreen(targetPos) {
-            const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
+            const targetVec = targetPos.addVectors(this.origin.multiply(-1));
             const targetRad = Math.atan2(targetVec.y, targetVec.x);
-            const baseVec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
+            const baseVec = this.right.addVectors(this.origin.multiply(-1));
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
             this.addRotate((targetRad - baseRad) / (Math.PI / 180));
         }
@@ -1015,8 +1028,14 @@ var app = (function () {
                 style.setProperty("--sy", String(__classPrivateFieldGet(this, _sy)));
                 style.setProperty("--w", `${__classPrivateFieldGet(this, _w)}px`);
                 style.setProperty("--h", `${__classPrivateFieldGet(this, _h)}px`);
+                if (this.isDirtyRect) {
+                    for (const e of this.vertices) {
+                        e.rebuild();
+                    }
+                }
             }
             this.isDirty = false;
+            this.isDirtyRect = false;
         }
     }
     _x = new WeakMap(), _y = new WeakMap(), _r = new WeakMap(), _sx = new WeakMap(), _sy = new WeakMap(), _w = new WeakMap(), _h = new WeakMap();
@@ -1036,14 +1055,14 @@ var app = (function () {
     			div1 = element("div");
     			div0 = element("div");
     			attr_dev(div0, "class", "svelte-tpimf0");
-    			add_location(div0, file, 80, 2, 2123);
+    			add_location(div0, file, 80, 2, 2120);
     			attr_dev(div1, "class", "svelte-tpimf0");
-    			add_location(div1, file, 79, 1, 2097);
+    			add_location(div1, file, 79, 1, 2094);
     			set_style(div2, "--w", "320px");
     			set_style(div2, "--h", "256px");
     			attr_dev(div2, "class", "svelte-tpimf0");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 74, 0, 2010);
+    			add_location(div2, file, 74, 0, 2007);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1161,7 +1180,7 @@ var app = (function () {
     			t3.addRotate(d * 100);
     		}
 
-    		// t1.loopAtScreen(Input.mousePosition);
+    		t2.loopAtScreen(Input.mousePosition);
     		$$invalidate(3, isCollision = false);
 
     		for (let e of t1.collides) {

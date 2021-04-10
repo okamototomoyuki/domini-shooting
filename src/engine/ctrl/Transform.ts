@@ -47,19 +47,15 @@ export default class Transform {
 
     frame = 0;
     isDirty = false;
+    isDirtyRect = true; // true:矩形要素の w または h が更新された。頂点を再計算するため ※ 初回は必ず更新
 
     constructor(node: HTMLElement) {
         this.node = node;
         this.vertices = [
-            new Vertex(this, Vertex.TYPE_ORIGIN),
             new Vertex(this, Vertex.TYPE_LT),
             new Vertex(this, Vertex.TYPE_RT),
             new Vertex(this, Vertex.TYPE_RB),
             new Vertex(this, Vertex.TYPE_LB),
-            new Vertex(this, Vertex.TYPE_TOP),
-            new Vertex(this, Vertex.TYPE_RIGHT),
-            new Vertex(this, Vertex.TYPE_BOTTOM),
-            new Vertex(this, Vertex.TYPE_LEFT),
         ];
     }
 
@@ -139,6 +135,7 @@ export default class Transform {
         this.rebuildMatrix();
         this.#w = w;
         this.isDirty = true;
+        this.isDirtyRect = true;
     }
     get h(): number {
         this.rebuildMatrix();
@@ -148,6 +145,7 @@ export default class Transform {
         this.rebuildMatrix();
         this.#h = h;
         this.isDirty = true;
+        this.isDirtyRect = true;
     }
     get position(): Vector2 {
         this.rebuildMatrix();
@@ -182,22 +180,38 @@ export default class Transform {
         this.isDirty = true;
     }
 
+    get origin(): Vector2 {
+        return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LT].positionScreen).multiply(0.5);
+    }
+    get top(): Vector2 {
+        return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RT].positionScreen).multiply(0.5);
+    }
+    get bottom(): Vector2 {
+        return this.vertices[Vertex.TYPE_LB].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+    }
+    get left(): Vector2 {
+        return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LB].positionScreen).multiply(0.5);
+    }
+    get right(): Vector2 {
+        return this.vertices[Vertex.TYPE_RT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+    }
+
     get positionScreen(): Vector2 {
-        return this.vertices[Vertex.TYPE_ORIGIN].positionScreen;
+        return this.origin;
     }
 
     get rotateScreen(): number {
-        const vec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
+        const vec = this.right.addVectors(this.origin.multiply(-1));
         return Math.atan2(vec.y, vec.x);
     }
 
     get scaleScreenX(): number {
-        const vec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LEFT].positionScreen.multiply(-1));
+        const vec = this.right.addVectors(this.left.multiply(-1));
         return vec.distance / this.node.offsetWidth;
     }
 
     get scaleScreenY(): number {
-        const vec = this.vertices[Vertex.TYPE_BOTTOM].positionScreen.addVectors(this.vertices[Vertex.TYPE_TOP].positionScreen.multiply(-1));
+        const vec = this.bottom.addVectors(this.top.multiply(-1));
         return vec.distance / this.node.offsetHeight;
     }
 
@@ -299,12 +313,13 @@ export default class Transform {
     get collides(): Transform[] {
 
         const selfVs = this.computeVertexScreen();
-        const oVecs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
+        const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
 
         const collides = new Array<Transform>();
         for (const otherT of Transform.nodeToIns.values()) {
             if (otherT != this) {
                 const otherVs = otherT.computeVertexScreen();
+                const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
 
                 // 線分が交わっているか
                 let isCollide = false;
@@ -326,18 +341,46 @@ export default class Transform {
                     || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
 
                     isCollide = true;
-                } else {
-                    // 点が矩形内に入っているか
-                    for (const oVec of oVecs) {
-                        const otherVA = otherVs.a.addVectors(oVec);
-                        const otherVB = otherVs.b.addVectors(oVec);
-                        const otherVC = otherVs.c.addVectors(oVec);
-                        const otherVD = otherVs.d.addVectors(oVec);
+                }
+
+                if (isCollide == false) {
+                    // 自身が相手の矩形内に入っているか
+                    for (const subSV of subSVs) {
+                        const otherVA = otherVs.a.addVectors(subSV);
+                        const otherVB = otherVs.b.addVectors(subSV);
+                        const otherVC = otherVs.c.addVectors(subSV);
+                        const otherVD = otherVs.d.addVectors(subSV);
 
                         const crossAB = Vector2.cross(otherVA, otherVB);
                         const crossBC = Vector2.cross(otherVB, otherVC);
                         const crossCD = Vector2.cross(otherVC, otherVD);
                         const crossDA = Vector2.cross(otherVD, otherVA);
+
+                        if (crossAB * crossBC > 0
+                            && crossBC * crossCD > 0
+                            && crossCD * crossDA > 0
+                            && crossDA * crossAB > 0) {
+
+                            isCollide = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isCollide == false) {
+
+                    // 相手が自身の矩形内に入っているか
+                    for (const subOV of subOVs) {
+                        const selfVA = selfVs.a.addVectors(subOV);
+                        const selfVB = selfVs.b.addVectors(subOV);
+                        const selfVC = selfVs.c.addVectors(subOV);
+                        const selfVD = selfVs.d.addVectors(subOV);
+
+                        const crossAB = Vector2.cross(selfVA, selfVB);
+                        const crossBC = Vector2.cross(selfVB, selfVC);
+                        const crossCD = Vector2.cross(selfVC, selfVD);
+                        const crossDA = Vector2.cross(selfVD, selfVA);
+
                         if (crossAB * crossBC > 0
                             && crossBC * crossCD > 0
                             && crossCD * crossDA > 0
@@ -358,9 +401,9 @@ export default class Transform {
     }
 
     loopAtScreen(targetPos: Vector2) {
-        const targetVec = targetPos.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
+        const targetVec = targetPos.addVectors(this.origin.multiply(-1));
         const targetRad = Math.atan2(targetVec.y, targetVec.x);
-        const baseVec = this.vertices[Vertex.TYPE_RIGHT].positionScreen.addVectors(this.vertices[Vertex.TYPE_ORIGIN].positionScreen.multiply(-1));
+        const baseVec = this.right.addVectors(this.origin.multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
         this.addRotate((targetRad - baseRad) / (Math.PI / 180));
     }
@@ -379,7 +422,13 @@ export default class Transform {
             style.setProperty("--sy", String(this.#sy));
             style.setProperty("--w", `${this.#w}px`);
             style.setProperty("--h", `${this.#h}px`);
+            if (this.isDirtyRect) {
+                for (const e of this.vertices) {
+                    e.rebuild();
+                }
+            }
         }
         this.isDirty = false;
+        this.isDirtyRect = false;
     }
 }

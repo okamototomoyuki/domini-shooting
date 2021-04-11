@@ -317,36 +317,6 @@ var app = (function () {
         $inject_state() { }
     }
 
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-
-    function __classPrivateFieldGet(receiver, privateMap) {
-        if (!privateMap.has(receiver)) {
-            throw new TypeError("attempted to get private field on non-instance");
-        }
-        return privateMap.get(receiver);
-    }
-
-    function __classPrivateFieldSet(receiver, privateMap, value) {
-        if (!privateMap.has(receiver)) {
-            throw new TypeError("attempted to set private field on non-instance");
-        }
-        privateMap.set(receiver, value);
-        return value;
-    }
-
     /**
      * XYベクトル
      */
@@ -599,7 +569,6 @@ var app = (function () {
     class Engine {
         static start() {
             Input.initialize();
-            Transform.initialize();
             this.loop();
         }
         static loop() {
@@ -608,7 +577,6 @@ var app = (function () {
             Engine.delta = (now - Engine.prevDate) / 1000;
             Engine.prevDate = now;
             Input.update();
-            Transform.update();
             requestAnimationFrame(Engine.loop);
         }
     }
@@ -626,22 +594,19 @@ var app = (function () {
             node.style.position = "absolute";
             node.style.width = "0px";
             node.style.height = "0px";
-            this.rebuild();
-        }
-        rebuild() {
-            var style = getComputedStyle(this.trans.node);
+            const style = this.node.style;
             switch (this.type) {
                 case Vertex.TYPE_LT:
-                    this.node.style.transform = "translate(0px, 0px)";
                     break;
                 case Vertex.TYPE_RT:
-                    this.node.style.transform = `translate(${style.width}, 0px)`;
+                    style.left = "100%";
                     break;
                 case Vertex.TYPE_RB:
-                    this.node.style.transform = `translate(${style.width}, ${style.height})`;
+                    style.top = "100%";
+                    style.left = "100%";
                     break;
                 case Vertex.TYPE_LB:
-                    this.node.style.transform = `translate(0px, ${style.height})`;
+                    style.top = "100%";
                     break;
             }
         }
@@ -656,22 +621,11 @@ var app = (function () {
     Vertex.TYPE_LB = 3;
     Vertex.nodeToIns = new Map();
 
-    var _x, _y, _r, _sx, _sy, _w, _h;
     /**
      * 矩形の Transform
      */
     class Transform {
         constructor(node) {
-            _x.set(this, 0);
-            _y.set(this, 0);
-            _r.set(this, 0);
-            _sx.set(this, 1);
-            _sy.set(this, 1);
-            _w.set(this, 100);
-            _h.set(this, 100);
-            this.frame = 0;
-            this.isDirty = false;
-            this.isDirtyRect = true; // true:矩形要素の w または h が更新された。頂点を再計算するため ※ 初回は必ず更新
             this.node = node;
             this.vertices = [
                 new Vertex(this, Vertex.TYPE_LT),
@@ -679,17 +633,29 @@ var app = (function () {
                 new Vertex(this, Vertex.TYPE_RB),
                 new Vertex(this, Vertex.TYPE_LB),
             ];
-        }
-        static initialize() {
-            this.update();
-        }
-        static update() {
-            for (const e of Transform.nodeToIns.values()) {
-                e.patch();
+            const style = this.node.style;
+            const computeStyle = getComputedStyle(this.node, null);
+            if (style.getPropertyValue("--x") == "") {
+                this.x = 0;
             }
+            if (style.getPropertyValue("--y") == "") {
+                this.y = 0;
+            }
+            if (style.getPropertyValue("--r") == "") {
+                this.r = 0;
+            }
+            if (style.getPropertyValue("--sx") == "") {
+                this.sx = 1;
+            }
+            if (style.getPropertyValue("--sy") == "") {
+                this.sy = 1;
+            }
+            const w = style.getPropertyValue("--w").replace("px", "");
+            this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
+            const h = style.getPropertyValue("--h").replace("px", "");
+            this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
         }
         static getTransform(node) {
-            this.initialize();
             let t = Transform.nodeToIns.get(node);
             if (t != null) {
                 return t;
@@ -700,124 +666,68 @@ var app = (function () {
                 return t;
             }
         }
-        rebuildMatrix() {
-            if (this.frame != Engine.currentFrame) {
-                // const computedStyle = getComputedStyle(this.node, null);
-                // this.matrix = Matrix.fromString(computedStyle.transform);
-                var style = this.node.style;
-                const x = style.getPropertyValue("--x");
-                const y = style.getPropertyValue("--y");
-                const r = style.getPropertyValue("--r");
-                const sx = style.getPropertyValue("--sx");
-                const sy = style.getPropertyValue("--sy");
-                const w = style.getPropertyValue("--w");
-                const h = style.getPropertyValue("--h");
-                __classPrivateFieldSet(this, _x, x ? Number(x.replace("px", "")) : __classPrivateFieldGet(this, _x));
-                __classPrivateFieldSet(this, _y, y ? Number(y.replace("px", "")) : __classPrivateFieldGet(this, _y));
-                __classPrivateFieldSet(this, _r, r ? Number(r.replace("deg", "")) : __classPrivateFieldGet(this, _r));
-                __classPrivateFieldSet(this, _sx, sx ? Number(sx) : __classPrivateFieldGet(this, _sx));
-                __classPrivateFieldSet(this, _sy, sy ? Number(sy) : __classPrivateFieldGet(this, _sy));
-                __classPrivateFieldSet(this, _w, w ? Number(w.replace("px", "")) : __classPrivateFieldGet(this, _w));
-                __classPrivateFieldSet(this, _h, h ? Number(h.replace("px", "")) : __classPrivateFieldGet(this, _h));
-                this.frame = Engine.currentFrame;
-            }
-        }
         get x() {
-            this.rebuildMatrix();
-            return __classPrivateFieldGet(this, _x);
+            const x = this.node.style.getPropertyValue("--x");
+            return x ? Number(x.replace("px", "")) : 0;
         }
         set x(x) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _x, x);
-            this.isDirty = true;
+            this.node.style.setProperty("--x", `${x}px`);
         }
         get y() {
-            this.rebuildMatrix();
-            return __classPrivateFieldGet(this, _y);
+            const y = this.node.style.getPropertyValue("--y");
+            return y ? Number(y.replace("px", "")) : 0;
         }
         set y(y) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _y, y);
-            this.isDirty = true;
+            this.node.style.setProperty("--y", `${y}px`);
         }
         get r() {
-            this.rebuildMatrix();
-            return __classPrivateFieldGet(this, _r);
+            const r = this.node.style.getPropertyValue("--r");
+            return r ? Number(r.replace("deg", "")) : 0;
         }
         set r(r) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _r, r);
-            this.isDirty = true;
+            this.node.style.setProperty("--r", `${r}deg`);
         }
         get sx() {
-            this.rebuildMatrix();
-            return __classPrivateFieldGet(this, _sx);
+            const sx = this.node.style.getPropertyValue("--sx");
+            return sx ? Number(sx) : 1;
         }
         set sx(sx) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _sx, sx);
-            this.isDirty = true;
+            this.node.style.setProperty("--sx", `${sx}`);
         }
         get sy() {
-            this.rebuildMatrix();
-            return __classPrivateFieldGet(this, _sy);
+            const sy = this.node.style.getPropertyValue("--sy");
+            return sy ? Number(sy) : 1;
         }
         set sy(sy) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _sy, sy);
-            this.isDirty = true;
+            this.node.style.setProperty("--sy", `${sy}`);
         }
         get w() {
-            this.rebuildMatrix();
-            return __classPrivateFieldGet(this, _w);
+            const w = this.node.style.getPropertyValue("--w");
+            return w ? Number(w.replace("px", "")) : 1;
         }
         set w(w) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _w, w);
-            this.isDirty = true;
-            this.isDirtyRect = true;
+            this.node.style.setProperty("--w", `${w}px`);
         }
         get h() {
-            this.rebuildMatrix();
-            return __classPrivateFieldGet(this, _h);
+            const h = this.node.style.getPropertyValue("--h");
+            return h ? Number(h.replace("px", "")) : 1;
         }
         set h(h) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _h, h);
-            this.isDirty = true;
-            this.isDirtyRect = true;
+            this.node.style.setProperty("--h", `${h}px`);
         }
         get position() {
-            this.rebuildMatrix();
-            return new Vector2(__classPrivateFieldGet(this, _x), __classPrivateFieldGet(this, _y));
+            return new Vector2(this.x, this.y);
         }
         set position(v) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _x, v.x);
-            __classPrivateFieldSet(this, _y, v.y);
-            this.isDirty = true;
-        }
-        setPosition(x, y) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _x, x);
-            __classPrivateFieldSet(this, _y, y);
-            this.isDirty = true;
+            this.x = v.x;
+            this.y = v.y;
         }
         get scale() {
-            this.rebuildMatrix();
-            return new Vector2(__classPrivateFieldGet(this, _sx), __classPrivateFieldGet(this, _sy));
+            return new Vector2(this.sx, this.sy);
         }
         set scale(v) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _sx, v.x);
-            __classPrivateFieldSet(this, _sy, v.y);
-            this.isDirty = true;
-        }
-        setScale(sx, sy) {
-            this.rebuildMatrix();
-            __classPrivateFieldSet(this, _sx, sx);
-            __classPrivateFieldSet(this, _sy, sy);
-            this.isDirty = true;
+            this.sx = v.x;
+            this.sy = v.y;
         }
         get origin() {
             return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LT].positionScreen).multiply(0.5);
@@ -849,59 +759,29 @@ var app = (function () {
             const vec = this.bottom.addVectors(this.top.multiply(-1));
             return vec.distance / this.node.offsetHeight;
         }
-        /**
-         * ローカル座標X移動
-         * @param dx X座標
-         */
-        translateX(dx) {
-            this.x += dx;
+        degToRad(deg) {
+            return deg * (Math.PI / 180);
         }
-        /**
-         * ローカル座標Y移動
-         * @param dy Y座標
-         */
-        translateY(dy) {
-            this.y += this.y + dy;
-        }
-        /**
-         * 座標移動
-         * @param dx X座標
-         * @param dy Y座標
-         */
-        translate(dx, dy) {
-            this.setPosition(this.x + dx, this.y + dy);
-        }
-        /**
-         * 回転
-         * @param angle ラジアン
-         */
-        addRotate(angle) {
-            this.r = this.r + angle;
-        }
-        degToRad(d) {
-            return d * (Math.PI / 180);
+        radToDeg(rad) {
+            return rad / (Math.PI / 180);
         }
         /**
          * スクリーン座標X移動
          * @param x X座標
          */
         translateScreenX(x) {
-            this.rebuildMatrix();
             let rad = this.degToRad(this.rotateScreen);
             this.x += x * Math.cos(-rad) * this.scaleScreenX;
             this.y += x * Math.sin(-rad) * this.scaleScreenY;
-            this.isDirty = true;
         }
         /**
          * スクリーン座標Y移動
          * @param y Y座標
          */
         translateScreenY(y) {
-            this.rebuildMatrix();
             let rad = this.degToRad(this.rotateScreen);
             this.x += -y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
             this.y += -y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
-            this.isDirty = true;
         }
         /**
          * スクリーン座標X移動
@@ -909,11 +789,9 @@ var app = (function () {
          * @param y y座標
          */
         translateScreen(x, y) {
-            this.rebuildMatrix();
             let rad = this.degToRad(this.rotateScreen);
             this.x += x * Math.cos(-rad) - y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
             this.y += x * Math.sin(-rad) - y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
-            this.isDirty = true;
         }
         /**
          * 画面に対しての頂点データ計算
@@ -1012,33 +890,9 @@ var app = (function () {
             const targetRad = Math.atan2(targetVec.y, targetVec.x);
             const baseVec = this.right.addVectors(this.origin.multiply(-1));
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
-            this.addRotate((targetRad - baseRad) / (Math.PI / 180));
-        }
-        /**
-         * 更新された情報で変形反映
-         */
-        patch() {
-            if (this.isDirty) {
-                // this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
-                var style = this.node.style;
-                style.setProperty("--x", `${__classPrivateFieldGet(this, _x)}px`);
-                style.setProperty("--y", `${__classPrivateFieldGet(this, _y)}px`);
-                style.setProperty("--r", `${__classPrivateFieldGet(this, _r)}deg`);
-                style.setProperty("--sx", String(__classPrivateFieldGet(this, _sx)));
-                style.setProperty("--sy", String(__classPrivateFieldGet(this, _sy)));
-                style.setProperty("--w", `${__classPrivateFieldGet(this, _w)}px`);
-                style.setProperty("--h", `${__classPrivateFieldGet(this, _h)}px`);
-                if (this.isDirtyRect) {
-                    for (const e of this.vertices) {
-                        e.rebuild();
-                    }
-                }
-            }
-            this.isDirty = false;
-            this.isDirtyRect = false;
+            this.r += this.radToDeg(targetRad - baseRad);
         }
     }
-    _x = new WeakMap(), _y = new WeakMap(), _r = new WeakMap(), _sx = new WeakMap(), _sy = new WeakMap(), _w = new WeakMap(), _h = new WeakMap();
     Transform.nodeToIns = new Map();
 
     /* src\App.svelte generated by Svelte v3.35.0 */
@@ -1054,15 +908,15 @@ var app = (function () {
     			div2 = element("div");
     			div1 = element("div");
     			div0 = element("div");
-    			attr_dev(div0, "class", "svelte-tpimf0");
-    			add_location(div0, file, 80, 2, 2120);
-    			attr_dev(div1, "class", "svelte-tpimf0");
-    			add_location(div1, file, 79, 1, 2094);
+    			attr_dev(div0, "class", "c svelte-tpimf0");
+    			add_location(div0, file, 87, 2, 2231);
+    			attr_dev(div1, "class", "b svelte-tpimf0");
+    			add_location(div1, file, 86, 1, 2195);
+    			attr_dev(div2, "class", "a svelte-tpimf0");
     			set_style(div2, "--w", "320px");
     			set_style(div2, "--h", "256px");
-    			attr_dev(div2, "class", "svelte-tpimf0");
     			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 74, 0, 2007);
+    			add_location(div2, file, 80, 0, 2097);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1113,8 +967,8 @@ var app = (function () {
     		Engine.start();
     		const t2 = Transform.getTransform(rect2);
     		const t3 = Transform.getTransform(rect3);
-    		t2.translateX(330);
-    		t3.translateX(330);
+    		t2.x += 330;
+    		t3.x += 330;
     		loop();
     	});
 
@@ -1141,11 +995,19 @@ var app = (function () {
     		}
 
     		if (Input.isPressing("KeyQ")) {
-    			t1.addRotate(-d * 100);
+    			t1.r += -d * 100;
     		}
 
     		if (Input.isPressing("KeyE")) {
-    			t1.addRotate(d * 100);
+    			t1.r += d * 100;
+    		}
+
+    		if (Input.isPressing("KeyZ")) {
+    			t1.sx -= d * 10;
+    		}
+
+    		if (Input.isPressing("KeyC")) {
+    			t1.sy -= d * 10;
     		}
 
     		if (Input.isPressing("KeyI")) {
@@ -1165,19 +1027,19 @@ var app = (function () {
     		}
 
     		if (Input.isPressing("KeyU")) {
-    			t2.addRotate(-d * 100);
+    			t2.r += -d * 100;
     		}
 
     		if (Input.isPressing("KeyO")) {
-    			t2.addRotate(d * 100);
+    			t2.r += d * 100;
     		}
 
     		if (Input.isPressing("KeyP")) {
-    			t3.addRotate(-d * 100);
+    			t3.r += -d * 100;
     		}
 
     		if (Input.isPressing("BracketLeft")) {
-    			t3.addRotate(d * 100);
+    			t3.r += d * 100;
     		}
 
     		t2.loopAtScreen(Input.mousePosition);

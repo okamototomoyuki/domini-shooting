@@ -11,18 +11,7 @@ export default class Transform {
 
     static nodeToIns = new Map<HTMLElement, Transform>();
 
-    static initialize() {
-        this.update();
-    }
-
-    static update() {
-        for (const e of Transform.nodeToIns.values()) {
-            e.patch();
-        }
-    }
-
     static getTransform(node: HTMLElement) {
-        this.initialize();
         let t = Transform.nodeToIns.get(node)
         if (t != null) {
             return t;
@@ -33,21 +22,8 @@ export default class Transform {
         }
     }
 
-
     node: HTMLElement;
     vertices: Vertex[];
-
-    #x = 0;
-    #y = 0;
-    #r = 0;
-    #sx = 1;
-    #sy = 1;
-    #w = 100;
-    #h = 100;
-
-    frame = 0;
-    isDirty = false;
-    isDirtyRect = true; // true:矩形要素の w または h が更新された。頂点を再計算するため ※ 初回は必ず更新
 
     constructor(node: HTMLElement) {
         this.node = node;
@@ -57,127 +33,92 @@ export default class Transform {
             new Vertex(this, Vertex.TYPE_RB),
             new Vertex(this, Vertex.TYPE_LB),
         ];
-    }
 
-    rebuildMatrix() {
-        if (this.frame != Engine.currentFrame) {
-            // const computedStyle = getComputedStyle(this.node, null);
-            // this.matrix = Matrix.fromString(computedStyle.transform);
-            var style = this.node.style;
-            const x = style.getPropertyValue("--x");
-            const y = style.getPropertyValue("--y");
-            const r = style.getPropertyValue("--r");
-            const sx = style.getPropertyValue("--sx");
-            const sy = style.getPropertyValue("--sy");
-            const w = style.getPropertyValue("--w");
-            const h = style.getPropertyValue("--h");
-            this.#x = x ? Number(x.replace("px", "")) : this.#x;
-            this.#y = y ? Number(y.replace("px", "")) : this.#y;
-            this.#r = r ? Number(r.replace("deg", "")) : this.#r;
-            this.#sx = sx ? Number(sx) : this.#sx;
-            this.#sy = sy ? Number(sy) : this.#sy;
-            this.#w = w ? Number(w.replace("px", "")) : this.#w;
-            this.#h = h ? Number(h.replace("px", "")) : this.#h;
-            this.frame = Engine.currentFrame;
+        const style = this.node.style;
+        const computeStyle = getComputedStyle(this.node, null);
+        if (style.getPropertyValue("--x") == "") {
+            this.x = 0;
         }
+        if (style.getPropertyValue("--y") == "") {
+            this.y = 0;
+        }
+        if (style.getPropertyValue("--r") == "") {
+            this.r = 0;
+        }
+        if (style.getPropertyValue("--sx") == "") {
+            this.sx = 1;
+        }
+        if (style.getPropertyValue("--sy") == "") {
+            this.sy = 1;
+        }
+        const w = style.getPropertyValue("--w").replace("px", "");
+        this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
+        const h = style.getPropertyValue("--h").replace("px", "");
+        this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
     }
 
     get x(): number {
-        this.rebuildMatrix();
-        return this.#x;
+        const x = this.node.style.getPropertyValue("--x");
+        return x ? Number(x.replace("px", "")) : 0;
     }
     set x(x: number) {
-        this.rebuildMatrix();
-        this.#x = x;
-        this.isDirty = true;
+        this.node.style.setProperty("--x", `${x}px`);
     }
     get y(): number {
-        this.rebuildMatrix();
-        return this.#y;
+        const y = this.node.style.getPropertyValue("--y");
+        return y ? Number(y.replace("px", "")) : 0;
     }
     set y(y: number) {
-        this.rebuildMatrix();
-        this.#y = y;
-        this.isDirty = true;
+        this.node.style.setProperty("--y", `${y}px`);
     }
     get r(): number {
-        this.rebuildMatrix();
-        return this.#r;
+        const r = this.node.style.getPropertyValue("--r");
+        return r ? Number(r.replace("deg", "")) : 0;
     }
     set r(r: number) {
-        this.rebuildMatrix();
-        this.#r = r;
-        this.isDirty = true;
+        this.node.style.setProperty("--r", `${r}deg`);
     }
     get sx(): number {
-        this.rebuildMatrix();
-        return this.#sx;
+        const sx = this.node.style.getPropertyValue("--sx");
+        return sx ? Number(sx) : 1;
     }
     set sx(sx: number) {
-        this.rebuildMatrix();
-        this.#sx = sx;
-        this.isDirty = true;
+        this.node.style.setProperty("--sx", `${sx}`);
     }
     get sy(): number {
-        this.rebuildMatrix();
-        return this.#sy;
+        const sy = this.node.style.getPropertyValue("--sy");
+        return sy ? Number(sy) : 1;
     }
     set sy(sy: number) {
-        this.rebuildMatrix();
-        this.#sy = sy;
-        this.isDirty = true;
+        this.node.style.setProperty("--sy", `${sy}`);
     }
     get w(): number {
-        this.rebuildMatrix();
-        return this.#w;
+        const w = this.node.style.getPropertyValue("--w");
+        return w ? Number(w.replace("px", "")) : 1;
     }
     set w(w: number) {
-        this.rebuildMatrix();
-        this.#w = w;
-        this.isDirty = true;
-        this.isDirtyRect = true;
+        this.node.style.setProperty("--w", `${w}px`);
     }
     get h(): number {
-        this.rebuildMatrix();
-        return this.#h;
+        const h = this.node.style.getPropertyValue("--h");
+        return h ? Number(h.replace("px", "")) : 1;
     }
     set h(h: number) {
-        this.rebuildMatrix();
-        this.#h = h;
-        this.isDirty = true;
-        this.isDirtyRect = true;
+        this.node.style.setProperty("--h", `${h}px`);
     }
     get position(): Vector2 {
-        this.rebuildMatrix();
-        return new Vector2(this.#x, this.#y);
+        return new Vector2(this.x, this.y);
     }
     set position(v: Vector2) {
-        this.rebuildMatrix();
-        this.#x = v.x;
-        this.#y = v.y;
-        this.isDirty = true;
-    }
-    setPosition(x: number, y: number) {
-        this.rebuildMatrix();
-        this.#x = x;
-        this.#y = y;
-        this.isDirty = true;
+        this.x = v.x;
+        this.y = v.y;
     }
     get scale(): Vector2 {
-        this.rebuildMatrix();
-        return new Vector2(this.#sx, this.#sy);
+        return new Vector2(this.sx, this.sy);
     }
     set scale(v: Vector2) {
-        this.rebuildMatrix();
-        this.#sx = v.x;
-        this.#sy = v.y;
-        this.isDirty = true;
-    }
-    setScale(sx: number, sy: number) {
-        this.rebuildMatrix();
-        this.#sx = sx;
-        this.#sy = sy;
-        this.isDirty = true;
+        this.sx = v.x;
+        this.sy = v.y;
     }
 
     get origin(): Vector2 {
@@ -215,41 +156,12 @@ export default class Transform {
         return vec.distance / this.node.offsetHeight;
     }
 
-    /**
-     * ローカル座標X移動
-     * @param dx X座標
-     */
-    translateX(dx: number) {
-        this.x += dx;
+    degToRad(deg: number): number {
+        return deg * (Math.PI / 180);
     }
 
-    /**
-     * ローカル座標Y移動
-     * @param dy Y座標
-     */
-    translateY(dy: number) {
-        this.y += this.y + dy;
-    }
-
-    /**
-     * 座標移動
-     * @param dx X座標
-     * @param dy Y座標
-     */
-    translate(dx: number, dy: number) {
-        this.setPosition(this.x + dx, this.y + dy);
-    }
-
-    /**
-     * 回転
-     * @param angle ラジアン
-     */
-    addRotate(angle: number) {
-        this.r = this.r + angle;
-    }
-
-    degToRad(d: number): number {
-        return d * (Math.PI / 180);
+    radToDeg(rad: number): number {
+        return rad / (Math.PI / 180);
     }
 
     /**
@@ -257,11 +169,9 @@ export default class Transform {
      * @param x X座標
      */
     translateScreenX(x: number) {
-        this.rebuildMatrix();
         let rad = this.degToRad(this.rotateScreen);
         this.x += x * Math.cos(-rad) * this.scaleScreenX;
         this.y += x * Math.sin(-rad) * this.scaleScreenY;
-        this.isDirty = true;
     }
 
     /**
@@ -269,11 +179,9 @@ export default class Transform {
      * @param y Y座標
      */
     translateScreenY(y: number) {
-        this.rebuildMatrix();
         let rad = this.degToRad(this.rotateScreen);
         this.x += - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
         this.y += - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
-        this.isDirty = true;
     }
 
     /**
@@ -282,11 +190,9 @@ export default class Transform {
      * @param y y座標
      */
     translateScreen(x: number, y: number) {
-        this.rebuildMatrix();
         let rad = this.degToRad(this.rotateScreen);
         this.x += x * Math.cos(-rad) - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
         this.y += x * Math.sin(-rad) - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
-        this.isDirty = true;
     }
 
     /**
@@ -405,30 +311,6 @@ export default class Transform {
         const targetRad = Math.atan2(targetVec.y, targetVec.x);
         const baseVec = this.right.addVectors(this.origin.multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
-        this.addRotate((targetRad - baseRad) / (Math.PI / 180));
-    }
-
-    /**
-     * 更新された情報で変形反映
-     */
-    patch() {
-        if (this.isDirty) {
-            // this.node.setAttribute("style", `transform: ${this.matrix.toString()}`);
-            var style = this.node.style;
-            style.setProperty("--x", `${this.#x}px`);
-            style.setProperty("--y", `${this.#y}px`);
-            style.setProperty("--r", `${this.#r}deg`);
-            style.setProperty("--sx", String(this.#sx));
-            style.setProperty("--sy", String(this.#sy));
-            style.setProperty("--w", `${this.#w}px`);
-            style.setProperty("--h", `${this.#h}px`);
-            if (this.isDirtyRect) {
-                for (const e of this.vertices) {
-                    e.rebuild();
-                }
-            }
-        }
-        this.isDirty = false;
-        this.isDirtyRect = false;
+        this.r += this.radToDeg(targetRad - baseRad);
     }
 }

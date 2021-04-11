@@ -9,7 +9,6 @@ export default class Engine {
 
     static start() {
         Input.initialize()
-        Transform.initialize()
 
         this.loop()
     }
@@ -22,7 +21,6 @@ export default class Engine {
         Engine.prevDate = now;
 
         Input.update();
-        Transform.update();
 
         requestAnimationFrame(Engine.loop);
     }

@@ -25,23 +25,19 @@ export default class Vertex {
         node.style.width = "0px";
         node.style.height = "0px";
 
-        this.rebuild();
-    }
-
-    rebuild() {
-        var style = getComputedStyle(this.trans.node)
+        const style = this.node.style;
         switch (this.type) {
             case Vertex.TYPE_LT:
-                this.node.style.transform = "translate(0px, 0px)";
                 break;
             case Vertex.TYPE_RT:
-                this.node.style.transform = `translate(${style.width}, 0px)`;
+                style.left = "100%";
                 break;
             case Vertex.TYPE_RB:
-                this.node.style.transform = `translate(${style.width}, ${style.height})`;
+                style.top = "100%";
+                style.left = "100%";
                 break;
             case Vertex.TYPE_LB:
-                this.node.style.transform = `translate(0px, ${style.height})`;
+                style.top = "100%";
                 break;
         }
     }

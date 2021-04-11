@@ -13,8 +13,8 @@
 		Engine.start();
 		const t2 = Transform.getTransform(rect2);
 		const t3 = Transform.getTransform(rect3);
-		t2.translateX(330);
-		t3.translateX(330);
+		t2.x += 330;
+		t3.x += 330;
 
 		loop();
 	});
@@ -38,10 +38,16 @@
 			t1.translateScreenX(d * 100);
 		}
 		if (Input.isPressing("KeyQ")) {
-			t1.addRotate(-d * 100);
+			t1.r += -d * 100;
 		}
 		if (Input.isPressing("KeyE")) {
-			t1.addRotate(d * 100);
+			t1.r += d * 100;
+		}
+		if (Input.isPressing("KeyZ")) {
+			t1.sx -= d * 10;
+		}
+		if (Input.isPressing("KeyC")) {
+			t1.sy -= d * 10;
 		}
 
 		if (Input.isPressing("KeyI")) {
@@ -57,16 +63,16 @@
 			t2.translateScreenX(d * 100);
 		}
 		if (Input.isPressing("KeyU")) {
-			t2.addRotate(-d * 100);
+			t2.r += -d * 100;
 		}
 		if (Input.isPressing("KeyO")) {
-			t2.addRotate(d * 100);
+			t2.r += d * 100;
 		}
 		if (Input.isPressing("KeyP")) {
-			t3.addRotate(-d * 100);
+			t3.r += -d * 100;
 		}
 		if (Input.isPressing("BracketLeft")) {
-			t3.addRotate(d * 100);
+			t3.r += d * 100;
 		}
 
 		t2.loopAtScreen(Input.mousePosition);
@@ -83,12 +89,13 @@
 </script>
 
 <div
+	class="a"
 	style="--w:320px;--h:256px;"
 	bind:this={rect}
 	class:collision={isCollision}
 >
-	<div bind:this={rect2}>
-		<div bind:this={rect3} />
+	<div class="b" bind:this={rect2}>
+		<div class="c" bind:this={rect3} />
 	</div>
 </div>
 

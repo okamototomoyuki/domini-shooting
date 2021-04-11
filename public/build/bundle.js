@@ -398,6 +398,10 @@ var app = (function () {
     customElements.define("m-vertex", Vertex);
 
     class MEntity extends HTMLElement {
+        constructor() {
+            super(...arguments);
+            this.vertices = [];
+        }
         connectedCallback() {
             this.vertices = [
                 Vertex.new(this, Vertex.TYPE_LT),
@@ -828,14 +832,14 @@ var app = (function () {
     			m_entity1 = element("m-entity");
     			m_entity0 = element("m-entity");
     			set_custom_element_data(m_entity0, "class", "c svelte-ykoydo");
-    			add_location(m_entity0, file, 83, 2, 2020);
+    			add_location(m_entity0, file, 83, 2, 2025);
     			set_custom_element_data(m_entity1, "class", "b svelte-ykoydo");
-    			add_location(m_entity1, file, 82, 1, 1982);
+    			add_location(m_entity1, file, 82, 1, 1987);
     			set_custom_element_data(m_entity2, "class", "a svelte-ykoydo");
     			set_style(m_entity2, "--w", "320px");
     			set_style(m_entity2, "--h", "256px");
     			toggle_class(m_entity2, "collin1", /*isCollision*/ ctx[3]);
-    			add_location(m_entity2, file, 76, 0, 1883);
+    			add_location(m_entity2, file, 76, 0, 1888);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");

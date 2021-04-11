@@ -1,7 +1,6 @@
 import { element, listen, loop } from "svelte/internal";
 import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
-import Engine from "../Engine";
 import MVertex from "./MVertex";
 
 /**
@@ -11,7 +10,7 @@ export default class MEntity extends HTMLElement {
 
     static list = new Array<MEntity>();
 
-    vertices: MVertex[];
+    vertices: MVertex[] = [];
 
     connectedCallback() {
         this.vertices = [

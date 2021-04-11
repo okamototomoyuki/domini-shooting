@@ -1,4 +1,3 @@
-import Transform from "../ctrl/Transform";
 import Engine from "../Engine";
 import Vector2 from "./Vector2";
 

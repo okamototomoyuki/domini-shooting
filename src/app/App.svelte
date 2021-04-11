@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import Transform from "./engine/ctrl/Transform";
-	import Input from "./engine/data/Input";
-	import Engine from "./engine/Engine";
+	import MEntity from "../engine/ctrl/MEntity";
+	import Input from "../engine/data/Input";
+	import Engine from "../engine/Engine";
 
-	let rect: HTMLElement;
-	let rect2: HTMLElement;
-	let rect3: HTMLElement;
+	let t1: MEntity;
+	let t2: MEntity;
+	let t3: MEntity;
 
 	let isCollision = false;
 	onMount(() => {
 		Engine.start();
-		const t2 = Transform.getTransform(rect2);
-		const t3 = Transform.getTransform(rect3);
 		t2.x += 330;
 		t3.x += 330;
 
@@ -20,10 +18,7 @@
 	});
 
 	const loop = () => {
-		const t1 = Transform.getTransform(rect);
-		const t2 = Transform.getTransform(rect2);
-		const t3 = Transform.getTransform(rect3);
-
+		console.log(MEntity.list.length);
 		const d = Engine.delta;
 		if (Input.isPressing("KeyW")) {
 			t1.translateScreenY(-d * 100);
@@ -79,7 +74,7 @@
 
 		isCollision = false;
 		for (let e of t1.collides) {
-			if (e.node == t3.node) {
+			if (e == t3) {
 				isCollision = true;
 			}
 		}
@@ -88,19 +83,19 @@
 	};
 </script>
 
-<div
+<m-entity
 	class="a"
 	style="--w:320px;--h:256px;"
-	bind:this={rect}
-	class:collision={isCollision}
+	bind:this={t1}
+	class:collin1={isCollision}
 >
-	<div class="b" bind:this={rect2}>
-		<div class="c" bind:this={rect3} />
-	</div>
-</div>
+	<m-entity class="b" bind:this={t2}>
+		<m-entity class="c" bind:this={t3} />
+	</m-entity>
+</m-entity>
 
 <style lang="scss">
-	div {
+	m-entity {
 		transform: translate(var(--x, 0), var(--y, 0)) rotate(var(--r, 0))
 			scaleX(var(--sx, 1)) scaleY(var(--sy, 1));
 		position: absolute;

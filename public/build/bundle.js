@@ -46,6 +46,14 @@ var app = (function () {
         else if (node.getAttribute(attribute) !== value)
             node.setAttribute(attribute, value);
     }
+    function set_custom_element_data(node, prop, value) {
+        if (prop in node) {
+            node[prop] = value;
+        }
+        else {
+            attr(node, prop, value);
+        }
+    }
     function children(element) {
         return Array.from(element.childNodes);
     }
@@ -144,6 +152,12 @@ var app = (function () {
             block.i(local);
         }
     }
+
+    const globals = (typeof window !== 'undefined'
+        ? window
+        : typeof globalThis !== 'undefined'
+            ? globalThis
+            : global);
     function mount_component(component, target, anchor, customElement) {
         const { fragment, on_mount, on_destroy, after_update } = component.$$;
         fragment && fragment.m(target, anchor);
@@ -283,13 +297,6 @@ var app = (function () {
         dispatch_dev('SvelteDOMRemove', { node });
         detach(node);
     }
-    function attr_dev(node, attribute, value) {
-        attr(node, attribute, value);
-        if (value == null)
-            dispatch_dev('SvelteDOMRemoveAttribute', { node, attribute });
-        else
-            dispatch_dev('SvelteDOMSetAttribute', { node, attribute, value });
-    }
     function validate_slots(name, slot, keys) {
         for (const slot_key of Object.keys(slot)) {
             if (!~keys.indexOf(slot_key)) {
@@ -317,59 +324,23 @@ var app = (function () {
         $inject_state() { }
     }
 
-    /**
-     * XYベクトル
-     */
     class Vector2 {
-        /**
-         * コンストラクタ
-         * @param x X
-         * @param y Y
-         */
         constructor(x, y) {
             this.x = x;
             this.y = y;
         }
-        /**
-         * 移動
-         * @param v 移動ベクトル
-         * @returns 結果のベクトル
-         */
         addVectors(v) {
             return new Vector2(this.x + v.x, this.y + v.y);
         }
-        /**
-         * 掛け算
-         * @param v 係数
-         * @returns 結果のベクトル
-         */
         multiply(v) {
             return new Vector2(this.x * v, this.y * v);
         }
-        /**
-         * 長さ
-         * @returns 長さ
-         */
         get distance() {
             return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
         }
-        /**
-         * 外積
-         * @param va ベクトルa
-         * @param vb ベクトルb
-         * @returns 外積のベクトル
-         */
         static cross(va, vb) {
             return va.x * vb.y - va.y * vb.x;
         }
-        /**
-         * XY座標線分が交わっているか
-         * @param aFrom 線分A始点
-         * @param aTo 線分A終点
-         * @param bFrom 線分B始点
-         * @param bTo 線分B終点
-         * @returns true:交わっている
-         */
         static isCrossXY(aFrom, aTo, bFrom, bTo) {
             const ta = (bFrom.x - bTo.x) * (aFrom.y - bFrom.y) + (bFrom.y - bTo.y) * (bFrom.x - aFrom.x);
             const tb = (bFrom.x - bTo.x) * (aTo.y - bFrom.y) + (bFrom.y - bTo.y) * (bFrom.x - aTo.x);
@@ -379,17 +350,7 @@ var app = (function () {
         }
     }
 
-    /*
-    * 矩形の頂点データ
-    */
     class VertexData {
-        /**
-         * コンストラクタ
-         * @param a 点1 左上
-         * @param b 点2 右上
-         * @param c 点3 右下
-         * @param d 点4 左下
-         */
         constructor(a, b, c, d) {
             this.a = a;
             this.b = b;
@@ -401,9 +362,294 @@ var app = (function () {
         }
     }
 
-    /**
-     * 入力
-     */
+    class Vertex extends HTMLElement {
+        static new(trans, type) {
+            const node = document.createElement('m-vertex');
+            trans.appendChild(node);
+            const style = node.style;
+            style.position = "absolute";
+            style.width = "0px";
+            style.height = "0px";
+            switch (type) {
+                case Vertex.TYPE_LT:
+                    break;
+                case Vertex.TYPE_RT:
+                    style.left = "100%";
+                    break;
+                case Vertex.TYPE_RB:
+                    style.top = "100%";
+                    style.left = "100%";
+                    break;
+                case Vertex.TYPE_LB:
+                    style.top = "100%";
+                    break;
+            }
+            return node;
+        }
+        get positionScreen() {
+            const bound = this.getBoundingClientRect();
+            return new Vector2(bound.x, bound.y);
+        }
+    }
+    Vertex.TYPE_LT = 0;
+    Vertex.TYPE_RT = 1;
+    Vertex.TYPE_RB = 2;
+    Vertex.TYPE_LB = 3;
+    customElements.define("m-vertex", Vertex);
+
+    class MEntity extends HTMLElement {
+        connectedCallback() {
+            this.vertices = [
+                Vertex.new(this, Vertex.TYPE_LT),
+                Vertex.new(this, Vertex.TYPE_RT),
+                Vertex.new(this, Vertex.TYPE_RB),
+                Vertex.new(this, Vertex.TYPE_LB),
+            ];
+            const style = this.style;
+            const computeStyle = getComputedStyle(this, null);
+            if (style.getPropertyValue("--x") == "") {
+                this.x = 0;
+            }
+            if (style.getPropertyValue("--y") == "") {
+                this.y = 0;
+            }
+            if (style.getPropertyValue("--r") == "") {
+                this.r = 0;
+            }
+            if (style.getPropertyValue("--sx") == "") {
+                this.sx = 1;
+            }
+            if (style.getPropertyValue("--sy") == "") {
+                this.sy = 1;
+            }
+            const w = style.getPropertyValue("--w").replace("px", "");
+            this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
+            const h = style.getPropertyValue("--h").replace("px", "");
+            this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+            MEntity.list.push(this);
+        }
+        get x() {
+            const x = this.style.getPropertyValue("--x");
+            return x ? Number(x.replace("px", "")) : 0;
+        }
+        set x(x) {
+            this.style.setProperty("--x", `${x}px`);
+        }
+        get y() {
+            const y = this.style.getPropertyValue("--y");
+            return y ? Number(y.replace("px", "")) : 0;
+        }
+        set y(y) {
+            this.style.setProperty("--y", `${y}px`);
+        }
+        get r() {
+            const r = this.style.getPropertyValue("--r");
+            return r ? Number(r.replace("deg", "")) : 0;
+        }
+        set r(r) {
+            this.style.setProperty("--r", `${r}deg`);
+        }
+        get sx() {
+            const sx = this.style.getPropertyValue("--sx");
+            return sx ? Number(sx) : 1;
+        }
+        set sx(sx) {
+            this.style.setProperty("--sx", `${sx}`);
+        }
+        get sy() {
+            const sy = this.style.getPropertyValue("--sy");
+            return sy ? Number(sy) : 1;
+        }
+        set sy(sy) {
+            this.style.setProperty("--sy", `${sy}`);
+        }
+        get w() {
+            const w = this.style.getPropertyValue("--w");
+            return w ? Number(w.replace("px", "")) : 1;
+        }
+        set w(w) {
+            this.style.setProperty("--w", `${w}px`);
+        }
+        get h() {
+            const h = this.style.getPropertyValue("--h");
+            return h ? Number(h.replace("px", "")) : 1;
+        }
+        set h(h) {
+            this.style.setProperty("--h", `${h}px`);
+        }
+        get position() {
+            return new Vector2(this.x, this.y);
+        }
+        set position(v) {
+            this.x = v.x;
+            this.y = v.y;
+        }
+        get scale() {
+            return new Vector2(this.sx, this.sy);
+        }
+        set scale(v) {
+            this.sx = v.x;
+            this.sy = v.y;
+        }
+        get origin() {
+            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LT].positionScreen).multiply(0.5);
+        }
+        get top() {
+            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RT].positionScreen).multiply(0.5);
+        }
+        get bottom() {
+            return this.vertices[Vertex.TYPE_LB].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+        }
+        get left() {
+            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LB].positionScreen).multiply(0.5);
+        }
+        get right() {
+            return this.vertices[Vertex.TYPE_RT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+        }
+        get positionScreen() {
+            return this.origin;
+        }
+        get rotateScreen() {
+            const vec = this.right.addVectors(this.origin.multiply(-1));
+            return Math.atan2(vec.y, vec.x);
+        }
+        get scaleScreenX() {
+            const vec = this.right.addVectors(this.left.multiply(-1));
+            return vec.distance / this.offsetWidth;
+        }
+        get scaleScreenY() {
+            const vec = this.bottom.addVectors(this.top.multiply(-1));
+            return vec.distance / this.offsetHeight;
+        }
+        degToRad(deg) {
+            return deg * (Math.PI / 180);
+        }
+        radToDeg(rad) {
+            return rad / (Math.PI / 180);
+        }
+        translateScreenX(x) {
+            let rad = this.degToRad(this.rotateScreen);
+            this.x += x * Math.cos(-rad) * this.scaleScreenX;
+            this.y += x * Math.sin(-rad) * this.scaleScreenY;
+        }
+        translateScreenY(y) {
+            let rad = this.degToRad(this.rotateScreen);
+            this.x += -y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
+            this.y += -y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
+        }
+        translateScreen(x, y) {
+            let rad = this.degToRad(this.rotateScreen);
+            this.x += x * Math.cos(-rad) - y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
+            this.y += x * Math.sin(-rad) - y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
+        }
+        computeVertexScreen() {
+            return new VertexData(this.vertices[Vertex.TYPE_LT].positionScreen, this.vertices[Vertex.TYPE_RT].positionScreen, this.vertices[Vertex.TYPE_RB].positionScreen, this.vertices[Vertex.TYPE_LB].positionScreen);
+        }
+        ;
+        get parentNode() {
+            return this.parentNode;
+        }
+        get collides() {
+            const selfVs = this.computeVertexScreen();
+            const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
+            const collides = new Array();
+            for (const otherT of MEntity.list) {
+                if (otherT != this) {
+                    const otherVs = otherT.computeVertexScreen();
+                    const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
+                    let isCollide = false;
+                    if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
+                        isCollide = true;
+                    }
+                    if (isCollide == false) {
+                        for (const subSV of subSVs) {
+                            const otherVA = otherVs.a.addVectors(subSV);
+                            const otherVB = otherVs.b.addVectors(subSV);
+                            const otherVC = otherVs.c.addVectors(subSV);
+                            const otherVD = otherVs.d.addVectors(subSV);
+                            const crossAB = Vector2.cross(otherVA, otherVB);
+                            const crossBC = Vector2.cross(otherVB, otherVC);
+                            const crossCD = Vector2.cross(otherVC, otherVD);
+                            const crossDA = Vector2.cross(otherVD, otherVA);
+                            if (crossAB * crossBC > 0
+                                && crossBC * crossCD > 0
+                                && crossCD * crossDA > 0
+                                && crossDA * crossAB > 0) {
+                                isCollide = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isCollide == false) {
+                        for (const subOV of subOVs) {
+                            const selfVA = selfVs.a.addVectors(subOV);
+                            const selfVB = selfVs.b.addVectors(subOV);
+                            const selfVC = selfVs.c.addVectors(subOV);
+                            const selfVD = selfVs.d.addVectors(subOV);
+                            const crossAB = Vector2.cross(selfVA, selfVB);
+                            const crossBC = Vector2.cross(selfVB, selfVC);
+                            const crossCD = Vector2.cross(selfVC, selfVD);
+                            const crossDA = Vector2.cross(selfVD, selfVA);
+                            if (crossAB * crossBC > 0
+                                && crossBC * crossCD > 0
+                                && crossCD * crossDA > 0
+                                && crossDA * crossAB > 0) {
+                                isCollide = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isCollide) {
+                        collides.push(otherT);
+                    }
+                }
+            }
+            return collides;
+        }
+        loopAtScreen(targetPos) {
+            const targetVec = targetPos.addVectors(this.origin.multiply(-1));
+            const targetRad = Math.atan2(targetVec.y, targetVec.x);
+            const baseVec = this.right.addVectors(this.origin.multiply(-1));
+            const baseRad = Math.atan2(baseVec.y, baseVec.x);
+            this.r += this.radToDeg(targetRad - baseRad);
+        }
+    }
+    MEntity.list = new Array();
+    customElements.define("m-entity", MEntity);
+
+    class Engine {
+        static start() {
+            Input.initialize();
+            this.loop();
+        }
+        static loop() {
+            Engine.currentFrame = Engine.currentFrame + 1;
+            const now = window.performance.now();
+            Engine.delta = (now - Engine.prevDate) / 1000;
+            Engine.prevDate = now;
+            Input.update();
+            requestAnimationFrame(Engine.loop);
+        }
+    }
+    Engine.prevDate = window.performance.now();
+    Engine.currentFrame = 0;
+    Engine.delta = 0;
+
     class Input {
         static initialize() {
             document.addEventListener("keydown", this._onKeyDown);
@@ -566,381 +812,54 @@ var app = (function () {
     Input.wheelFrame = 0;
     Input.wheel = 0;
 
-    class Engine {
-        static start() {
-            Input.initialize();
-            this.loop();
-        }
-        static loop() {
-            Engine.currentFrame = Engine.currentFrame + 1;
-            const now = window.performance.now();
-            Engine.delta = (now - Engine.prevDate) / 1000;
-            Engine.prevDate = now;
-            Input.update();
-            requestAnimationFrame(Engine.loop);
-        }
-    }
-    Engine.prevDate = window.performance.now();
-    Engine.currentFrame = 0;
-    Engine.delta = 0;
+    /* src\app\App.svelte generated by Svelte v3.35.0 */
 
-    class Vertex {
-        constructor(trans, type) {
-            this.trans = trans;
-            const node = document.createElement('div');
-            this.node = node;
-            this.type = type;
-            this.trans.node.appendChild(this.node);
-            node.style.position = "absolute";
-            node.style.width = "0px";
-            node.style.height = "0px";
-            const style = this.node.style;
-            switch (this.type) {
-                case Vertex.TYPE_LT:
-                    break;
-                case Vertex.TYPE_RT:
-                    style.left = "100%";
-                    break;
-                case Vertex.TYPE_RB:
-                    style.top = "100%";
-                    style.left = "100%";
-                    break;
-                case Vertex.TYPE_LB:
-                    style.top = "100%";
-                    break;
-            }
-        }
-        get positionScreen() {
-            let bound = this.node.getBoundingClientRect();
-            return new Vector2(bound.x, bound.y);
-        }
-    }
-    Vertex.TYPE_LT = 0;
-    Vertex.TYPE_RT = 1;
-    Vertex.TYPE_RB = 2;
-    Vertex.TYPE_LB = 3;
-    Vertex.nodeToIns = new Map();
-
-    /**
-     * 矩形の Transform
-     */
-    class Transform {
-        constructor(node) {
-            this.node = node;
-            this.vertices = [
-                new Vertex(this, Vertex.TYPE_LT),
-                new Vertex(this, Vertex.TYPE_RT),
-                new Vertex(this, Vertex.TYPE_RB),
-                new Vertex(this, Vertex.TYPE_LB),
-            ];
-            const style = this.node.style;
-            const computeStyle = getComputedStyle(this.node, null);
-            if (style.getPropertyValue("--x") == "") {
-                this.x = 0;
-            }
-            if (style.getPropertyValue("--y") == "") {
-                this.y = 0;
-            }
-            if (style.getPropertyValue("--r") == "") {
-                this.r = 0;
-            }
-            if (style.getPropertyValue("--sx") == "") {
-                this.sx = 1;
-            }
-            if (style.getPropertyValue("--sy") == "") {
-                this.sy = 1;
-            }
-            const w = style.getPropertyValue("--w").replace("px", "");
-            this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
-            const h = style.getPropertyValue("--h").replace("px", "");
-            this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
-        }
-        static getTransform(node) {
-            let t = Transform.nodeToIns.get(node);
-            if (t != null) {
-                return t;
-            }
-            else {
-                t = new Transform(node);
-                Transform.nodeToIns.set(node, t);
-                return t;
-            }
-        }
-        get x() {
-            const x = this.node.style.getPropertyValue("--x");
-            return x ? Number(x.replace("px", "")) : 0;
-        }
-        set x(x) {
-            this.node.style.setProperty("--x", `${x}px`);
-        }
-        get y() {
-            const y = this.node.style.getPropertyValue("--y");
-            return y ? Number(y.replace("px", "")) : 0;
-        }
-        set y(y) {
-            this.node.style.setProperty("--y", `${y}px`);
-        }
-        get r() {
-            const r = this.node.style.getPropertyValue("--r");
-            return r ? Number(r.replace("deg", "")) : 0;
-        }
-        set r(r) {
-            this.node.style.setProperty("--r", `${r}deg`);
-        }
-        get sx() {
-            const sx = this.node.style.getPropertyValue("--sx");
-            return sx ? Number(sx) : 1;
-        }
-        set sx(sx) {
-            this.node.style.setProperty("--sx", `${sx}`);
-        }
-        get sy() {
-            const sy = this.node.style.getPropertyValue("--sy");
-            return sy ? Number(sy) : 1;
-        }
-        set sy(sy) {
-            this.node.style.setProperty("--sy", `${sy}`);
-        }
-        get w() {
-            const w = this.node.style.getPropertyValue("--w");
-            return w ? Number(w.replace("px", "")) : 1;
-        }
-        set w(w) {
-            this.node.style.setProperty("--w", `${w}px`);
-        }
-        get h() {
-            const h = this.node.style.getPropertyValue("--h");
-            return h ? Number(h.replace("px", "")) : 1;
-        }
-        set h(h) {
-            this.node.style.setProperty("--h", `${h}px`);
-        }
-        get position() {
-            return new Vector2(this.x, this.y);
-        }
-        set position(v) {
-            this.x = v.x;
-            this.y = v.y;
-        }
-        get scale() {
-            return new Vector2(this.sx, this.sy);
-        }
-        set scale(v) {
-            this.sx = v.x;
-            this.sy = v.y;
-        }
-        get origin() {
-            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LT].positionScreen).multiply(0.5);
-        }
-        get top() {
-            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RT].positionScreen).multiply(0.5);
-        }
-        get bottom() {
-            return this.vertices[Vertex.TYPE_LB].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
-        }
-        get left() {
-            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LB].positionScreen).multiply(0.5);
-        }
-        get right() {
-            return this.vertices[Vertex.TYPE_RT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
-        }
-        get positionScreen() {
-            return this.origin;
-        }
-        get rotateScreen() {
-            const vec = this.right.addVectors(this.origin.multiply(-1));
-            return Math.atan2(vec.y, vec.x);
-        }
-        get scaleScreenX() {
-            const vec = this.right.addVectors(this.left.multiply(-1));
-            return vec.distance / this.node.offsetWidth;
-        }
-        get scaleScreenY() {
-            const vec = this.bottom.addVectors(this.top.multiply(-1));
-            return vec.distance / this.node.offsetHeight;
-        }
-        degToRad(deg) {
-            return deg * (Math.PI / 180);
-        }
-        radToDeg(rad) {
-            return rad / (Math.PI / 180);
-        }
-        /**
-         * スクリーン座標X移動
-         * @param x X座標
-         */
-        translateScreenX(x) {
-            let rad = this.degToRad(this.rotateScreen);
-            this.x += x * Math.cos(-rad) * this.scaleScreenX;
-            this.y += x * Math.sin(-rad) * this.scaleScreenY;
-        }
-        /**
-         * スクリーン座標Y移動
-         * @param y Y座標
-         */
-        translateScreenY(y) {
-            let rad = this.degToRad(this.rotateScreen);
-            this.x += -y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
-            this.y += -y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
-        }
-        /**
-         * スクリーン座標X移動
-         * @param x X座標
-         * @param y y座標
-         */
-        translateScreen(x, y) {
-            let rad = this.degToRad(this.rotateScreen);
-            this.x += x * Math.cos(-rad) - y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
-            this.y += x * Math.sin(-rad) - y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
-        }
-        /**
-         * 画面に対しての頂点データ計算
-         * @returns 頂点データ
-         */
-        computeVertexScreen() {
-            return new VertexData(this.vertices[Vertex.TYPE_LT].positionScreen, this.vertices[Vertex.TYPE_RT].positionScreen, this.vertices[Vertex.TYPE_RB].positionScreen, this.vertices[Vertex.TYPE_LB].positionScreen);
-        }
-        ;
-        /**
-         * 親ノード取得
-         */
-        get parentNode() {
-            return this.node.parentNode;
-        }
-        /**
-         * 衝突した対象一覧
-         */
-        get collides() {
-            const selfVs = this.computeVertexScreen();
-            const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
-            const collides = new Array();
-            for (const otherT of Transform.nodeToIns.values()) {
-                if (otherT != this) {
-                    const otherVs = otherT.computeVertexScreen();
-                    const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
-                    // 線分が交わっているか
-                    let isCollide = false;
-                    if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
-                        isCollide = true;
-                    }
-                    if (isCollide == false) {
-                        // 自身が相手の矩形内に入っているか
-                        for (const subSV of subSVs) {
-                            const otherVA = otherVs.a.addVectors(subSV);
-                            const otherVB = otherVs.b.addVectors(subSV);
-                            const otherVC = otherVs.c.addVectors(subSV);
-                            const otherVD = otherVs.d.addVectors(subSV);
-                            const crossAB = Vector2.cross(otherVA, otherVB);
-                            const crossBC = Vector2.cross(otherVB, otherVC);
-                            const crossCD = Vector2.cross(otherVC, otherVD);
-                            const crossDA = Vector2.cross(otherVD, otherVA);
-                            if (crossAB * crossBC > 0
-                                && crossBC * crossCD > 0
-                                && crossCD * crossDA > 0
-                                && crossDA * crossAB > 0) {
-                                isCollide = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (isCollide == false) {
-                        // 相手が自身の矩形内に入っているか
-                        for (const subOV of subOVs) {
-                            const selfVA = selfVs.a.addVectors(subOV);
-                            const selfVB = selfVs.b.addVectors(subOV);
-                            const selfVC = selfVs.c.addVectors(subOV);
-                            const selfVD = selfVs.d.addVectors(subOV);
-                            const crossAB = Vector2.cross(selfVA, selfVB);
-                            const crossBC = Vector2.cross(selfVB, selfVC);
-                            const crossCD = Vector2.cross(selfVC, selfVD);
-                            const crossDA = Vector2.cross(selfVD, selfVA);
-                            if (crossAB * crossBC > 0
-                                && crossBC * crossCD > 0
-                                && crossCD * crossDA > 0
-                                && crossDA * crossAB > 0) {
-                                isCollide = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (isCollide) {
-                        collides.push(otherT);
-                    }
-                }
-            }
-            return collides;
-        }
-        loopAtScreen(targetPos) {
-            const targetVec = targetPos.addVectors(this.origin.multiply(-1));
-            const targetRad = Math.atan2(targetVec.y, targetVec.x);
-            const baseVec = this.right.addVectors(this.origin.multiply(-1));
-            const baseRad = Math.atan2(baseVec.y, baseVec.x);
-            this.r += this.radToDeg(targetRad - baseRad);
-        }
-    }
-    Transform.nodeToIns = new Map();
-
-    /* src\App.svelte generated by Svelte v3.35.0 */
-    const file = "src\\App.svelte";
+    const { console: console_1 } = globals;
+    const file = "src\\app\\App.svelte";
 
     function create_fragment(ctx) {
-    	let div2;
-    	let div1;
-    	let div0;
+    	let m_entity2;
+    	let m_entity1;
+    	let m_entity0;
 
     	const block = {
     		c: function create() {
-    			div2 = element("div");
-    			div1 = element("div");
-    			div0 = element("div");
-    			attr_dev(div0, "class", "c svelte-tpimf0");
-    			add_location(div0, file, 87, 2, 2231);
-    			attr_dev(div1, "class", "b svelte-tpimf0");
-    			add_location(div1, file, 86, 1, 2195);
-    			attr_dev(div2, "class", "a svelte-tpimf0");
-    			set_style(div2, "--w", "320px");
-    			set_style(div2, "--h", "256px");
-    			toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(div2, file, 80, 0, 2097);
+    			m_entity2 = element("m-entity");
+    			m_entity1 = element("m-entity");
+    			m_entity0 = element("m-entity");
+    			set_custom_element_data(m_entity0, "class", "c svelte-ykoydo");
+    			add_location(m_entity0, file, 83, 2, 2020);
+    			set_custom_element_data(m_entity1, "class", "b svelte-ykoydo");
+    			add_location(m_entity1, file, 82, 1, 1982);
+    			set_custom_element_data(m_entity2, "class", "a svelte-ykoydo");
+    			set_style(m_entity2, "--w", "320px");
+    			set_style(m_entity2, "--h", "256px");
+    			toggle_class(m_entity2, "collin1", /*isCollision*/ ctx[3]);
+    			add_location(m_entity2, file, 76, 0, 1883);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div2, anchor);
-    			append_dev(div2, div1);
-    			append_dev(div1, div0);
-    			/*div0_binding*/ ctx[4](div0);
-    			/*div1_binding*/ ctx[5](div1);
-    			/*div2_binding*/ ctx[6](div2);
+    			insert_dev(target, m_entity2, anchor);
+    			append_dev(m_entity2, m_entity1);
+    			append_dev(m_entity1, m_entity0);
+    			/*m_entity0_binding*/ ctx[4](m_entity0);
+    			/*m_entity1_binding*/ ctx[5](m_entity1);
+    			/*m_entity2_binding*/ ctx[6](m_entity2);
     		},
     		p: function update(ctx, [dirty]) {
     			if (dirty & /*isCollision*/ 8) {
-    				toggle_class(div2, "collision", /*isCollision*/ ctx[3]);
+    				toggle_class(m_entity2, "collin1", /*isCollision*/ ctx[3]);
     			}
     		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div2);
-    			/*div0_binding*/ ctx[4](null);
-    			/*div1_binding*/ ctx[5](null);
-    			/*div2_binding*/ ctx[6](null);
+    			if (detaching) detach_dev(m_entity2);
+    			/*m_entity0_binding*/ ctx[4](null);
+    			/*m_entity1_binding*/ ctx[5](null);
+    			/*m_entity2_binding*/ ctx[6](null);
     		}
     	};
 
@@ -958,24 +877,20 @@ var app = (function () {
     function instance($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("App", slots, []);
-    	let rect;
-    	let rect2;
-    	let rect3;
+    	let t1;
+    	let t2;
+    	let t3;
     	let isCollision = false;
 
     	onMount(() => {
     		Engine.start();
-    		const t2 = Transform.getTransform(rect2);
-    		const t3 = Transform.getTransform(rect3);
-    		t2.x += 330;
-    		t3.x += 330;
+    		$$invalidate(1, t2.x += 330, t2);
+    		$$invalidate(2, t3.x += 330, t3);
     		loop();
     	});
 
     	const loop = () => {
-    		const t1 = Transform.getTransform(rect);
-    		const t2 = Transform.getTransform(rect2);
-    		const t3 = Transform.getTransform(rect3);
+    		console.log(MEntity.list.length);
     		const d = Engine.delta;
 
     		if (Input.isPressing("KeyW")) {
@@ -995,19 +910,19 @@ var app = (function () {
     		}
 
     		if (Input.isPressing("KeyQ")) {
-    			t1.r += -d * 100;
+    			$$invalidate(0, t1.r += -d * 100, t1);
     		}
 
     		if (Input.isPressing("KeyE")) {
-    			t1.r += d * 100;
+    			$$invalidate(0, t1.r += d * 100, t1);
     		}
 
     		if (Input.isPressing("KeyZ")) {
-    			t1.sx -= d * 10;
+    			$$invalidate(0, t1.sx -= d * 10, t1);
     		}
 
     		if (Input.isPressing("KeyC")) {
-    			t1.sy -= d * 10;
+    			$$invalidate(0, t1.sy -= d * 10, t1);
     		}
 
     		if (Input.isPressing("KeyI")) {
@@ -1027,26 +942,26 @@ var app = (function () {
     		}
 
     		if (Input.isPressing("KeyU")) {
-    			t2.r += -d * 100;
+    			$$invalidate(1, t2.r += -d * 100, t2);
     		}
 
     		if (Input.isPressing("KeyO")) {
-    			t2.r += d * 100;
+    			$$invalidate(1, t2.r += d * 100, t2);
     		}
 
     		if (Input.isPressing("KeyP")) {
-    			t3.r += -d * 100;
+    			$$invalidate(2, t3.r += -d * 100, t3);
     		}
 
     		if (Input.isPressing("BracketLeft")) {
-    			t3.r += d * 100;
+    			$$invalidate(2, t3.r += d * 100, t3);
     		}
 
     		t2.loopAtScreen(Input.mousePosition);
     		$$invalidate(3, isCollision = false);
 
     		for (let e of t1.collides) {
-    			if (e.node == t3.node) {
+    			if (e == t3) {
     				$$invalidate(3, isCollision = true);
     			}
     		}
@@ -1057,46 +972,46 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
-    	function div0_binding($$value) {
+    	function m_entity0_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			rect3 = $$value;
-    			$$invalidate(2, rect3);
+    			t3 = $$value;
+    			$$invalidate(2, t3);
     		});
     	}
 
-    	function div1_binding($$value) {
+    	function m_entity1_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			rect2 = $$value;
-    			$$invalidate(1, rect2);
+    			t2 = $$value;
+    			$$invalidate(1, t2);
     		});
     	}
 
-    	function div2_binding($$value) {
+    	function m_entity2_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			rect = $$value;
-    			$$invalidate(0, rect);
+    			t1 = $$value;
+    			$$invalidate(0, t1);
     		});
     	}
 
     	$$self.$capture_state = () => ({
     		onMount,
-    		Transform,
+    		MEntity,
     		Input,
     		Engine,
-    		rect,
-    		rect2,
-    		rect3,
+    		t1,
+    		t2,
+    		t3,
     		isCollision,
     		loop
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("rect" in $$props) $$invalidate(0, rect = $$props.rect);
-    		if ("rect2" in $$props) $$invalidate(1, rect2 = $$props.rect2);
-    		if ("rect3" in $$props) $$invalidate(2, rect3 = $$props.rect3);
+    		if ("t1" in $$props) $$invalidate(0, t1 = $$props.t1);
+    		if ("t2" in $$props) $$invalidate(1, t2 = $$props.t2);
+    		if ("t3" in $$props) $$invalidate(2, t3 = $$props.t3);
     		if ("isCollision" in $$props) $$invalidate(3, isCollision = $$props.isCollision);
     	};
 
@@ -1104,7 +1019,15 @@ var app = (function () {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [rect, rect2, rect3, isCollision, div0_binding, div1_binding, div2_binding];
+    	return [
+    		t1,
+    		t2,
+    		t3,
+    		isCollision,
+    		m_entity0_binding,
+    		m_entity1_binding,
+    		m_entity2_binding
+    	];
     }
 
     class App extends SvelteComponentDev {

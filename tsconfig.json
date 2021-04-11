@@ -8,9 +8,9 @@
     "__sapper__/*",
     "public/*"
   ],
-  "declarationMap": true,
-  "sourceMap": true,
-  "incremental": true,
-  "removeComments": true,
-  "strict": true
+  "compilerOptions": {
+    "strict": true,
+    "removeComments": true,
+    "importsNotUsedAsValues": "remove",
+  }
 }

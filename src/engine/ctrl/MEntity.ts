@@ -1,41 +1,28 @@
-import { element, loop } from "svelte/internal";
+import { element, listen, loop } from "svelte/internal";
 import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
 import Engine from "../Engine";
-import Vertex from "./Vertex";
+import MVertex from "./MVertex";
 
 /**
  * 矩形の Transform
  */
-export default class Transform {
+export default class MEntity extends HTMLElement {
 
-    static nodeToIns = new Map<HTMLElement, Transform>();
+    static list = new Array<MEntity>();
 
-    static getTransform(node: HTMLElement) {
-        let t = Transform.nodeToIns.get(node)
-        if (t != null) {
-            return t;
-        } else {
-            t = new Transform(node)
-            Transform.nodeToIns.set(node, t);
-            return t;
-        }
-    }
+    vertices: MVertex[];
 
-    node: HTMLElement;
-    vertices: Vertex[];
-
-    constructor(node: HTMLElement) {
-        this.node = node;
+    connectedCallback() {
         this.vertices = [
-            new Vertex(this, Vertex.TYPE_LT),
-            new Vertex(this, Vertex.TYPE_RT),
-            new Vertex(this, Vertex.TYPE_RB),
-            new Vertex(this, Vertex.TYPE_LB),
+            MVertex.new(this, MVertex.TYPE_LT),
+            MVertex.new(this, MVertex.TYPE_RT),
+            MVertex.new(this, MVertex.TYPE_RB),
+            MVertex.new(this, MVertex.TYPE_LB),
         ];
 
-        const style = this.node.style;
-        const computeStyle = getComputedStyle(this.node, null);
+        const style = this.style;
+        const computeStyle = getComputedStyle(this, null);
         if (style.getPropertyValue("--x") == "") {
             this.x = 0;
         }
@@ -55,56 +42,58 @@ export default class Transform {
         this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
         const h = style.getPropertyValue("--h").replace("px", "");
         this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+
+        MEntity.list.push(this);
     }
 
     get x(): number {
-        const x = this.node.style.getPropertyValue("--x");
+        const x = this.style.getPropertyValue("--x");
         return x ? Number(x.replace("px", "")) : 0;
     }
     set x(x: number) {
-        this.node.style.setProperty("--x", `${x}px`);
+        this.style.setProperty("--x", `${x}px`);
     }
     get y(): number {
-        const y = this.node.style.getPropertyValue("--y");
+        const y = this.style.getPropertyValue("--y");
         return y ? Number(y.replace("px", "")) : 0;
     }
     set y(y: number) {
-        this.node.style.setProperty("--y", `${y}px`);
+        this.style.setProperty("--y", `${y}px`);
     }
     get r(): number {
-        const r = this.node.style.getPropertyValue("--r");
+        const r = this.style.getPropertyValue("--r");
         return r ? Number(r.replace("deg", "")) : 0;
     }
     set r(r: number) {
-        this.node.style.setProperty("--r", `${r}deg`);
+        this.style.setProperty("--r", `${r}deg`);
     }
     get sx(): number {
-        const sx = this.node.style.getPropertyValue("--sx");
+        const sx = this.style.getPropertyValue("--sx");
         return sx ? Number(sx) : 1;
     }
     set sx(sx: number) {
-        this.node.style.setProperty("--sx", `${sx}`);
+        this.style.setProperty("--sx", `${sx}`);
     }
     get sy(): number {
-        const sy = this.node.style.getPropertyValue("--sy");
+        const sy = this.style.getPropertyValue("--sy");
         return sy ? Number(sy) : 1;
     }
     set sy(sy: number) {
-        this.node.style.setProperty("--sy", `${sy}`);
+        this.style.setProperty("--sy", `${sy}`);
     }
     get w(): number {
-        const w = this.node.style.getPropertyValue("--w");
+        const w = this.style.getPropertyValue("--w");
         return w ? Number(w.replace("px", "")) : 1;
     }
     set w(w: number) {
-        this.node.style.setProperty("--w", `${w}px`);
+        this.style.setProperty("--w", `${w}px`);
     }
     get h(): number {
-        const h = this.node.style.getPropertyValue("--h");
+        const h = this.style.getPropertyValue("--h");
         return h ? Number(h.replace("px", "")) : 1;
     }
     set h(h: number) {
-        this.node.style.setProperty("--h", `${h}px`);
+        this.style.setProperty("--h", `${h}px`);
     }
     get position(): Vector2 {
         return new Vector2(this.x, this.y);
@@ -122,19 +111,19 @@ export default class Transform {
     }
 
     get origin(): Vector2 {
-        return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LT].positionScreen).multiply(0.5);
+        return this.vertices[MVertex.TYPE_LT].positionScreen.addVectors(this.vertices[MVertex.TYPE_LT].positionScreen).multiply(0.5);
     }
     get top(): Vector2 {
-        return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RT].positionScreen).multiply(0.5);
+        return this.vertices[MVertex.TYPE_LT].positionScreen.addVectors(this.vertices[MVertex.TYPE_RT].positionScreen).multiply(0.5);
     }
     get bottom(): Vector2 {
-        return this.vertices[Vertex.TYPE_LB].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+        return this.vertices[MVertex.TYPE_LB].positionScreen.addVectors(this.vertices[MVertex.TYPE_RB].positionScreen).multiply(0.5);
     }
     get left(): Vector2 {
-        return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LB].positionScreen).multiply(0.5);
+        return this.vertices[MVertex.TYPE_LT].positionScreen.addVectors(this.vertices[MVertex.TYPE_LB].positionScreen).multiply(0.5);
     }
     get right(): Vector2 {
-        return this.vertices[Vertex.TYPE_RT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
+        return this.vertices[MVertex.TYPE_RT].positionScreen.addVectors(this.vertices[MVertex.TYPE_RB].positionScreen).multiply(0.5);
     }
 
     get positionScreen(): Vector2 {
@@ -148,12 +137,12 @@ export default class Transform {
 
     get scaleScreenX(): number {
         const vec = this.right.addVectors(this.left.multiply(-1));
-        return vec.distance / this.node.offsetWidth;
+        return vec.distance / this.offsetWidth;
     }
 
     get scaleScreenY(): number {
         const vec = this.bottom.addVectors(this.top.multiply(-1));
-        return vec.distance / this.node.offsetHeight;
+        return vec.distance / this.offsetHeight;
     }
 
     degToRad(deg: number): number {
@@ -200,29 +189,29 @@ export default class Transform {
      * @returns 頂点データ
      */
     computeVertexScreen(): VertexData {
-        return new VertexData(this.vertices[Vertex.TYPE_LT].positionScreen,
-            this.vertices[Vertex.TYPE_RT].positionScreen,
-            this.vertices[Vertex.TYPE_RB].positionScreen,
-            this.vertices[Vertex.TYPE_LB].positionScreen);
+        return new VertexData(this.vertices[MVertex.TYPE_LT].positionScreen,
+            this.vertices[MVertex.TYPE_RT].positionScreen,
+            this.vertices[MVertex.TYPE_RB].positionScreen,
+            this.vertices[MVertex.TYPE_LB].positionScreen);
     };
 
     /**
      * 親ノード取得
      */
     get parentNode(): HTMLElement {
-        return this.node.parentNode as HTMLElement;
+        return this.parentNode as HTMLElement;
     }
 
     /**
      * 衝突した対象一覧
      */
-    get collides(): Transform[] {
+    get collides(): MEntity[] {
 
         const selfVs = this.computeVertexScreen();
         const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
 
-        const collides = new Array<Transform>();
-        for (const otherT of Transform.nodeToIns.values()) {
+        const collides = new Array<MEntity>();
+        for (const otherT of MEntity.list) {
             if (otherT != this) {
                 const otherVs = otherT.computeVertexScreen();
                 const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
@@ -314,3 +303,4 @@ export default class Transform {
         this.r += this.radToDeg(targetRad - baseRad);
     }
 }
+customElements.define("m-entity", MEntity);

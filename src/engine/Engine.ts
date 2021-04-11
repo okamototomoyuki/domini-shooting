@@ -1,4 +1,3 @@
-import Transform from "./ctrl/Transform";
 import Input from "./data/Input";
 
 export default class Engine {

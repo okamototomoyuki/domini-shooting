@@ -18,7 +18,6 @@
 	});
 
 	const loop = () => {
-		console.log(MEntity.list.length);
 		const d = Engine.delta;
 		if (Input.isPressing("KeyW")) {
 			t1.translateScreenY(-d * 100);
@@ -87,7 +86,7 @@
 	class="a"
 	style="--w:320px;--h:256px;"
 	bind:this={t1}
-	class:collin1={isCollision}
+	class:collision={isCollision}
 >
 	<m-entity class="b" bind:this={t2}>
 		<m-entity class="c" bind:this={t3} />

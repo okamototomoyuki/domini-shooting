@@ -28,9 +28,9 @@ export default class Input {
     static update() {
         for (let key of Input.map.keys()) {
             let v = Input.map.get(key);
-            if (v > 1) {
+            if (v == 2) {
                 Input.map.set(key, 1);
-            } else if (v < 0) {
+            } else if (v == -1) {
                 Input.map.set(key, 0);
             }
         }
@@ -86,110 +86,73 @@ export default class Input {
     }
 
     static isNotPress(code: string): boolean {
-        if (Input.map.has(code)) {
-            return Input.map.get(code) <= 0;
-        }
-        return true;
+        const v = Input.map.get(code);
+        return v == 0 || v == -1;
     }
 
     static isDown(code: string): boolean {
-        if (Input.map.has(code)) {
-            return Input.map.get(code) == 2;
-        }
-        return false;
+        return Input.map.get(code) == 2;
     }
 
     static isPressing(code: string): boolean {
-        if (Input.map.has(code)) {
-            return Input.map.get(code) > 0;
-        }
-        return false;
+        const v = Input.map.get(code)
+        return v == 1 || v == 2;
     }
 
 
     static get isUpMouseLeft(): boolean {
-        if (Input.map.has(this._MOUSE_LEFT)) {
-            return Input.map.get(this._MOUSE_LEFT) == -1;
-        }
-        return false;
+        return Input.map.get(this._MOUSE_LEFT) == -1
     }
 
     static get isNotPressMouseLeft(): boolean {
-        if (Input.map.has(this._MOUSE_LEFT)) {
-            return Input.map.get(this._MOUSE_LEFT) <= 0;
-        }
-        return true;
+        const v = Input.map.get(this._MOUSE_LEFT);
+        return v == -1 || v == 0
     }
 
     static get isDownMouseLeft(): boolean {
-        if (Input.map.has(this._MOUSE_LEFT)) {
-            return Input.map.get(this._MOUSE_LEFT) == 2;
-        }
-        return false;
+        return Input.map.get(this._MOUSE_LEFT) == 2;
     }
 
     static get isPressingMouseLeft(): boolean {
-        if (Input.map.has(this._MOUSE_LEFT)) {
-            return Input.map.get(this._MOUSE_LEFT) > 0;
-        }
-        return false;
+        const v = Input.map.get(this._MOUSE_LEFT)
+        return v == 1 || v == 2;
     }
 
 
     static get isUpMouseRight(): boolean {
-        if (Input.map.has(this._MOUSE_RIGHT)) {
-            return Input.map.get(this._MOUSE_RIGHT) == -1;
-        }
-        return false;
+        return Input.map.get(this._MOUSE_RIGHT) == -1;
     }
 
     static get isNotPressMouseRight(): boolean {
-        if (Input.map.has(this._MOUSE_RIGHT)) {
-            return Input.map.get(this._MOUSE_RIGHT) <= 0;
-        }
-        return true;
+        const v = Input.map.get(this._MOUSE_RIGHT)
+        return v == -1 || v == 0
     }
 
     static get isDownMouseRight(): boolean {
-        if (Input.map.has(this._MOUSE_RIGHT)) {
-            return Input.map.get(this._MOUSE_RIGHT) == 2;
-        }
-        return false;
+        return Input.map.get(this._MOUSE_RIGHT) == 2;
     }
 
     static get isPressingMouseRight(): boolean {
-        if (Input.map.has(this._MOUSE_RIGHT)) {
-            return Input.map.get(this._MOUSE_RIGHT) > 0;
-        }
-        return false;
+        const v = Input.map.get(this._MOUSE_RIGHT)
+        return v == 1 || v == 2;
     }
 
 
     static get isUpMouseMiddle(): boolean {
-        if (Input.map.has(this._MOUSE_MIDDLE)) {
-            return Input.map.get(this._MOUSE_MIDDLE) == -1;
-        }
-        return false;
+        return Input.map.get(this._MOUSE_MIDDLE) == -1;
     }
 
     static get isNotPressMouseMiddle(): boolean {
-        if (Input.map.has(this._MOUSE_MIDDLE)) {
-            return Input.map.get(this._MOUSE_MIDDLE) <= 0;
-        }
-        return true;
+        const v = Input.map.get(this._MOUSE_MIDDLE)
+        return v == -1 || v == 0;
     }
 
     static get isDownMouseMiddle(): boolean {
-        if (Input.map.has(this._MOUSE_MIDDLE)) {
-            return Input.map.get(this._MOUSE_MIDDLE) == 2;
-        }
-        return false;
+        return Input.map.get(this._MOUSE_MIDDLE) == 2;
     }
 
     static get isPressingMouseMiddle(): boolean {
-        if (Input.map.has(this._MOUSE_MIDDLE)) {
-            return Input.map.get(this._MOUSE_MIDDLE) > 0;
-        }
-        return false;
+        const v = Input.map.get(this._MOUSE_MIDDLE)
+        return v == 1 || v == 2;
     }
 }

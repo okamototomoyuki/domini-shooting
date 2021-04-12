@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import MEntity from "../engine/component/MEntity";
+	import MEntity from "../engine/element/MEntity";
 	import Input from "../engine/data/Input";
 	import Engine from "../engine/Engine";
 

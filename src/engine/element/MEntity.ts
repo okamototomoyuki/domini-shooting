@@ -1,4 +1,3 @@
-import { element, listen, loop } from "svelte/internal";
 import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
 import MVertex from "./MVertex";

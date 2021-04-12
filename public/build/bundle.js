@@ -791,14 +791,14 @@ var app = (function () {
     			m_entity1 = element("m-entity");
     			m_entity0 = element("m-entity");
     			set_custom_element_data(m_entity0, "class", "c svelte-ykoydo");
-    			add_location(m_entity0, file, 82, 2, 1988);
+    			add_location(m_entity0, file, 82, 2, 1986);
     			set_custom_element_data(m_entity1, "class", "b svelte-ykoydo");
-    			add_location(m_entity1, file, 81, 1, 1950);
+    			add_location(m_entity1, file, 81, 1, 1948);
     			set_custom_element_data(m_entity2, "class", "a svelte-ykoydo");
     			set_style(m_entity2, "--w", "320px");
     			set_style(m_entity2, "--h", "256px");
     			toggle_class(m_entity2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(m_entity2, file, 75, 0, 1849);
+    			add_location(m_entity2, file, 75, 0, 1847);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");

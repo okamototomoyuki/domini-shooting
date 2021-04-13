@@ -1,5 +1,7 @@
+import MComponent from "../component/MComponent";
 import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
+import MathUtils from "../util/MathUtils";
 import MVertex from "./MVertex";
 
 /**
@@ -11,6 +13,7 @@ export default class MEntity extends HTMLElement {
 
     isInit = false;
     vertices: MVertex[] = [];
+    components: MComponent[] = [];
 
     connectedCallback() {
         if (this.isInit == false) {
@@ -97,6 +100,14 @@ export default class MEntity extends HTMLElement {
     set h(h: number) {
         this.style.setProperty("--h", `${h}px`);
     }
+    get bg(): string {
+        const bg = this.style.getPropertyValue("--bg");
+        return bg ? bg : "black";
+    }
+    set bg(bg: string) {
+        this.style.setProperty("--bg", bg);
+    }
+
     get position(): Vector2 {
         return new Vector2(this.x, this.y);
     }
@@ -147,20 +158,12 @@ export default class MEntity extends HTMLElement {
         return vec.distance / this.offsetHeight;
     }
 
-    degToRad(deg: number): number {
-        return deg * (Math.PI / 180);
-    }
-
-    radToDeg(rad: number): number {
-        return rad / (Math.PI / 180);
-    }
-
     /**
      * スクリーン座標X移動
      * @param x X座標
      */
     translateScreenX(x: number) {
-        let rad = this.degToRad(this.rotateScreen);
+        let rad = MathUtils.degToRad(this.rotateScreen);
         this.x += x * Math.cos(-rad) * this.scaleScreenX;
         this.y += x * Math.sin(-rad) * this.scaleScreenY;
     }
@@ -170,7 +173,7 @@ export default class MEntity extends HTMLElement {
      * @param y Y座標
      */
     translateScreenY(y: number) {
-        let rad = this.degToRad(this.rotateScreen);
+        let rad = MathUtils.degToRad(this.rotateScreen);
         this.x += - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
         this.y += - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
     }
@@ -181,7 +184,7 @@ export default class MEntity extends HTMLElement {
      * @param y y座標
      */
     translateScreen(x: number, y: number) {
-        let rad = this.degToRad(this.rotateScreen);
+        let rad = MathUtils.degToRad(this.rotateScreen);
         this.x += x * Math.cos(-rad) - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
         this.y += x * Math.sin(-rad) - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
     }
@@ -302,7 +305,11 @@ export default class MEntity extends HTMLElement {
         const targetRad = Math.atan2(targetVec.y, targetVec.x);
         const baseVec = this.right.addVectors(this.origin.multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
-        this.r += this.radToDeg(targetRad - baseRad);
+        this.r += MathUtils.radToDeg(targetRad - baseRad);
+    }
+
+    get isDestroy(): boolean {
+        return this.parentElement == null;
     }
 }
 customElements.define("m-entity", MEntity);

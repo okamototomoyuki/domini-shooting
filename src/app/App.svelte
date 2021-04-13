@@ -102,8 +102,6 @@
 		transform-origin: center;
 		width: var(--w, 320px);
 		height: var(--h, 256px);
-		&.collision {
-			background-color: red;
-		}
+		background-color: var(--bg, black);
 	}
 </style>

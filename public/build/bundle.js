@@ -356,6 +356,15 @@ var app = (function () {
         }
     }
 
+    class MathUtils {
+        static degToRad(deg) {
+            return deg * (Math.PI / 180);
+        }
+        static radToDeg(rad) {
+            return rad / (Math.PI / 180);
+        }
+    }
+
     class Vertex extends HTMLElement {
         static new(trans, type) {
             const node = document.createElement('m-vertex');
@@ -396,6 +405,7 @@ var app = (function () {
             super(...arguments);
             this.isInit = false;
             this.vertices = [];
+            this.components = [];
         }
         connectedCallback() {
             if (this.isInit == false) {
@@ -479,6 +489,13 @@ var app = (function () {
         set h(h) {
             this.style.setProperty("--h", `${h}px`);
         }
+        get bg() {
+            const bg = this.style.getPropertyValue("--bg");
+            return bg ? bg : "black";
+        }
+        set bg(bg) {
+            this.style.setProperty("--bg", bg);
+        }
         get position() {
             return new Vector2(this.x, this.y);
         }
@@ -523,24 +540,18 @@ var app = (function () {
             const vec = this.bottom.addVectors(this.top.multiply(-1));
             return vec.distance / this.offsetHeight;
         }
-        degToRad(deg) {
-            return deg * (Math.PI / 180);
-        }
-        radToDeg(rad) {
-            return rad / (Math.PI / 180);
-        }
         translateScreenX(x) {
-            let rad = this.degToRad(this.rotateScreen);
+            let rad = MathUtils.degToRad(this.rotateScreen);
             this.x += x * Math.cos(-rad) * this.scaleScreenX;
             this.y += x * Math.sin(-rad) * this.scaleScreenY;
         }
         translateScreenY(y) {
-            let rad = this.degToRad(this.rotateScreen);
+            let rad = MathUtils.degToRad(this.rotateScreen);
             this.x += -y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
             this.y += -y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
         }
         translateScreen(x, y) {
-            let rad = this.degToRad(this.rotateScreen);
+            let rad = MathUtils.degToRad(this.rotateScreen);
             this.x += x * Math.cos(-rad) - y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
             this.y += x * Math.sin(-rad) - y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
         }
@@ -628,7 +639,10 @@ var app = (function () {
             const targetRad = Math.atan2(targetVec.y, targetVec.x);
             const baseVec = this.right.addVectors(this.origin.multiply(-1));
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
-            this.r += this.radToDeg(targetRad - baseRad);
+            this.r += MathUtils.radToDeg(targetRad - baseRad);
+        }
+        get isDestroy() {
+            return this.parentElement == null;
         }
     }
     MEntity.list = new Array();
@@ -790,11 +804,11 @@ var app = (function () {
     			m_entity2 = element("m-entity");
     			m_entity1 = element("m-entity");
     			m_entity0 = element("m-entity");
-    			set_custom_element_data(m_entity0, "class", "c svelte-ykoydo");
+    			set_custom_element_data(m_entity0, "class", "c svelte-3mgeao");
     			add_location(m_entity0, file, 82, 2, 1986);
-    			set_custom_element_data(m_entity1, "class", "b svelte-ykoydo");
+    			set_custom_element_data(m_entity1, "class", "b svelte-3mgeao");
     			add_location(m_entity1, file, 81, 1, 1948);
-    			set_custom_element_data(m_entity2, "class", "a svelte-ykoydo");
+    			set_custom_element_data(m_entity2, "class", "a svelte-3mgeao");
     			set_style(m_entity2, "--w", "320px");
     			set_style(m_entity2, "--h", "256px");
     			toggle_class(m_entity2, "collision", /*isCollision*/ ctx[3]);

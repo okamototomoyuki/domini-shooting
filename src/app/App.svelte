@@ -3,6 +3,8 @@
 	import MEntity from "../engine/element/MEntity";
 	import Input from "../engine/data/Input";
 	import Engine from "../engine/Engine";
+	import MComoponent from "../engine/component/MComponent";
+	import Player from "./component/Player";
 
 	let t1: MEntity;
 	let t2: MEntity;
@@ -11,10 +13,11 @@
 	let isCollision = false;
 	onMount(() => {
 		Engine.start();
+		MComoponent.registerComponent("player", Player);
 		t2.x += 330;
 		t3.x += 330;
 
-		loop();
+		// loop();
 	});
 
 	const loop = () => {
@@ -82,12 +85,7 @@
 	};
 </script>
 
-<m-entity
-	class="a"
-	style="--w:320px;--h:256px;"
-	bind:this={t1}
-	class:collision={isCollision}
->
+<m-entity class="a" style="--w:320px;--h:256px;" bind:this={t1} player>
 	<m-entity class="b" bind:this={t2}>
 		<m-entity class="c" bind:this={t3} />
 	</m-entity>
@@ -98,7 +96,6 @@
 		transform: translate(var(--x, 0), var(--y, 0)) rotate(var(--r, 0))
 			scaleX(var(--sx, 1)) scaleY(var(--sy, 1));
 		position: absolute;
-		background-color: black;
 		transform-origin: center;
 		width: var(--w, 320px);
 		height: var(--h, 256px);

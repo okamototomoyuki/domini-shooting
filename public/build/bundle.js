@@ -60,9 +60,6 @@ var app = (function () {
     function set_style(node, key, value, important) {
         node.style.setProperty(key, value, important ? 'important' : '');
     }
-    function toggle_class(element, name, toggle) {
-        element.classList[toggle ? 'add' : 'remove'](name);
-    }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
         e.initCustomEvent(type, false, false, detail);
@@ -318,6 +315,31 @@ var app = (function () {
         $inject_state() { }
     }
 
+    class MComoponent {
+        constructor(entity) {
+            this.entity = entity;
+        }
+        static registerComponent(name, compClass) {
+            this.nameToComp.set(name, compClass);
+        }
+        static generateComponent(className) {
+            const factory = MComoponent.nameToComp.get(className);
+            if (factory) {
+                return new factory();
+            }
+            else {
+                return undefined;
+            }
+        }
+        start() {
+        }
+        update() {
+        }
+        onDestroy() {
+        }
+    }
+    MComoponent.nameToComp = new Map();
+
     class Vector2 {
         constructor(x, y) {
             this.x = x;
@@ -403,13 +425,22 @@ var app = (function () {
     class MEntity extends HTMLElement {
         constructor() {
             super(...arguments);
-            this.isInit = false;
             this.vertices = [];
-            this.components = [];
+            this.nameToComponent = new Map();
+        }
+        static update() {
+            for (const e of this.list) {
+                if (e.parentElement) {
+                    e.update();
+                }
+                else {
+                    e.onDestroy();
+                }
+            }
         }
         connectedCallback() {
-            if (this.isInit == false) {
-                this.isInit = true;
+            if (MEntity.list.includes(this) == false) {
+                MEntity.list.push(this);
                 this.vertices = [
                     Vertex.new(this, Vertex.TYPE_LT),
                     Vertex.new(this, Vertex.TYPE_RT),
@@ -437,7 +468,35 @@ var app = (function () {
                 this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
                 const h = style.getPropertyValue("--h").replace("px", "");
                 this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
-                MEntity.list.push(this);
+            }
+        }
+        update() {
+            const nameToComp = new Map(this.nameToComponent);
+            const attrs = [...this.attributes];
+            for (const attr of attrs) {
+                let comp = nameToComp.get(attr.name);
+                if (comp) {
+                    nameToComp.delete(attr.name);
+                }
+                else {
+                    comp = MComoponent.generateComponent(attr.name);
+                    if (comp) {
+                        comp.entity = this;
+                        this.nameToComponent.set(attr.name, comp);
+                        comp.start();
+                    }
+                }
+                if (comp) {
+                    comp.update();
+                }
+            }
+            for (const comp of nameToComp.values()) {
+                comp.onDestroy();
+            }
+        }
+        onDestroy() {
+            for (const comp of this.nameToComponent.values()) {
+                comp.onDestroy();
             }
         }
         get x() {
@@ -658,6 +717,7 @@ var app = (function () {
             const now = window.performance.now();
             Engine.delta = (now - Engine.prevDate) / 1000;
             Engine.prevDate = now;
+            MEntity.update();
             Input.update();
             requestAnimationFrame(Engine.loop);
         }
@@ -791,6 +851,40 @@ var app = (function () {
     Input.wheelFrame = 0;
     Input.wheel = 0;
 
+    class Player extends MComoponent {
+        update() {
+            console.log(1);
+            const d = Engine.delta;
+            const e = this.entity;
+            if (Input.isPressing("KeyW")) {
+                e.translateScreenY(-d * 100);
+            }
+            if (Input.isPressing("KeyA")) {
+                e.translateScreenX(-d * 100);
+            }
+            if (Input.isPressing("KeyS")) {
+                e.translateScreenY(d * 100);
+            }
+            if (Input.isPressing("KeyD")) {
+                e.translateScreenX(d * 100);
+            }
+            if (Input.isPressing("KeyQ")) {
+                e.r += -d * 100;
+            }
+            if (Input.isPressing("KeyE")) {
+                e.r += d * 100;
+            }
+            if (Input.isPressing("KeyZ")) {
+                e.sx -= d * 10;
+            }
+            if (Input.isPressing("KeyC")) {
+                e.sy -= d * 10;
+            }
+            e.loopAtScreen(Input.mousePosition);
+            e.bg = e.collides.length > 0 ? "red" : "black";
+        }
+    }
+
     /* src\app\App.svelte generated by Svelte v3.35.0 */
     const file = "src\\app\\App.svelte";
 
@@ -804,15 +898,15 @@ var app = (function () {
     			m_entity2 = element("m-entity");
     			m_entity1 = element("m-entity");
     			m_entity0 = element("m-entity");
-    			set_custom_element_data(m_entity0, "class", "c svelte-3mgeao");
-    			add_location(m_entity0, file, 82, 2, 1986);
-    			set_custom_element_data(m_entity1, "class", "b svelte-3mgeao");
-    			add_location(m_entity1, file, 81, 1, 1948);
-    			set_custom_element_data(m_entity2, "class", "a svelte-3mgeao");
+    			set_custom_element_data(m_entity0, "class", "c svelte-d6u1g2");
+    			add_location(m_entity0, file, 79, 2, 2100);
+    			set_custom_element_data(m_entity1, "class", "b svelte-d6u1g2");
+    			add_location(m_entity1, file, 78, 1, 2062);
+    			set_custom_element_data(m_entity2, "class", "a svelte-d6u1g2");
     			set_style(m_entity2, "--w", "320px");
     			set_style(m_entity2, "--h", "256px");
-    			toggle_class(m_entity2, "collision", /*isCollision*/ ctx[3]);
-    			add_location(m_entity2, file, 75, 0, 1847);
+    			set_custom_element_data(m_entity2, "player", "");
+    			add_location(m_entity2, file, 77, 0, 1989);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -821,22 +915,18 @@ var app = (function () {
     			insert_dev(target, m_entity2, anchor);
     			append_dev(m_entity2, m_entity1);
     			append_dev(m_entity1, m_entity0);
-    			/*m_entity0_binding*/ ctx[4](m_entity0);
-    			/*m_entity1_binding*/ ctx[5](m_entity1);
-    			/*m_entity2_binding*/ ctx[6](m_entity2);
+    			/*m_entity0_binding*/ ctx[3](m_entity0);
+    			/*m_entity1_binding*/ ctx[4](m_entity1);
+    			/*m_entity2_binding*/ ctx[5](m_entity2);
     		},
-    		p: function update(ctx, [dirty]) {
-    			if (dirty & /*isCollision*/ 8) {
-    				toggle_class(m_entity2, "collision", /*isCollision*/ ctx[3]);
-    			}
-    		},
+    		p: noop,
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(m_entity2);
-    			/*m_entity0_binding*/ ctx[4](null);
-    			/*m_entity1_binding*/ ctx[5](null);
-    			/*m_entity2_binding*/ ctx[6](null);
+    			/*m_entity0_binding*/ ctx[3](null);
+    			/*m_entity1_binding*/ ctx[4](null);
+    			/*m_entity2_binding*/ ctx[5](null);
     		}
     	};
 
@@ -861,9 +951,9 @@ var app = (function () {
 
     	onMount(() => {
     		Engine.start();
+    		MComoponent.registerComponent("player", Player);
     		$$invalidate(1, t2.x += 330, t2);
     		$$invalidate(2, t3.x += 330, t3);
-    		loop();
     	});
 
     	const loop = () => {
@@ -934,11 +1024,11 @@ var app = (function () {
     		}
 
     		t2.loopAtScreen(Input.mousePosition);
-    		$$invalidate(3, isCollision = false);
+    		isCollision = false;
 
     		for (let e of t1.collides) {
     			if (e == t3) {
-    				$$invalidate(3, isCollision = true);
+    				isCollision = true;
     			}
     		}
 
@@ -977,6 +1067,8 @@ var app = (function () {
     		MEntity,
     		Input,
     		Engine,
+    		MComoponent,
+    		Player,
     		t1,
     		t2,
     		t3,
@@ -988,22 +1080,14 @@ var app = (function () {
     		if ("t1" in $$props) $$invalidate(0, t1 = $$props.t1);
     		if ("t2" in $$props) $$invalidate(1, t2 = $$props.t2);
     		if ("t3" in $$props) $$invalidate(2, t3 = $$props.t3);
-    		if ("isCollision" in $$props) $$invalidate(3, isCollision = $$props.isCollision);
+    		if ("isCollision" in $$props) isCollision = $$props.isCollision;
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [
-    		t1,
-    		t2,
-    		t3,
-    		isCollision,
-    		m_entity0_binding,
-    		m_entity1_binding,
-    		m_entity2_binding
-    	];
+    	return [t1, t2, t3, m_entity0_binding, m_entity1_binding, m_entity2_binding];
     }
 
     class App extends SvelteComponentDev {

@@ -11,13 +11,22 @@ export default class MEntity extends HTMLElement {
 
     static list = new Array<MEntity>();
 
-    isInit = false;
+    static update() {
+        for (const e of this.list) {
+            if (e.parentElement) {
+                e.update();
+            } else {
+                e.onDestroy();
+            }
+        }
+    }
+
     vertices: MVertex[] = [];
-    components: MComponent[] = [];
+    nameToComponent = new Map<String, MComponent>();
 
     connectedCallback() {
-        if (this.isInit == false) {
-            this.isInit = true;
+        if (MEntity.list.includes(this) == false) {
+            MEntity.list.push(this);
             this.vertices = [
                 MVertex.new(this, MVertex.TYPE_LT),
                 MVertex.new(this, MVertex.TYPE_RT),
@@ -46,8 +55,43 @@ export default class MEntity extends HTMLElement {
             this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
             const h = style.getPropertyValue("--h").replace("px", "");
             this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+        }
+    }
 
-            MEntity.list.push(this);
+    update() {
+        const nameToComp = new Map(this.nameToComponent);
+        const attrs = [...this.attributes];
+
+        // 存在チェック
+        for (const attr of attrs) {
+            let comp = nameToComp.get(attr.name);
+            if (comp) {
+                nameToComp.delete(attr.name)
+            } else {
+                // なければ追加
+                comp = MComponent.generateComponent(attr.name);
+                if (comp) {
+                    comp.entity = this;
+                    this.nameToComponent.set(attr.name, comp);
+                    comp.start();
+                }
+            }
+
+            // 更新
+            if (comp) {
+                comp.update();
+            }
+        }
+        // 削除されたら Destroy 
+        for (const comp of nameToComp.values()) {
+            comp.onDestroy();
+        }
+    }
+
+    onDestroy() {
+        // コンポーネント全破棄 
+        for (const comp of this.nameToComponent.values()) {
+            comp.onDestroy();
         }
     }
 

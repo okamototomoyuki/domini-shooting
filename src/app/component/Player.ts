@@ -5,6 +5,7 @@ import Engine from "../../engine/Engine";
 export default class Player extends MComoponent {
 
     update() {
+        console.log(1);
         const d = Engine.delta;
         const e = this.entity;
 
@@ -58,7 +59,7 @@ export default class Player extends MComoponent {
         //     t3.r += d * 100;
         // }
 
-        // t2.loopAtScreen(Input.mousePosition);
+        e.loopAtScreen(Input.mousePosition);
 
         e.bg = e.collides.length > 0 ? "red" : "black";
     }

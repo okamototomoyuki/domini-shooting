@@ -1,4 +1,5 @@
 import Input from "./data/Input";
+import MEntity from "./element/MEntity";
 
 export default class Engine {
 
@@ -19,6 +20,7 @@ export default class Engine {
         Engine.delta = (now - Engine.prevDate) / 1000;
         Engine.prevDate = now;
 
+        MEntity.update();
         Input.update();
 
         requestAnimationFrame(Engine.loop);

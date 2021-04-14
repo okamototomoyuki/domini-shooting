@@ -168,7 +168,7 @@ export default class MEntity extends HTMLElement {
     }
 
     get origin(): Vector2 {
-        return this.vertices[MVertex.TYPE_LT].positionScreen.addVectors(this.vertices[MVertex.TYPE_LT].positionScreen).multiply(0.5);
+        return this.vertices[MVertex.TYPE_LT].positionScreen.addVectors(this.vertices[MVertex.TYPE_RB].positionScreen).multiply(0.5);
     }
     get top(): Vector2 {
         return this.vertices[MVertex.TYPE_LT].positionScreen.addVectors(this.vertices[MVertex.TYPE_RT].positionScreen).multiply(0.5);

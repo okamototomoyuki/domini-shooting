@@ -15,14 +15,14 @@ export default class Input {
     static wheel = 0
 
     static initialize() {
-        document.addEventListener("keydown", this._onKeyDown);
-        document.addEventListener("keyup", this._onKeyUp);
-        document.addEventListener("mousemove", this._onMouseMove)
-        document.body.addEventListener("mousedown", this._onMouseDown)
-        document.body.addEventListener("mouseup", this._onMouseUp)
-        document.body.addEventListener("wheel", this._onMouseWheel)
+        document.addEventListener("keydown", Input._onKeyDown);
+        document.addEventListener("keyup", Input._onKeyUp);
+        document.addEventListener("mousemove", Input._onMouseMove)
+        document.body.addEventListener("mousedown", Input._onMouseDown)
+        document.body.addEventListener("mouseup", Input._onMouseUp)
+        document.body.addEventListener("wheel", Input._onMouseWheel)
 
-        this.update();
+        Input.update();
     }
 
     static update() {
@@ -54,22 +54,23 @@ export default class Input {
     static _onMouseDown(e: MouseEvent) {
         switch (e.button) {
             case 0:
-                Input.map.set(this._MOUSE_LEFT, 2);
+                console.log(1);
+                Input.map.set(Input._MOUSE_LEFT, 2);
             case 1:
-                Input.map.set(this._MOUSE_MIDDLE, 2);
+                Input.map.set(Input._MOUSE_MIDDLE, 2);
             case 2:
-                Input.map.set(this._MOUSE_RIGHT, 2);
+                Input.map.set(Input._MOUSE_RIGHT, 2);
         }
     }
 
     static _onMouseUp(e: MouseEvent) {
         switch (e.button) {
             case 0:
-                Input.map.set(this._MOUSE_LEFT, -1);
+                Input.map.set(Input._MOUSE_LEFT, -1);
             case 1:
-                Input.map.set(this._MOUSE_MIDDLE, -1);
+                Input.map.set(Input._MOUSE_MIDDLE, -1);
             case 2:
-                Input.map.set(this._MOUSE_RIGHT, -1);
+                Input.map.set(Input._MOUSE_RIGHT, -1);
         }
     }
 
@@ -101,58 +102,58 @@ export default class Input {
 
 
     static get isUpMouseLeft(): boolean {
-        return Input.map.get(this._MOUSE_LEFT) == -1
+        return Input.map.get(Input._MOUSE_LEFT) == -1
     }
 
     static get isNotPressMouseLeft(): boolean {
-        const v = Input.map.get(this._MOUSE_LEFT);
+        const v = Input.map.get(Input._MOUSE_LEFT);
         return v == -1 || v == 0
     }
 
     static get isDownMouseLeft(): boolean {
-        return Input.map.get(this._MOUSE_LEFT) == 2;
+        return Input.map.get(Input._MOUSE_LEFT) == 2;
     }
 
     static get isPressingMouseLeft(): boolean {
-        const v = Input.map.get(this._MOUSE_LEFT)
+        const v = Input.map.get(Input._MOUSE_LEFT)
         return v == 1 || v == 2;
     }
 
 
     static get isUpMouseRight(): boolean {
-        return Input.map.get(this._MOUSE_RIGHT) == -1;
+        return Input.map.get(Input._MOUSE_RIGHT) == -1;
     }
 
     static get isNotPressMouseRight(): boolean {
-        const v = Input.map.get(this._MOUSE_RIGHT)
+        const v = Input.map.get(Input._MOUSE_RIGHT)
         return v == -1 || v == 0
     }
 
     static get isDownMouseRight(): boolean {
-        return Input.map.get(this._MOUSE_RIGHT) == 2;
+        return Input.map.get(Input._MOUSE_RIGHT) == 2;
     }
 
     static get isPressingMouseRight(): boolean {
-        const v = Input.map.get(this._MOUSE_RIGHT)
+        const v = Input.map.get(Input._MOUSE_RIGHT)
         return v == 1 || v == 2;
     }
 
 
     static get isUpMouseMiddle(): boolean {
-        return Input.map.get(this._MOUSE_MIDDLE) == -1;
+        return Input.map.get(Input._MOUSE_MIDDLE) == -1;
     }
 
     static get isNotPressMouseMiddle(): boolean {
-        const v = Input.map.get(this._MOUSE_MIDDLE)
+        const v = Input.map.get(Input._MOUSE_MIDDLE)
         return v == -1 || v == 0;
     }
 
     static get isDownMouseMiddle(): boolean {
-        return Input.map.get(this._MOUSE_MIDDLE) == 2;
+        return Input.map.get(Input._MOUSE_MIDDLE) == 2;
     }
 
     static get isPressingMouseMiddle(): boolean {
-        const v = Input.map.get(this._MOUSE_MIDDLE)
+        const v = Input.map.get(Input._MOUSE_MIDDLE)
         return v == 1 || v == 2;
     }
 }

@@ -1,0 +1,30 @@
+import MComoponent from "../../engine/component/MComponent";
+import Input from "../../engine/data/Input";
+import Vector2 from "../../engine/data/Vector2";
+import MEntity from "../../engine/element/MEntity";
+
+export default class Bullet extends MComoponent {
+
+    static Generate(screenPos: Vector2, rad: number) {
+        const node = document.createElement('m-entity') as MEntity
+        document.body.appendChild(node);
+        const bullet = node.addAttribute<Bullet>() as Bullet;
+        bullet.#screenPos = screenPos;
+        bullet.#rad = rad;
+    }
+
+    #screenPos: Vector2 = new Vector2(0, 0);
+    #rad: number = 0;
+
+    start() {
+        const e = this.entity;
+
+        e.positionScreen = this.#screenPos;
+        e.r = this.#rad;
+        e.w = 10;
+        e.h = 10;
+    }
+
+    update() {
+    }
+}

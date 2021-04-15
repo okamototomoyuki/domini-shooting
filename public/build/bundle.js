@@ -315,7 +315,7 @@ var app = (function () {
         $inject_state() { }
     }
 
-    class MComoponent {
+    class MComponent {
         constructor(entity) {
             this.entity = entity;
         }
@@ -323,13 +323,21 @@ var app = (function () {
             this.nameToComp.set(name, compClass);
         }
         static generateComponent(className) {
-            const factory = MComoponent.nameToComp.get(className);
+            const factory = MComponent.nameToComp.get(className);
             if (factory) {
                 return new factory();
             }
             else {
                 return undefined;
             }
+        }
+        static getAttributeName(compClass) {
+            for (const e of this.nameToComp.entries()) {
+                if (e[1] instanceof compClass) {
+                    return e[0];
+                }
+            }
+            return undefined;
         }
         start() {
         }
@@ -338,7 +346,7 @@ var app = (function () {
         onDestroy() {
         }
     }
-    MComoponent.nameToComp = new Map();
+    MComponent.nameToComp = new Map();
 
     class Vector2 {
         constructor(x, y) {
@@ -479,7 +487,7 @@ var app = (function () {
                     nameToComp.delete(attr.name);
                 }
                 else {
-                    comp = MComoponent.generateComponent(attr.name);
+                    comp = MComponent.generateComponent(attr.name);
                     if (comp) {
                         comp.entity = this;
                         this.nameToComponent.set(attr.name, comp);
@@ -570,7 +578,7 @@ var app = (function () {
             this.sy = v.y;
         }
         get origin() {
-            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_LT].positionScreen).multiply(0.5);
+            return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
         }
         get top() {
             return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RT].positionScreen).multiply(0.5);
@@ -587,9 +595,16 @@ var app = (function () {
         get positionScreen() {
             return this.origin;
         }
-        get rotateScreen() {
+        set positionScreen(screenPos) {
+            let toVector = screenPos.addVectors(this.positionScreen.multiply(-1));
+            this.translateScreen(toVector.x, toVector.y);
+        }
+        get radianScreen() {
             const vec = this.right.addVectors(this.origin.multiply(-1));
             return Math.atan2(vec.y, vec.x);
+        }
+        get degreeScreen() {
+            return MathUtils.radToDeg(this.radianScreen);
         }
         get scaleScreenX() {
             const vec = this.right.addVectors(this.left.multiply(-1));
@@ -600,17 +615,17 @@ var app = (function () {
             return vec.distance / this.offsetHeight;
         }
         translateScreenX(x) {
-            let rad = MathUtils.degToRad(this.rotateScreen);
+            let rad = MathUtils.degToRad(this.radianScreen);
             this.x += x * Math.cos(-rad) * this.scaleScreenX;
             this.y += x * Math.sin(-rad) * this.scaleScreenY;
         }
         translateScreenY(y) {
-            let rad = MathUtils.degToRad(this.rotateScreen);
+            let rad = MathUtils.degToRad(this.radianScreen);
             this.x += -y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
             this.y += -y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
         }
         translateScreen(x, y) {
-            let rad = MathUtils.degToRad(this.rotateScreen);
+            let rad = MathUtils.degToRad(this.radianScreen);
             this.x += x * Math.cos(-rad) - y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
             this.y += x * Math.sin(-rad) - y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
         }
@@ -700,6 +715,9 @@ var app = (function () {
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
             this.r += MathUtils.radToDeg(targetRad - baseRad);
         }
+        addAttribute(compClass) {
+            MComponent.getAttributeName(compClass);
+        }
         get isDestroy() {
             return this.parentElement == null;
         }
@@ -707,34 +725,15 @@ var app = (function () {
     MEntity.list = new Array();
     customElements.define("m-entity", MEntity);
 
-    class Engine {
-        static start() {
-            Input.initialize();
-            this.loop();
-        }
-        static loop() {
-            Engine.currentFrame = Engine.currentFrame + 1;
-            const now = window.performance.now();
-            Engine.delta = (now - Engine.prevDate) / 1000;
-            Engine.prevDate = now;
-            MEntity.update();
-            Input.update();
-            requestAnimationFrame(Engine.loop);
-        }
-    }
-    Engine.prevDate = window.performance.now();
-    Engine.currentFrame = 0;
-    Engine.delta = 0;
-
     class Input {
         static initialize() {
-            document.addEventListener("keydown", this._onKeyDown);
-            document.addEventListener("keyup", this._onKeyUp);
-            document.addEventListener("mousemove", this._onMouseMove);
-            document.body.addEventListener("mousedown", this._onMouseDown);
-            document.body.addEventListener("mouseup", this._onMouseUp);
-            document.body.addEventListener("wheel", this._onMouseWheel);
-            this.update();
+            document.addEventListener("keydown", Input._onKeyDown);
+            document.addEventListener("keyup", Input._onKeyUp);
+            document.addEventListener("mousemove", Input._onMouseMove);
+            document.body.addEventListener("mousedown", Input._onMouseDown);
+            document.body.addEventListener("mouseup", Input._onMouseUp);
+            document.body.addEventListener("wheel", Input._onMouseWheel);
+            Input.update();
         }
         static update() {
             for (let key of Input.map.keys()) {
@@ -762,21 +761,22 @@ var app = (function () {
         static _onMouseDown(e) {
             switch (e.button) {
                 case 0:
-                    Input.map.set(this._MOUSE_LEFT, 2);
+                    console.log(1);
+                    Input.map.set(Input._MOUSE_LEFT, 2);
                 case 1:
-                    Input.map.set(this._MOUSE_MIDDLE, 2);
+                    Input.map.set(Input._MOUSE_MIDDLE, 2);
                 case 2:
-                    Input.map.set(this._MOUSE_RIGHT, 2);
+                    Input.map.set(Input._MOUSE_RIGHT, 2);
             }
         }
         static _onMouseUp(e) {
             switch (e.button) {
                 case 0:
-                    Input.map.set(this._MOUSE_LEFT, -1);
+                    Input.map.set(Input._MOUSE_LEFT, -1);
                 case 1:
-                    Input.map.set(this._MOUSE_MIDDLE, -1);
+                    Input.map.set(Input._MOUSE_MIDDLE, -1);
                 case 2:
-                    Input.map.set(this._MOUSE_RIGHT, -1);
+                    Input.map.set(Input._MOUSE_RIGHT, -1);
             }
         }
         static _onMouseWheel(e) {
@@ -801,45 +801,45 @@ var app = (function () {
             return v == 1 || v == 2;
         }
         static get isUpMouseLeft() {
-            return Input.map.get(this._MOUSE_LEFT) == -1;
+            return Input.map.get(Input._MOUSE_LEFT) == -1;
         }
         static get isNotPressMouseLeft() {
-            const v = Input.map.get(this._MOUSE_LEFT);
+            const v = Input.map.get(Input._MOUSE_LEFT);
             return v == -1 || v == 0;
         }
         static get isDownMouseLeft() {
-            return Input.map.get(this._MOUSE_LEFT) == 2;
+            return Input.map.get(Input._MOUSE_LEFT) == 2;
         }
         static get isPressingMouseLeft() {
-            const v = Input.map.get(this._MOUSE_LEFT);
+            const v = Input.map.get(Input._MOUSE_LEFT);
             return v == 1 || v == 2;
         }
         static get isUpMouseRight() {
-            return Input.map.get(this._MOUSE_RIGHT) == -1;
+            return Input.map.get(Input._MOUSE_RIGHT) == -1;
         }
         static get isNotPressMouseRight() {
-            const v = Input.map.get(this._MOUSE_RIGHT);
+            const v = Input.map.get(Input._MOUSE_RIGHT);
             return v == -1 || v == 0;
         }
         static get isDownMouseRight() {
-            return Input.map.get(this._MOUSE_RIGHT) == 2;
+            return Input.map.get(Input._MOUSE_RIGHT) == 2;
         }
         static get isPressingMouseRight() {
-            const v = Input.map.get(this._MOUSE_RIGHT);
+            const v = Input.map.get(Input._MOUSE_RIGHT);
             return v == 1 || v == 2;
         }
         static get isUpMouseMiddle() {
-            return Input.map.get(this._MOUSE_MIDDLE) == -1;
+            return Input.map.get(Input._MOUSE_MIDDLE) == -1;
         }
         static get isNotPressMouseMiddle() {
-            const v = Input.map.get(this._MOUSE_MIDDLE);
+            const v = Input.map.get(Input._MOUSE_MIDDLE);
             return v == -1 || v == 0;
         }
         static get isDownMouseMiddle() {
-            return Input.map.get(this._MOUSE_MIDDLE) == 2;
+            return Input.map.get(Input._MOUSE_MIDDLE) == 2;
         }
         static get isPressingMouseMiddle() {
-            const v = Input.map.get(this._MOUSE_MIDDLE);
+            const v = Input.map.get(Input._MOUSE_MIDDLE);
             return v == 1 || v == 2;
         }
     }
@@ -851,9 +851,27 @@ var app = (function () {
     Input.wheelFrame = 0;
     Input.wheel = 0;
 
-    class Player extends MComoponent {
+    class Engine {
+        static start() {
+            Input.initialize();
+            this.loop();
+        }
+        static loop() {
+            Engine.currentFrame = Engine.currentFrame + 1;
+            const now = window.performance.now();
+            Engine.delta = (now - Engine.prevDate) / 1000;
+            Engine.prevDate = now;
+            MEntity.update();
+            Input.update();
+            requestAnimationFrame(Engine.loop);
+        }
+    }
+    Engine.prevDate = window.performance.now();
+    Engine.currentFrame = 0;
+    Engine.delta = 0;
+
+    class Player extends MComponent {
         update() {
-            console.log(1);
             const d = Engine.delta;
             const e = this.entity;
             if (Input.isPressing("KeyW")) {
@@ -881,7 +899,72 @@ var app = (function () {
                 e.sy -= d * 10;
             }
             e.loopAtScreen(Input.mousePosition);
-            e.bg = e.collides.length > 0 ? "red" : "black";
+        }
+    }
+
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+    ***************************************************************************** */
+
+    function __classPrivateFieldGet(receiver, privateMap) {
+        if (!privateMap.has(receiver)) {
+            throw new TypeError("attempted to get private field on non-instance");
+        }
+        return privateMap.get(receiver);
+    }
+
+    function __classPrivateFieldSet(receiver, privateMap, value) {
+        if (!privateMap.has(receiver)) {
+            throw new TypeError("attempted to set private field on non-instance");
+        }
+        privateMap.set(receiver, value);
+        return value;
+    }
+
+    var _screenPos, _rad;
+    class Bullet extends MComponent {
+        constructor() {
+            super(...arguments);
+            _screenPos.set(this, new Vector2(0, 0));
+            _rad.set(this, 0);
+        }
+        static Generate(screenPos, rad) {
+            const node = document.createElement('m-entity');
+            document.body.appendChild(node);
+            const bullet = node.addAttribute();
+            __classPrivateFieldSet(bullet, _screenPos, screenPos);
+            __classPrivateFieldSet(bullet, _rad, rad);
+        }
+        start() {
+            const e = this.entity;
+            e.positionScreen = __classPrivateFieldGet(this, _screenPos);
+            e.r = __classPrivateFieldGet(this, _rad);
+            e.w = 10;
+            e.h = 10;
+        }
+        update() {
+        }
+    }
+    _screenPos = new WeakMap(), _rad = new WeakMap();
+
+    class Gun extends MComponent {
+        update() {
+            if (Input.isDownMouseLeft) {
+                var pos = this.entity.positionScreen;
+                var rot = this.entity.degreeScreen;
+                Bullet.Generate(pos, rot);
+            }
         }
     }
 
@@ -889,44 +972,42 @@ var app = (function () {
     const file = "src\\app\\App.svelte";
 
     function create_fragment(ctx) {
-    	let m_entity2;
     	let m_entity1;
     	let m_entity0;
 
     	const block = {
     		c: function create() {
-    			m_entity2 = element("m-entity");
     			m_entity1 = element("m-entity");
     			m_entity0 = element("m-entity");
-    			set_custom_element_data(m_entity0, "class", "c svelte-d6u1g2");
-    			add_location(m_entity0, file, 79, 2, 2100);
-    			set_custom_element_data(m_entity1, "class", "b svelte-d6u1g2");
-    			add_location(m_entity1, file, 78, 1, 2062);
-    			set_custom_element_data(m_entity2, "class", "a svelte-d6u1g2");
-    			set_style(m_entity2, "--w", "320px");
-    			set_style(m_entity2, "--h", "256px");
-    			set_custom_element_data(m_entity2, "player", "");
-    			add_location(m_entity2, file, 77, 0, 1989);
+    			set_custom_element_data(m_entity0, "class", "b");
+    			set_style(m_entity0, "--w", "25px");
+    			set_style(m_entity0, "--h", "25px");
+    			set_style(m_entity0, "--x", "37.5px");
+    			set_style(m_entity0, "--y", "12.5px");
+    			set_custom_element_data(m_entity0, "gun", "");
+    			add_location(m_entity0, file, 18, 1, 621);
+    			set_custom_element_data(m_entity1, "class", "a");
+    			set_style(m_entity1, "--w", "50px");
+    			set_style(m_entity1, "--h", "50px");
+    			set_custom_element_data(m_entity1, "player", "");
+    			add_location(m_entity1, file, 17, 0, 550);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, m_entity2, anchor);
-    			append_dev(m_entity2, m_entity1);
+    			insert_dev(target, m_entity1, anchor);
     			append_dev(m_entity1, m_entity0);
-    			/*m_entity0_binding*/ ctx[3](m_entity0);
-    			/*m_entity1_binding*/ ctx[4](m_entity1);
-    			/*m_entity2_binding*/ ctx[5](m_entity2);
+    			/*m_entity0_binding*/ ctx[2](m_entity0);
+    			/*m_entity1_binding*/ ctx[3](m_entity1);
     		},
     		p: noop,
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(m_entity2);
-    			/*m_entity0_binding*/ ctx[3](null);
-    			/*m_entity1_binding*/ ctx[4](null);
-    			/*m_entity2_binding*/ ctx[5](null);
+    			if (detaching) detach_dev(m_entity1);
+    			/*m_entity0_binding*/ ctx[2](null);
+    			/*m_entity1_binding*/ ctx[3](null);
     		}
     	};
 
@@ -946,94 +1027,13 @@ var app = (function () {
     	validate_slots("App", slots, []);
     	let t1;
     	let t2;
-    	let t3;
-    	let isCollision = false;
 
     	onMount(() => {
     		Engine.start();
-    		MComoponent.registerComponent("player", Player);
-    		$$invalidate(1, t2.x += 330, t2);
-    		$$invalidate(2, t3.x += 330, t3);
+    		MComponent.registerComponent("player", Player);
+    		MComponent.registerComponent("gun", Gun);
+    		MComponent.registerComponent("bullet", Bullet);
     	});
-
-    	const loop = () => {
-    		const d = Engine.delta;
-
-    		if (Input.isPressing("KeyW")) {
-    			t1.translateScreenY(-d * 100);
-    		}
-
-    		if (Input.isPressing("KeyA")) {
-    			t1.translateScreenX(-d * 100);
-    		}
-
-    		if (Input.isPressing("KeyS")) {
-    			t1.translateScreenY(d * 100);
-    		}
-
-    		if (Input.isPressing("KeyD")) {
-    			t1.translateScreenX(d * 100);
-    		}
-
-    		if (Input.isPressing("KeyQ")) {
-    			$$invalidate(0, t1.r += -d * 100, t1);
-    		}
-
-    		if (Input.isPressing("KeyE")) {
-    			$$invalidate(0, t1.r += d * 100, t1);
-    		}
-
-    		if (Input.isPressing("KeyZ")) {
-    			$$invalidate(0, t1.sx -= d * 10, t1);
-    		}
-
-    		if (Input.isPressing("KeyC")) {
-    			$$invalidate(0, t1.sy -= d * 10, t1);
-    		}
-
-    		if (Input.isPressing("KeyI")) {
-    			t2.translateScreenY(-d * 100);
-    		}
-
-    		if (Input.isPressing("KeyJ")) {
-    			t2.translateScreenX(-d * 100);
-    		}
-
-    		if (Input.isPressing("KeyK")) {
-    			t2.translateScreenY(d * 100);
-    		}
-
-    		if (Input.isPressing("KeyL")) {
-    			t2.translateScreenX(d * 100);
-    		}
-
-    		if (Input.isPressing("KeyU")) {
-    			$$invalidate(1, t2.r += -d * 100, t2);
-    		}
-
-    		if (Input.isPressing("KeyO")) {
-    			$$invalidate(1, t2.r += d * 100, t2);
-    		}
-
-    		if (Input.isPressing("KeyP")) {
-    			$$invalidate(2, t3.r += -d * 100, t3);
-    		}
-
-    		if (Input.isPressing("BracketLeft")) {
-    			$$invalidate(2, t3.r += d * 100, t3);
-    		}
-
-    		t2.loopAtScreen(Input.mousePosition);
-    		isCollision = false;
-
-    		for (let e of t1.collides) {
-    			if (e == t3) {
-    				isCollision = true;
-    			}
-    		}
-
-    		requestAnimationFrame(loop);
-    	};
 
     	const writable_props = [];
 
@@ -1043,19 +1043,12 @@ var app = (function () {
 
     	function m_entity0_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			t3 = $$value;
-    			$$invalidate(2, t3);
-    		});
-    	}
-
-    	function m_entity1_binding($$value) {
-    		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			t2 = $$value;
     			$$invalidate(1, t2);
     		});
     	}
 
-    	function m_entity2_binding($$value) {
+    	function m_entity1_binding($$value) {
     		binding_callbacks[$$value ? "unshift" : "push"](() => {
     			t1 = $$value;
     			$$invalidate(0, t1);
@@ -1065,29 +1058,25 @@ var app = (function () {
     	$$self.$capture_state = () => ({
     		onMount,
     		MEntity,
-    		Input,
     		Engine,
-    		MComoponent,
+    		MComoponent: MComponent,
     		Player,
+    		Gun,
+    		Bullet,
     		t1,
-    		t2,
-    		t3,
-    		isCollision,
-    		loop
+    		t2
     	});
 
     	$$self.$inject_state = $$props => {
     		if ("t1" in $$props) $$invalidate(0, t1 = $$props.t1);
     		if ("t2" in $$props) $$invalidate(1, t2 = $$props.t2);
-    		if ("t3" in $$props) $$invalidate(2, t3 = $$props.t3);
-    		if ("isCollision" in $$props) isCollision = $$props.isCollision;
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [t1, t2, t3, m_entity0_binding, m_entity1_binding, m_entity2_binding];
+    	return [t1, t2, m_entity0_binding, m_entity1_binding];
     }
 
     class App extends SvelteComponentDev {

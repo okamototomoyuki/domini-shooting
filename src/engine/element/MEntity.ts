@@ -1,6 +1,8 @@
 import MComponent from "../component/MComponent";
+import MComponent from "../component/MComponent";
 import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
+import Constructable from "../interface/Constructable";
 import MathUtils from "../util/MathUtils";
 import MVertex from "./MVertex";
 
@@ -186,10 +188,17 @@ export default class MEntity extends HTMLElement {
     get positionScreen(): Vector2 {
         return this.origin;
     }
-
-    get rotateScreen(): number {
+    set positionScreen(screenPos: Vector2) {
+        let toVector = screenPos.addVectors(this.positionScreen.multiply(-1));
+        this.translateScreen(toVector.x, toVector.y);
+    }
+    get radianScreen(): number {
         const vec = this.right.addVectors(this.origin.multiply(-1));
         return Math.atan2(vec.y, vec.x);
+    }
+
+    get degreeScreen(): number {
+        return MathUtils.radToDeg(this.radianScreen);
     }
 
     get scaleScreenX(): number {
@@ -207,7 +216,7 @@ export default class MEntity extends HTMLElement {
      * @param x X座標
      */
     translateScreenX(x: number) {
-        let rad = MathUtils.degToRad(this.rotateScreen);
+        let rad = MathUtils.degToRad(this.radianScreen);
         this.x += x * Math.cos(-rad) * this.scaleScreenX;
         this.y += x * Math.sin(-rad) * this.scaleScreenY;
     }
@@ -217,7 +226,7 @@ export default class MEntity extends HTMLElement {
      * @param y Y座標
      */
     translateScreenY(y: number) {
-        let rad = MathUtils.degToRad(this.rotateScreen);
+        let rad = MathUtils.degToRad(this.radianScreen);
         this.x += - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
         this.y += - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
     }
@@ -228,7 +237,7 @@ export default class MEntity extends HTMLElement {
      * @param y y座標
      */
     translateScreen(x: number, y: number) {
-        let rad = MathUtils.degToRad(this.rotateScreen);
+        let rad = MathUtils.degToRad(this.radianScreen);
         this.x += x * Math.cos(-rad) - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
         this.y += x * Math.sin(-rad) - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
     }
@@ -350,6 +359,10 @@ export default class MEntity extends HTMLElement {
         const baseVec = this.right.addVectors(this.origin.multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
         this.r += MathUtils.radToDeg(targetRad - baseRad);
+    }
+
+    addAttribute(compClass: Constructable<MComponent>) {
+        ここから  MComponent.getAttributeName(compClass)
     }
 
     get isDestroy(): boolean {

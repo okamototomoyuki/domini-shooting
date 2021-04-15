@@ -1,21 +1,26 @@
 import MEntity from "../element/MEntity";
+import Constructable from "../interface/Constructable";
 
-interface Constructable<T> extends Function {
-    new(...args: any[]): T;
-}
-
-export default class MComoponent {
-    static nameToComp = new Map<String, Constructable<MComoponent>>();
-    static registerComponent(name: String, compClass: Constructable<MComoponent>) {
+export default class MComponent {
+    static nameToComp = new Map<String, Constructable<MComponent>>();
+    static registerComponent(name: String, compClass: Constructable<MComponent>) {
         this.nameToComp.set(name, compClass);
     }
-    static generateComponent(className: string): MComoponent | undefined {
-        const factory = MComoponent.nameToComp.get(className);
+    static generateComponent(className: string): MComponent | undefined {
+        const factory = MComponent.nameToComp.get(className);
         if (factory) {
             return new factory();
         } else {
             return undefined;
         }
+    }
+    static getAttributeName(compClass: Constructable<MComponent>): String | undefined {
+        for (const e of this.nameToComp.entries()) {
+            if (e[1] instanceof compClass) {
+                return e[0];
+            }
+        }
+        return undefined;
     }
 
     entity: MEntity;

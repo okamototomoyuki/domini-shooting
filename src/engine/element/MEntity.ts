@@ -1,5 +1,4 @@
 import MComponent from "../component/MComponent";
-import MComponent from "../component/MComponent";
 import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
 import Constructable from "../interface/Constructable";
@@ -71,16 +70,18 @@ export default class MEntity extends HTMLElement {
                 nameToComp.delete(attr.name)
             } else {
                 // なければ追加
-                comp = MComponent.generateComponent(attr.name);
+                comp = this.addComponent(MComopnent.get(attr.name));
                 if (comp) {
                     comp.entity = this;
                     this.nameToComponent.set(attr.name, comp);
-                    comp.start();
                 }
             }
 
             // 更新
             if (comp) {
+                if (comp.isStart) {
+                    comp.start();
+                }
                 comp.update();
             }
         }
@@ -361,8 +362,17 @@ export default class MEntity extends HTMLElement {
         this.r += MathUtils.radToDeg(targetRad - baseRad);
     }
 
-    addAttribute(compClass: Constructable<MComponent>) {
-        ここから  MComponent.getAttributeName(compClass)
+    addComponent(compClass: Constructable<MComponent>) {
+        const attrName = MComponent.getAttributeName(compClass)
+        
+        let comp = MComponent.generateComponent(attrName);
+        if (comp) {
+            comp.entity = this;
+            this.nameToComponent.set(attrName, comp);
+        }
+        if (attrName) {
+            return MComponent.generateComponent(attrName);
+        }
     }
 
     get isDestroy(): boolean {

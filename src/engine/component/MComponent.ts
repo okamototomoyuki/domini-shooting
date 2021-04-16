@@ -6,7 +6,7 @@ export default class MComponent {
     static registerComponent(name: String, compClass: Constructable<MComponent>) {
         this.nameToComp.set(name, compClass);
     }
-    static generateComponent(className: string): MComponent | undefined {
+    static generateComponent(className: String): MComponent | undefined {
         const factory = MComponent.nameToComp.get(className);
         if (factory) {
             return new factory();
@@ -24,6 +24,7 @@ export default class MComponent {
     }
 
     entity: MEntity;
+    isStart = false;
 
     constructor(entity: MEntity) {
         this.entity = entity;

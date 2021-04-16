@@ -317,6 +317,7 @@ var app = (function () {
 
     class MComponent {
         constructor(entity) {
+            this.isStart = false;
             this.entity = entity;
         }
         static registerComponent(name, compClass) {
@@ -487,14 +488,16 @@ var app = (function () {
                     nameToComp.delete(attr.name);
                 }
                 else {
-                    comp = MComponent.generateComponent(attr.name);
+                    comp = this.addComponent(MComopnent.get(attr.name));
                     if (comp) {
                         comp.entity = this;
                         this.nameToComponent.set(attr.name, comp);
-                        comp.start();
                     }
                 }
                 if (comp) {
+                    if (comp.isStart) {
+                        comp.start();
+                    }
                     comp.update();
                 }
             }
@@ -715,8 +718,16 @@ var app = (function () {
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
             this.r += MathUtils.radToDeg(targetRad - baseRad);
         }
-        addAttribute(compClass) {
-            MComponent.getAttributeName(compClass);
+        addComponent(compClass) {
+            const attrName = MComponent.getAttributeName(compClass);
+            let comp = MComponent.generateComponent(attrName);
+            if (comp) {
+                comp.entity = this;
+                this.nameToComponent.set(attrName, comp);
+            }
+            if (attrName) {
+                return MComponent.generateComponent(attrName);
+            }
         }
         get isDestroy() {
             return this.parentElement == null;
@@ -942,9 +953,11 @@ var app = (function () {
         static Generate(screenPos, rad) {
             const node = document.createElement('m-entity');
             document.body.appendChild(node);
-            const bullet = node.addAttribute();
-            __classPrivateFieldSet(bullet, _screenPos, screenPos);
-            __classPrivateFieldSet(bullet, _rad, rad);
+            const bullet = node.addAttribute(Bullet);
+            if (bullet) {
+                __classPrivateFieldSet(bullet, _screenPos, screenPos);
+                __classPrivateFieldSet(bullet, _rad, rad);
+            }
         }
         start() {
             const e = this.entity;

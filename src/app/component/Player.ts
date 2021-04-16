@@ -1,8 +1,8 @@
-import MComoponent from "../../engine/component/MComponent";
+import MComponent from "../../engine/component/MComponent";
 import Input from "../../engine/data/Input";
 import Engine from "../../engine/Engine";
 
-export default class Player extends MComoponent {
+export default class Player extends MComponent {
 
     update() {
         const d = Engine.delta;

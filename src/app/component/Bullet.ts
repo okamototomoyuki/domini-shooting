@@ -1,16 +1,18 @@
-import MComoponent from "../../engine/component/MComponent";
+import MComponent from "../../engine/component/MComponent";
 import Input from "../../engine/data/Input";
 import Vector2 from "../../engine/data/Vector2";
 import MEntity from "../../engine/element/MEntity";
 
-export default class Bullet extends MComoponent {
+export default class Bullet extends MComponent {
 
     static Generate(screenPos: Vector2, rad: number) {
         const node = document.createElement('m-entity') as MEntity
         document.body.appendChild(node);
-        const bullet = node.addAttribute<Bullet>() as Bullet;
-        bullet.#screenPos = screenPos;
-        bullet.#rad = rad;
+        const bullet = node.addComponent(Bullet) as Bullet;
+        if (bullet) {
+            bullet.#screenPos = screenPos;
+            bullet.#rad = rad;
+        }
     }
 
     #screenPos: Vector2 = new Vector2(0, 0);

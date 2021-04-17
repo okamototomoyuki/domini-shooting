@@ -7,6 +7,12 @@ export default class Bullet extends MComponent {
 
     static Generate(screenPos: Vector2, rad: number) {
         const node = document.createElement('m-entity') as MEntity
+
+        node.positionScreen = screenPos;
+        node.r = rad;
+        node.w = 10;
+        node.h = 10;
+
         document.body.appendChild(node);
         const bullet = node.addComponent(Bullet) as Bullet;
         if (bullet) {
@@ -21,12 +27,15 @@ export default class Bullet extends MComponent {
     start() {
         const e = this.entity;
 
-        e.positionScreen = this.#screenPos;
-        e.r = this.#rad;
-        e.w = 10;
-        e.h = 10;
+        // e.positionScreen = this.#screenPos;
+        // e.r = this.#rad;
+        // e.w = 10;
+        // e.h = 10;
     }
 
     update() {
+        // const e = this.entity;
+        // e.positionScreen = this.#screenPos;
+        // e.r = this.#rad;
     }
 }

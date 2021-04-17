@@ -320,6 +320,8 @@ var app = (function () {
             this.isStart = false;
             this.entity = entity;
         }
+        static getClass(name) { return MComponent.nameToComp.get(name); }
+        ;
         static registerComponent(name, compClass) {
             this.nameToComp.set(name, compClass);
         }
@@ -334,7 +336,7 @@ var app = (function () {
         }
         static getAttributeName(compClass) {
             for (const e of this.nameToComp.entries()) {
-                if (e[1] instanceof compClass) {
+                if (e[1] == compClass) {
                     return e[0];
                 }
             }
@@ -439,7 +441,7 @@ var app = (function () {
         }
         static update() {
             for (const e of this.list) {
-                if (e.parentElement) {
+                if (e.isDestroy == false) {
                     e.update();
                 }
                 else {
@@ -488,15 +490,19 @@ var app = (function () {
                     nameToComp.delete(attr.name);
                 }
                 else {
-                    comp = this.addComponent(MComopnent.get(attr.name));
-                    if (comp) {
-                        comp.entity = this;
-                        this.nameToComponent.set(attr.name, comp);
+                    const compClass = MComponent.getClass(attr.name);
+                    if (compClass) {
+                        comp = this.addComponent(compClass);
+                        if (comp) {
+                            comp.entity = this;
+                            this.nameToComponent.set(attr.name, comp);
+                        }
                     }
                 }
                 if (comp) {
                     if (comp.isStart) {
                         comp.start();
+                        comp.isStart = true;
                     }
                     comp.update();
                 }
@@ -720,14 +726,18 @@ var app = (function () {
         }
         addComponent(compClass) {
             const attrName = MComponent.getAttributeName(compClass);
-            let comp = MComponent.generateComponent(attrName);
-            if (comp) {
-                comp.entity = this;
-                this.nameToComponent.set(attrName, comp);
-            }
             if (attrName) {
-                return MComponent.generateComponent(attrName);
+                let comp = new compClass();
+                if (comp) {
+                    comp.entity = this;
+                    this.nameToComponent.set(attrName, comp);
+                    if (this.attributes.getNamedItem(attrName) == null) {
+                        this.setAttribute(attrName, "");
+                    }
+                }
+                return comp;
             }
+            return undefined;
         }
         get isDestroy() {
             return this.parentElement == null;
@@ -883,6 +893,7 @@ var app = (function () {
 
     class Player extends MComponent {
         update() {
+            console.log(1);
             const d = Engine.delta;
             const e = this.entity;
             if (Input.isPressing("KeyW")) {
@@ -928,13 +939,6 @@ var app = (function () {
     PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
 
-    function __classPrivateFieldGet(receiver, privateMap) {
-        if (!privateMap.has(receiver)) {
-            throw new TypeError("attempted to get private field on non-instance");
-        }
-        return privateMap.get(receiver);
-    }
-
     function __classPrivateFieldSet(receiver, privateMap, value) {
         if (!privateMap.has(receiver)) {
             throw new TypeError("attempted to set private field on non-instance");
@@ -952,19 +956,19 @@ var app = (function () {
         }
         static Generate(screenPos, rad) {
             const node = document.createElement('m-entity');
+            node.positionScreen = screenPos;
+            node.r = rad;
+            node.w = 10;
+            node.h = 10;
             document.body.appendChild(node);
-            const bullet = node.addAttribute(Bullet);
+            const bullet = node.addComponent(Bullet);
             if (bullet) {
                 __classPrivateFieldSet(bullet, _screenPos, screenPos);
                 __classPrivateFieldSet(bullet, _rad, rad);
             }
         }
         start() {
-            const e = this.entity;
-            e.positionScreen = __classPrivateFieldGet(this, _screenPos);
-            e.r = __classPrivateFieldGet(this, _rad);
-            e.w = 10;
-            e.h = 10;
+            this.entity;
         }
         update() {
         }

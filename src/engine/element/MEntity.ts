@@ -14,7 +14,7 @@ export default class MEntity extends HTMLElement {
 
     static update() {
         for (const e of this.list) {
-            if (e.parentElement) {
+            if (e.isDestroy == false) {
                 e.update();
             } else {
                 e.onDestroy();
@@ -23,7 +23,7 @@ export default class MEntity extends HTMLElement {
     }
 
     vertices: MVertex[] = [];
-    nameToComponent = new Map<String, MComponent>();
+    nameToComponent = new Map<string, MComponent>();
 
     connectedCallback() {
         if (MEntity.list.includes(this) == false) {
@@ -70,10 +70,13 @@ export default class MEntity extends HTMLElement {
                 nameToComp.delete(attr.name)
             } else {
                 // なければ追加
-                comp = this.addComponent(MComopnent.get(attr.name));
-                if (comp) {
-                    comp.entity = this;
-                    this.nameToComponent.set(attr.name, comp);
+                const compClass = MComponent.getClass(attr.name);
+                if (compClass) {
+                    comp = this.addComponent(compClass);
+                    if (comp) {
+                        comp.entity = this;
+                        this.nameToComponent.set(attr.name, comp);
+                    }
                 }
             }
 
@@ -81,6 +84,7 @@ export default class MEntity extends HTMLElement {
             if (comp) {
                 if (comp.isStart) {
                     comp.start();
+                    comp.isStart = true;
                 }
                 comp.update();
             }
@@ -362,17 +366,22 @@ export default class MEntity extends HTMLElement {
         this.r += MathUtils.radToDeg(targetRad - baseRad);
     }
 
-    addComponent(compClass: Constructable<MComponent>) {
-        const attrName = MComponent.getAttributeName(compClass)
-        
-        let comp = MComponent.generateComponent(attrName);
-        if (comp) {
-            comp.entity = this;
-            this.nameToComponent.set(attrName, comp);
-        }
+    addComponent(compClass: Constructable<MComponent>): MComponent | undefined {
+        const attrName = MComponent.getAttributeName(compClass);
         if (attrName) {
-            return MComponent.generateComponent(attrName);
+            let comp = new compClass();
+            if (comp) {
+                comp.entity = this;
+                this.nameToComponent.set(attrName, comp);
+
+                // DOM に書かれてなければ追加
+                if (this.attributes.getNamedItem(attrName) == null) {
+                    this.setAttribute(attrName, "")
+                }
+            }
+            return comp;
         }
+        return undefined;
     }
 
     get isDestroy(): boolean {

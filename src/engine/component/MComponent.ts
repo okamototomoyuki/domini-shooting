@@ -2,11 +2,13 @@ import MEntity from "../element/MEntity";
 import Constructable from "../interface/Constructable";
 
 export default class MComponent {
-    static nameToComp = new Map<String, Constructable<MComponent>>();
-    static registerComponent(name: String, compClass: Constructable<MComponent>) {
+    static nameToComp = new Map<string, Constructable<MComponent>>();
+    static getClass(name: string): Constructable<MComponent> | undefined { return MComponent.nameToComp.get(name) };
+
+    static registerComponent(name: string, compClass: Constructable<MComponent>) {
         this.nameToComp.set(name, compClass);
     }
-    static generateComponent(className: String): MComponent | undefined {
+    static generateComponent(className: string): MComponent | undefined {
         const factory = MComponent.nameToComp.get(className);
         if (factory) {
             return new factory();
@@ -14,9 +16,9 @@ export default class MComponent {
             return undefined;
         }
     }
-    static getAttributeName(compClass: Constructable<MComponent>): String | undefined {
+    static getAttributeName(compClass: Constructable<MComponent>): string | undefined {
         for (const e of this.nameToComp.entries()) {
-            if (e[1] instanceof compClass) {
+            if (e[1] == compClass) {
                 return e[0];
             }
         }

@@ -476,8 +476,8 @@ var app = (function () {
             if (style.getPropertyValue("--y") == "") {
                 this.y = 0;
             }
-            if (style.getPropertyValue("--r") == "") {
-                this.r = 0;
+            if (style.getPropertyValue("--rad") == "") {
+                this.rad = 0;
             }
             if (style.getPropertyValue("--sx") == "") {
                 this.sx = 1;
@@ -509,7 +509,7 @@ var app = (function () {
                     }
                 }
                 if (comp) {
-                    if (comp.isStart) {
+                    if (comp.isStart == false) {
                         comp.start();
                         comp.isStart = true;
                     }
@@ -539,12 +539,12 @@ var app = (function () {
         set y(y) {
             this.style.setProperty("--y", `${y}px`);
         }
-        get r() {
-            const r = this.style.getPropertyValue("--r");
-            return r ? Number(r.replace("deg", "")) : 0;
+        get rad() {
+            const r = this.style.getPropertyValue("--rad");
+            return r ? Number(r.replace("rad", "")) : 0;
         }
-        set r(r) {
-            this.style.setProperty("--r", `${r}deg`);
+        set rad(r) {
+            this.style.setProperty("--rad", `${r}rad`);
         }
         get sx() {
             const sx = this.style.getPropertyValue("--sx");
@@ -595,6 +595,15 @@ var app = (function () {
             this.sx = v.x;
             this.sy = v.y;
         }
+        get parentRad() {
+            return this.radianScreen - this.rad;
+        }
+        get parentSx() {
+            return this.scaleScreenX / this.sx;
+        }
+        get parentSy() {
+            return this.scaleScreenY / this.sy;
+        }
         get origin() {
             return this.vertices[Vertex.TYPE_LT].positionScreen.addVectors(this.vertices[Vertex.TYPE_RB].positionScreen).multiply(0.5);
         }
@@ -633,19 +642,19 @@ var app = (function () {
             return vec.distance / this.offsetHeight;
         }
         translateScreenX(x) {
-            let rad = MathUtils.degToRad(this.radianScreen);
-            this.x += x * Math.cos(-rad) * this.scaleScreenX;
-            this.y += x * Math.sin(-rad) * this.scaleScreenY;
+            const parentRad = this.parentRad;
+            this.x += x * Math.cos(-parentRad) * this.parentSx;
+            this.y += x * Math.sin(-parentRad) * this.parentSy;
         }
         translateScreenY(y) {
-            let rad = MathUtils.degToRad(this.radianScreen);
-            this.x += -y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
-            this.y += -y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
+            const parentRad = this.parentRad;
+            this.x += -y * Math.cos(-(parentRad + Math.PI / 2)) * this.parentSx;
+            this.y += -y * Math.sin(-(parentRad + Math.PI / 2)) * this.parentSy;
         }
         translateScreen(x, y) {
-            let rad = MathUtils.degToRad(this.radianScreen);
-            this.x += x * Math.cos(-rad) - y * Math.cos(-(rad + Math.PI / 2)) * this.scaleScreenX;
-            this.y += x * Math.sin(-rad) - y * Math.sin(-(rad + Math.PI / 2)) * this.scaleScreenY;
+            const parentRad = this.parentRad;
+            this.x += (x * Math.cos(-parentRad) - y * Math.cos(-(parentRad + Math.PI / 2))) * this.parentSx;
+            this.y += (x * Math.sin(-parentRad) - y * Math.sin(-(parentRad + Math.PI / 2))) * this.parentSx;
         }
         computeVertexScreen() {
             return new VertexData(this.vertices[Vertex.TYPE_LT].positionScreen, this.vertices[Vertex.TYPE_RT].positionScreen, this.vertices[Vertex.TYPE_RB].positionScreen, this.vertices[Vertex.TYPE_LB].positionScreen);
@@ -731,7 +740,7 @@ var app = (function () {
             const targetRad = Math.atan2(targetVec.y, targetVec.x);
             const baseVec = this.right.addVectors(this.origin.multiply(-1));
             const baseRad = Math.atan2(baseVec.y, baseVec.x);
-            this.r += MathUtils.radToDeg(targetRad - baseRad);
+            this.rad += targetRad - baseRad;
         }
         addComponent(compClass) {
             const attrName = MComponent.getAttributeName(compClass);
@@ -904,28 +913,28 @@ var app = (function () {
             const d = Engine.delta;
             const e = this.entity;
             if (Input.isPressing("KeyW")) {
-                e.translateScreenY(-d * 100);
+                e.translateScreenY(-d * 500);
             }
             if (Input.isPressing("KeyA")) {
-                e.translateScreenX(-d * 100);
+                e.translateScreenX(-d * 500);
             }
             if (Input.isPressing("KeyS")) {
-                e.translateScreenY(d * 100);
+                e.translateScreenY(d * 500);
             }
             if (Input.isPressing("KeyD")) {
-                e.translateScreenX(d * 100);
+                e.translateScreenX(d * 500);
             }
             if (Input.isPressing("KeyQ")) {
-                e.r += -d * 100;
+                e.sx += -d * 100;
             }
             if (Input.isPressing("KeyE")) {
-                e.r += d * 100;
+                e.sx += d * 100;
             }
             if (Input.isPressing("KeyZ")) {
-                e.sx -= d * 10;
+                e.sy += -d * 100;
             }
             if (Input.isPressing("KeyC")) {
-                e.sy -= d * 10;
+                e.sy += d * 100;
             }
             e.loopAtScreen(Input.mousePosition);
         }
@@ -934,12 +943,12 @@ var app = (function () {
     class Bullet extends MComponent {
         static Generate(screenPos, rad) {
             const node = MEntity.generate();
-            node.r = rad;
+            node.rad = rad;
             node.w = 10;
             node.h = 10;
             node.bg = "red";
             node.positionScreen = screenPos;
-            node.addComponent(Bullet);
+            return node.addComponent(Bullet);
         }
         start() {
             this.entity;
@@ -951,12 +960,13 @@ var app = (function () {
     class Gun extends MComponent {
         update() {
             if (Input.isDownMouseLeft) {
-                var pos = this.entity.positionScreen;
-                var rot = this.entity.degreeScreen;
-                Bullet.Generate(pos, rot);
+                const pos = this.entity.positionScreen;
+                const rad = this.entity.radianScreen;
+                Gun.list.push(Bullet.Generate(pos, rad));
             }
         }
     }
+    Gun.list = new Array();
 
     /* src\app\App.svelte generated by Svelte v3.35.0 */
     const file = "src\\app\\App.svelte";

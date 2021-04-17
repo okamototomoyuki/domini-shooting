@@ -55,8 +55,8 @@ export default class MEntity extends HTMLElement {
         if (style.getPropertyValue("--y") == "") {
             this.y = 0;
         }
-        if (style.getPropertyValue("--r") == "") {
-            this.r = 0;
+        if (style.getPropertyValue("--rad") == "") {
+            this.rad = 0;
         }
         if (style.getPropertyValue("--sx") == "") {
             this.sx = 1;
@@ -95,7 +95,7 @@ export default class MEntity extends HTMLElement {
 
             // 更新
             if (comp) {
-                if (comp.isStart) {
+                if (comp.isStart == false) {
                     comp.start();
                     comp.isStart = true;
                 }
@@ -129,12 +129,12 @@ export default class MEntity extends HTMLElement {
     set y(y: number) {
         this.style.setProperty("--y", `${y}px`);
     }
-    get r(): number {
-        const r = this.style.getPropertyValue("--r");
-        return r ? Number(r.replace("deg", "")) : 0;
+    get rad(): number {
+        const r = this.style.getPropertyValue("--rad");
+        return r ? Number(r.replace("rad", "")) : 0;
     }
-    set r(r: number) {
-        this.style.setProperty("--r", `${r}deg`);
+    set rad(r: number) {
+        this.style.setProperty("--rad", `${r}rad`);
     }
     get sx(): number {
         const sx = this.style.getPropertyValue("--sx");
@@ -186,6 +186,15 @@ export default class MEntity extends HTMLElement {
         this.sx = v.x;
         this.sy = v.y;
     }
+    get parentRad(): number {
+        return this.radianScreen - this.rad;
+    }
+    get parentSx(): number {
+        return this.scaleScreenX / this.sx;
+    }
+    get parentSy(): number {
+        return this.scaleScreenY / this.sy;
+    }
 
     get origin(): Vector2 {
         return this.vertices[MVertex.TYPE_LT].positionScreen.addVectors(this.vertices[MVertex.TYPE_RB].positionScreen).multiply(0.5);
@@ -234,9 +243,9 @@ export default class MEntity extends HTMLElement {
      * @param x X座標
      */
     translateScreenX(x: number) {
-        let rad = MathUtils.degToRad(this.radianScreen);
-        this.x += x * Math.cos(-rad) * this.scaleScreenX;
-        this.y += x * Math.sin(-rad) * this.scaleScreenY;
+        const parentRad = this.parentRad;
+        this.x += x * Math.cos(-parentRad) * this.parentSx;
+        this.y += x * Math.sin(-parentRad) * this.parentSy;
     }
 
     /**
@@ -244,9 +253,9 @@ export default class MEntity extends HTMLElement {
      * @param y Y座標
      */
     translateScreenY(y: number) {
-        let rad = MathUtils.degToRad(this.radianScreen);
-        this.x += - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
-        this.y += - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
+        const parentRad = this.parentRad;
+        this.x += - y * Math.cos(- (parentRad + Math.PI / 2)) * this.parentSx;
+        this.y += - y * Math.sin(- (parentRad + Math.PI / 2)) * this.parentSy;
     }
 
     /**
@@ -255,9 +264,9 @@ export default class MEntity extends HTMLElement {
      * @param y y座標
      */
     translateScreen(x: number, y: number) {
-        let rad = MathUtils.degToRad(this.radianScreen);
-        this.x += x * Math.cos(-rad) - y * Math.cos(- (rad + Math.PI / 2)) * this.scaleScreenX;
-        this.y += x * Math.sin(-rad) - y * Math.sin(- (rad + Math.PI / 2)) * this.scaleScreenY;
+        const parentRad = this.parentRad;
+        this.x += (x * Math.cos(-parentRad) - y * Math.cos(- (parentRad + Math.PI / 2))) * this.parentSx;
+        this.y += (x * Math.sin(-parentRad) - y * Math.sin(- (parentRad + Math.PI / 2))) * this.parentSx;
     }
 
     /**
@@ -376,7 +385,7 @@ export default class MEntity extends HTMLElement {
         const targetRad = Math.atan2(targetVec.y, targetVec.x);
         const baseVec = this.right.addVectors(this.origin.multiply(-1));
         const baseRad = Math.atan2(baseVec.y, baseVec.x);
-        this.r += MathUtils.radToDeg(targetRad - baseRad);
+        this.rad += targetRad - baseRad;
     }
 
     addComponent(compClass: Constructable<MComponent>): MComponent | undefined {

@@ -9,28 +9,28 @@ export default class Player extends MComponent {
         const e = this.entity;
 
         if (Input.isPressing("KeyW")) {
-            e.translateScreenY(-d * 100);
+            e.translateScreenY(-d * 500);
         }
         if (Input.isPressing("KeyA")) {
-            e.translateScreenX(-d * 100);
+            e.translateScreenX(-d * 500);
         }
         if (Input.isPressing("KeyS")) {
-            e.translateScreenY(d * 100);
+            e.translateScreenY(d * 500);
         }
         if (Input.isPressing("KeyD")) {
-            e.translateScreenX(d * 100);
+            e.translateScreenX(d * 500);
         }
         if (Input.isPressing("KeyQ")) {
-            e.r += -d * 100;
+            e.sx += -d * 100;
         }
         if (Input.isPressing("KeyE")) {
-            e.r += d * 100;
+            e.sx += d * 100;
         }
         if (Input.isPressing("KeyZ")) {
-            e.sx -= d * 10;
+            e.sy += -d * 100;
         }
         if (Input.isPressing("KeyC")) {
-            e.sy -= d * 10;
+            e.sy += d * 100;
         }
 
         // if (Input.isPressing("KeyI")) {

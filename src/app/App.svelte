@@ -29,7 +29,7 @@
 
 <style lang="scss">
 	:global(m-entity) {
-		transform: translate(var(--x, 0), var(--y, 0)) rotate(var(--r, 0))
+		transform: translate(var(--x, 0), var(--y, 0)) rotate(var(--rad, 0))
 			scaleX(var(--sx, 1)) scaleY(var(--sy, 1));
 		position: absolute;
 		transform-origin: center;

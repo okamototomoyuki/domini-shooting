@@ -1,5 +1,6 @@
 import MComponent from "../../engine/component/MComponent";
 import Input from "../../engine/data/Input";
+import Vector2 from "../../engine/data/Vector2";
 import Engine from "../../engine/Engine";
 
 export default class Player extends MComponent {

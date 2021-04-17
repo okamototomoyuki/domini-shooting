@@ -406,6 +406,12 @@ export default class MEntity extends HTMLElement {
         return undefined;
     }
 
+    get isInBody(): boolean {
+        const rect = document.body.getBoundingClientRect();
+        const pos = this.positionScreen
+        return 0 < pos.x && pos.x < rect.width && 0 < pos.y && pos.y < rect.height;
+    }
+
     get isDestroy(): boolean {
         return this.parentElement == null;
     }

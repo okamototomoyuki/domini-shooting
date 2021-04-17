@@ -2,6 +2,7 @@ import MComponent from "../../engine/component/MComponent";
 import Input from "../../engine/data/Input";
 import Vector2 from "../../engine/data/Vector2";
 import MEntity from "../../engine/element/MEntity";
+import Engine from "../../engine/Engine";
 import MathUtils from "../../engine/util/MathUtils";
 
 export default class Bullet extends MComponent {
@@ -16,21 +17,12 @@ export default class Bullet extends MComponent {
         return node.addComponent(Bullet) as Bullet
     }
 
-    start() {
-        const e = this.entity;
-
-        // if (this.#screenPos) {
-        // console.log("----")
-        //     // e.positionScreen = this.#screenPos;
-        // }
-        // e.r = this.#rad;
-        // e.w = 10;
-        // e.h = 10;
-    }
-
     update() {
-        // const e = this.entity;
-        // e.positionScreen = this.#screenPos;
-        // e.r = this.#rad;
+        const e = this.entity;
+        const vecR = e.right.addVectors(e.origin.multiply(-1));
+        e.position = e.position.addVectors(vecR.normalized.multiply(500).multiply(Engine.delta));
+        if (e.isInBody == false) {
+            e.remove();
+        }
     }
 }

@@ -35,6 +35,15 @@ export default class Vector2 {
     }
 
     /**
+     * 掛け算
+     * @param v 係数
+     * @returns 結果のベクトル
+     */
+    get normalized(): Vector2 {
+        return this.multiply(1 / this.distance);
+    }
+
+    /**
      * 長さ
      * @returns 長さ
      */

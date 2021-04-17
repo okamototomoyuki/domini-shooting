@@ -54,7 +54,6 @@ export default class Input {
     static _onMouseDown(e: MouseEvent) {
         switch (e.button) {
             case 0:
-                console.log(1);
                 Input.map.set(Input._MOUSE_LEFT, 2);
             case 1:
                 Input.map.set(Input._MOUSE_MIDDLE, 2);

@@ -12,6 +12,13 @@ export default class MEntity extends HTMLElement {
 
     static list = new Array<MEntity>();
 
+    static generate(): MEntity {
+        const node = document.createElement('m-entity') as MEntity
+        document.body.appendChild(node);
+        node.initialize();
+        return node;
+    }
+
     static update() {
         for (const e of this.list) {
             if (e.isDestroy == false) {
@@ -27,36 +34,42 @@ export default class MEntity extends HTMLElement {
 
     connectedCallback() {
         if (MEntity.list.includes(this) == false) {
-            MEntity.list.push(this);
-            this.vertices = [
-                MVertex.new(this, MVertex.TYPE_LT),
-                MVertex.new(this, MVertex.TYPE_RT),
-                MVertex.new(this, MVertex.TYPE_RB),
-                MVertex.new(this, MVertex.TYPE_LB),
-            ];
-
-            const style = this.style;
-            const computeStyle = getComputedStyle(this, null);
-            if (style.getPropertyValue("--x") == "") {
-                this.x = 0;
-            }
-            if (style.getPropertyValue("--y") == "") {
-                this.y = 0;
-            }
-            if (style.getPropertyValue("--r") == "") {
-                this.r = 0;
-            }
-            if (style.getPropertyValue("--sx") == "") {
-                this.sx = 1;
-            }
-            if (style.getPropertyValue("--sy") == "") {
-                this.sy = 1;
-            }
-            const w = style.getPropertyValue("--w").replace("px", "");
-            this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
-            const h = style.getPropertyValue("--h").replace("px", "");
-            this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+            this.initialize();
         }
+    }
+
+    initialize() {
+        MEntity.list.push(this);
+        this.vertices = [
+            MVertex.new(this, MVertex.TYPE_LT),
+            MVertex.new(this, MVertex.TYPE_RT),
+            MVertex.new(this, MVertex.TYPE_RB),
+            MVertex.new(this, MVertex.TYPE_LB),
+        ];
+
+        const style = this.style;
+        const computeStyle = getComputedStyle(this, null);
+        if (style.getPropertyValue("--x") == "") {
+            this.x = 0;
+        }
+        if (style.getPropertyValue("--y") == "") {
+            this.y = 0;
+        }
+        if (style.getPropertyValue("--r") == "") {
+            this.r = 0;
+        }
+        if (style.getPropertyValue("--sx") == "") {
+            this.sx = 1;
+        }
+        if (style.getPropertyValue("--sy") == "") {
+            this.sy = 1;
+        }
+
+        const w = style.getPropertyValue("--w").replace("px", "");
+        this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
+        const h = style.getPropertyValue("--h").replace("px", "");
+        this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+
     }
 
     update() {

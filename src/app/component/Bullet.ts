@@ -6,23 +6,14 @@ import MEntity from "../../engine/element/MEntity";
 export default class Bullet extends MComponent {
 
     static Generate(screenPos: Vector2, rad: number) {
-        const node = document.createElement('m-entity') as MEntity
-
-        node.positionScreen = screenPos;
+        const node = MEntity.generate();
         node.r = rad;
         node.w = 10;
         node.h = 10;
-
-        document.body.appendChild(node);
-        const bullet = node.addComponent(Bullet) as Bullet;
-        if (bullet) {
-            bullet.#screenPos = screenPos;
-            bullet.#rad = rad;
-        }
+        node.bg = "red";
+        node.positionScreen = screenPos;
+        node.addComponent(Bullet) as Bullet;
     }
-
-    #screenPos: Vector2 = new Vector2(0, 0);
-    #rad: number = 0;
 
     start() {
         const e = this.entity;

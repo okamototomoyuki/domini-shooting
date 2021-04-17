@@ -439,6 +439,12 @@ var app = (function () {
             this.vertices = [];
             this.nameToComponent = new Map();
         }
+        static generate() {
+            const node = document.createElement('m-entity');
+            document.body.appendChild(node);
+            node.initialize();
+            return node;
+        }
         static update() {
             for (const e of this.list) {
                 if (e.isDestroy == false) {
@@ -451,35 +457,38 @@ var app = (function () {
         }
         connectedCallback() {
             if (MEntity.list.includes(this) == false) {
-                MEntity.list.push(this);
-                this.vertices = [
-                    Vertex.new(this, Vertex.TYPE_LT),
-                    Vertex.new(this, Vertex.TYPE_RT),
-                    Vertex.new(this, Vertex.TYPE_RB),
-                    Vertex.new(this, Vertex.TYPE_LB),
-                ];
-                const style = this.style;
-                const computeStyle = getComputedStyle(this, null);
-                if (style.getPropertyValue("--x") == "") {
-                    this.x = 0;
-                }
-                if (style.getPropertyValue("--y") == "") {
-                    this.y = 0;
-                }
-                if (style.getPropertyValue("--r") == "") {
-                    this.r = 0;
-                }
-                if (style.getPropertyValue("--sx") == "") {
-                    this.sx = 1;
-                }
-                if (style.getPropertyValue("--sy") == "") {
-                    this.sy = 1;
-                }
-                const w = style.getPropertyValue("--w").replace("px", "");
-                this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
-                const h = style.getPropertyValue("--h").replace("px", "");
-                this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+                this.initialize();
             }
+        }
+        initialize() {
+            MEntity.list.push(this);
+            this.vertices = [
+                Vertex.new(this, Vertex.TYPE_LT),
+                Vertex.new(this, Vertex.TYPE_RT),
+                Vertex.new(this, Vertex.TYPE_RB),
+                Vertex.new(this, Vertex.TYPE_LB),
+            ];
+            const style = this.style;
+            const computeStyle = getComputedStyle(this, null);
+            if (style.getPropertyValue("--x") == "") {
+                this.x = 0;
+            }
+            if (style.getPropertyValue("--y") == "") {
+                this.y = 0;
+            }
+            if (style.getPropertyValue("--r") == "") {
+                this.r = 0;
+            }
+            if (style.getPropertyValue("--sx") == "") {
+                this.sx = 1;
+            }
+            if (style.getPropertyValue("--sy") == "") {
+                this.sy = 1;
+            }
+            const w = style.getPropertyValue("--w").replace("px", "");
+            this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
+            const h = style.getPropertyValue("--h").replace("px", "");
+            this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
         }
         update() {
             const nameToComp = new Map(this.nameToComponent);
@@ -782,7 +791,6 @@ var app = (function () {
         static _onMouseDown(e) {
             switch (e.button) {
                 case 0:
-                    console.log(1);
                     Input.map.set(Input._MOUSE_LEFT, 2);
                 case 1:
                     Input.map.set(Input._MOUSE_MIDDLE, 2);
@@ -893,7 +901,6 @@ var app = (function () {
 
     class Player extends MComponent {
         update() {
-            console.log(1);
             const d = Engine.delta;
             const e = this.entity;
             if (Input.isPressing("KeyW")) {
@@ -924,48 +931,15 @@ var app = (function () {
         }
     }
 
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-
-    function __classPrivateFieldSet(receiver, privateMap, value) {
-        if (!privateMap.has(receiver)) {
-            throw new TypeError("attempted to set private field on non-instance");
-        }
-        privateMap.set(receiver, value);
-        return value;
-    }
-
-    var _screenPos, _rad;
     class Bullet extends MComponent {
-        constructor() {
-            super(...arguments);
-            _screenPos.set(this, new Vector2(0, 0));
-            _rad.set(this, 0);
-        }
         static Generate(screenPos, rad) {
-            const node = document.createElement('m-entity');
-            node.positionScreen = screenPos;
+            const node = MEntity.generate();
             node.r = rad;
             node.w = 10;
             node.h = 10;
-            document.body.appendChild(node);
-            const bullet = node.addComponent(Bullet);
-            if (bullet) {
-                __classPrivateFieldSet(bullet, _screenPos, screenPos);
-                __classPrivateFieldSet(bullet, _rad, rad);
-            }
+            node.bg = "red";
+            node.positionScreen = screenPos;
+            node.addComponent(Bullet);
         }
         start() {
             this.entity;
@@ -973,7 +947,6 @@ var app = (function () {
         update() {
         }
     }
-    _screenPos = new WeakMap(), _rad = new WeakMap();
 
     class Gun extends MComponent {
         update() {

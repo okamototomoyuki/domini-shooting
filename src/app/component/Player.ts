@@ -5,7 +5,6 @@ import Engine from "../../engine/Engine";
 export default class Player extends MComponent {
 
     update() {
-        console.log(1);
         const d = Engine.delta;
         const e = this.entity;
 

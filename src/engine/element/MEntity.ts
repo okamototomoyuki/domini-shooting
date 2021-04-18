@@ -1,6 +1,7 @@
 import MComponent from "../component/MComponent";
 import Vector2 from "../data/Vector2";
 import VertexData from "../data/VertexData";
+import Engine from "../Engine";
 import Constructable from "../interface/Constructable";
 import MathUtils from "../util/MathUtils";
 import MVertex from "./MVertex";
@@ -15,7 +16,7 @@ export default class MEntity extends HTMLElement {
     static generate(): MEntity {
         const node = document.createElement('m-entity') as MEntity
         document.body.appendChild(node);
-        node.initialize();
+        node.initializeIfNotYet();
         return node;
     }
 
@@ -33,42 +34,42 @@ export default class MEntity extends HTMLElement {
     nameToComponent = new Map<string, MComponent>();
 
     connectedCallback() {
-        if (MEntity.list.includes(this) == false) {
-            this.initialize();
-        }
+        this.initializeIfNotYet();
     }
 
-    initialize() {
-        MEntity.list.push(this);
-        this.vertices = [
-            MVertex.new(this, MVertex.TYPE_LT),
-            MVertex.new(this, MVertex.TYPE_RT),
-            MVertex.new(this, MVertex.TYPE_RB),
-            MVertex.new(this, MVertex.TYPE_LB),
-        ];
+    initializeIfNotYet() {
+        if (MEntity.list.includes(this) == false) {
+            MEntity.list.push(this);
+            this.vertices = [
+                MVertex.new(this, MVertex.TYPE_LT),
+                MVertex.new(this, MVertex.TYPE_RT),
+                MVertex.new(this, MVertex.TYPE_RB),
+                MVertex.new(this, MVertex.TYPE_LB),
+            ];
 
-        const style = this.style;
-        const computeStyle = getComputedStyle(this, null);
-        if (style.getPropertyValue("--x") == "") {
-            this.x = 0;
-        }
-        if (style.getPropertyValue("--y") == "") {
-            this.y = 0;
-        }
-        if (style.getPropertyValue("--rad") == "") {
-            this.rad = 0;
-        }
-        if (style.getPropertyValue("--sx") == "") {
-            this.sx = 1;
-        }
-        if (style.getPropertyValue("--sy") == "") {
-            this.sy = 1;
-        }
+            const style = this.style;
+            const computeStyle = getComputedStyle(this, null);
+            if (style.getPropertyValue("--x") == "") {
+                this.x = 0;
+            }
+            if (style.getPropertyValue("--y") == "") {
+                this.y = 0;
+            }
+            if (style.getPropertyValue("--rad") == "") {
+                this.rad = 0;
+            }
+            if (style.getPropertyValue("--sx") == "") {
+                this.sx = 1;
+            }
+            if (style.getPropertyValue("--sy") == "") {
+                this.sy = 1;
+            }
 
-        const w = style.getPropertyValue("--w").replace("px", "");
-        this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
-        const h = style.getPropertyValue("--h").replace("px", "");
-        this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+            const w = style.getPropertyValue("--w").replace("px", "");
+            this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
+            const h = style.getPropertyValue("--h").replace("px", "");
+            this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
+        }
 
     }
 

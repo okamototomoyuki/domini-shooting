@@ -6,26 +6,36 @@
 	import Player from "./component/Player";
 	import Gun from "./component/Gun";
 	import Bullet from "./component/Bullet";
+	import Enemy from "./component/Enemy";
 
-	let t1: MEntity;
-	let t2: MEntity;
+	let generateTime = 0;
+	let generateSpan = 3;
 
 	onMount(() => {
 		Engine.start();
 		MComoponent.registerComponent("player", Player);
 		MComoponent.registerComponent("gun", Gun);
 		MComoponent.registerComponent("bullet", Bullet);
-	});
-</script>
+		MComoponent.registerComponent("enemy", Enemy);
 
-<m-entity class="a" style="--w:50px;--h:50px;" bind:this={t1} player>
-	<m-entity
-		class="b"
-		bind:this={t2}
-		style="--w:25px;--h:25px;--x:37.5px;--y:12.5px"
-		gun
-	/>
-</m-entity>
+		Player.generate();
+		generateTime = generateSpan;
+		requestAnimationFrame(loop);
+	});
+
+	const loop = () => {
+		const player = Player.instance;
+		if (player && player.isReady) {
+			generateTime += Engine.delta;
+			if (generateTime > generateSpan) {
+				Enemy.generate();
+				generateTime = 0;
+				generateSpan = Math.max(generateSpan - 0.2, Gun.SPAN * 0.99);
+			}
+		}
+		requestAnimationFrame(loop);
+	};
+</script>
 
 <style lang="scss">
 	:global(body) {

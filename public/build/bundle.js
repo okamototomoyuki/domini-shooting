@@ -4,11 +4,6 @@ var app = (function () {
     'use strict';
 
     function noop() { }
-    function add_location(element, file, line, column, char) {
-        element.__svelte_meta = {
-            loc: { file, line, column, char }
-        };
-    }
     function run(fn) {
         return fn();
     }
@@ -27,38 +22,11 @@ var app = (function () {
     function is_empty(obj) {
         return Object.keys(obj).length === 0;
     }
-
-    function append(target, node) {
-        target.appendChild(node);
-    }
-    function insert(target, node, anchor) {
-        target.insertBefore(node, anchor || null);
-    }
     function detach(node) {
         node.parentNode.removeChild(node);
     }
-    function element(name) {
-        return document.createElement(name);
-    }
-    function attr(node, attribute, value) {
-        if (value == null)
-            node.removeAttribute(attribute);
-        else if (node.getAttribute(attribute) !== value)
-            node.setAttribute(attribute, value);
-    }
-    function set_custom_element_data(node, prop, value) {
-        if (prop in node) {
-            node[prop] = value;
-        }
-        else {
-            attr(node, prop, value);
-        }
-    }
     function children(element) {
         return Array.from(element.childNodes);
-    }
-    function set_style(node, key, value, important) {
-        node.style.setProperty(key, value, important ? 'important' : '');
     }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
@@ -276,18 +244,6 @@ var app = (function () {
     function dispatch_dev(type, detail) {
         document.dispatchEvent(custom_event(type, Object.assign({ version: '3.35.0' }, detail)));
     }
-    function append_dev(target, node) {
-        dispatch_dev('SvelteDOMInsert', { target, node });
-        append(target, node);
-    }
-    function insert_dev(target, node, anchor) {
-        dispatch_dev('SvelteDOMInsert', { target, node, anchor });
-        insert(target, node, anchor);
-    }
-    function detach_dev(node) {
-        dispatch_dev('SvelteDOMRemove', { node });
-        detach(node);
-    }
     function validate_slots(name, slot, keys) {
         for (const slot_key of Object.keys(slot)) {
             if (!~keys.indexOf(slot_key)) {
@@ -445,7 +401,7 @@ var app = (function () {
         static generate() {
             const node = document.createElement('m-entity');
             document.body.appendChild(node);
-            node.initialize();
+            node.initializeIfNotYet();
             return node;
         }
         static update() {
@@ -459,39 +415,39 @@ var app = (function () {
             }
         }
         connectedCallback() {
-            if (MEntity.list.includes(this) == false) {
-                this.initialize();
-            }
+            this.initializeIfNotYet();
         }
-        initialize() {
-            MEntity.list.push(this);
-            this.vertices = [
-                Vertex.new(this, Vertex.TYPE_LT),
-                Vertex.new(this, Vertex.TYPE_RT),
-                Vertex.new(this, Vertex.TYPE_RB),
-                Vertex.new(this, Vertex.TYPE_LB),
-            ];
-            const style = this.style;
-            const computeStyle = getComputedStyle(this, null);
-            if (style.getPropertyValue("--x") == "") {
-                this.x = 0;
+        initializeIfNotYet() {
+            if (MEntity.list.includes(this) == false) {
+                MEntity.list.push(this);
+                this.vertices = [
+                    Vertex.new(this, Vertex.TYPE_LT),
+                    Vertex.new(this, Vertex.TYPE_RT),
+                    Vertex.new(this, Vertex.TYPE_RB),
+                    Vertex.new(this, Vertex.TYPE_LB),
+                ];
+                const style = this.style;
+                const computeStyle = getComputedStyle(this, null);
+                if (style.getPropertyValue("--x") == "") {
+                    this.x = 0;
+                }
+                if (style.getPropertyValue("--y") == "") {
+                    this.y = 0;
+                }
+                if (style.getPropertyValue("--rad") == "") {
+                    this.rad = 0;
+                }
+                if (style.getPropertyValue("--sx") == "") {
+                    this.sx = 1;
+                }
+                if (style.getPropertyValue("--sy") == "") {
+                    this.sy = 1;
+                }
+                const w = style.getPropertyValue("--w").replace("px", "");
+                this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
+                const h = style.getPropertyValue("--h").replace("px", "");
+                this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
             }
-            if (style.getPropertyValue("--y") == "") {
-                this.y = 0;
-            }
-            if (style.getPropertyValue("--rad") == "") {
-                this.rad = 0;
-            }
-            if (style.getPropertyValue("--sx") == "") {
-                this.sx = 1;
-            }
-            if (style.getPropertyValue("--sy") == "") {
-                this.sy = 1;
-            }
-            const w = style.getPropertyValue("--w").replace("px", "");
-            this.w = w ? Number(w) : Number(computeStyle.width.replace("px", ""));
-            const h = style.getPropertyValue("--h").replace("px", "");
-            this.h = h ? Number(h) : Number(computeStyle.height.replace("px", ""));
         }
         update() {
             const nameToComp = new Map(this.nameToComponent);
@@ -916,40 +872,8 @@ var app = (function () {
     Engine.currentFrame = 0;
     Engine.delta = 0;
 
-    class Player extends MComponent {
-        update() {
-            const d = Engine.delta;
-            const e = this.entity;
-            if (Input.isPressing("KeyW")) {
-                e.translateScreenY(-d * 500);
-            }
-            if (Input.isPressing("KeyA")) {
-                e.translateScreenX(-d * 500);
-            }
-            if (Input.isPressing("KeyS")) {
-                e.translateScreenY(d * 500);
-            }
-            if (Input.isPressing("KeyD")) {
-                e.translateScreenX(d * 500);
-            }
-            if (Input.isPressing("KeyQ")) {
-                e.sx += -d * 100;
-            }
-            if (Input.isPressing("KeyE")) {
-                e.sx += d * 100;
-            }
-            if (Input.isPressing("KeyZ")) {
-                e.sy += -d * 100;
-            }
-            if (Input.isPressing("KeyC")) {
-                e.sy += d * 100;
-            }
-            e.loopAtScreen(Input.mousePosition);
-        }
-    }
-
     class Bullet extends MComponent {
-        static Generate(screenPos, rad) {
+        static generate(screenPos, rad) {
             const node = MEntity.generate();
             node.rad = rad;
             node.w = 10;
@@ -968,57 +892,163 @@ var app = (function () {
         }
     }
 
-    class Gun extends MComponent {
+    class Enemy extends MComponent {
+        static generate() {
+            const node = MEntity.generate();
+            let pos = null;
+            const wScreen = document.body.clientWidth;
+            const hScreen = document.body.clientHeight;
+            if (Math.random() > 0.5) {
+                if (Math.random() > 0.75) {
+                    pos = new Vector2(-Enemy.WIDTH, Math.random() * hScreen);
+                }
+                else {
+                    pos = new Vector2(wScreen + Enemy.WIDTH, Math.random() * hScreen);
+                }
+            }
+            else {
+                if (Math.random() > 0.25) {
+                    pos = new Vector2(Math.random() * wScreen, -Enemy.HEIGHT);
+                }
+                else {
+                    pos = new Vector2(Math.random() * wScreen, hScreen + Enemy.WIDTH);
+                }
+            }
+            node.w = Enemy.WIDTH;
+            node.h = Enemy.HEIGHT;
+            node.positionScreen = pos;
+            node.bg = "blue";
+            return node.addComponent(Enemy);
+        }
         update() {
-            if (Input.isDownMouseLeft) {
-                const pos = this.entity.positionScreen;
-                const rad = this.entity.radianScreen;
-                Bullet.Generate(pos, rad);
+            const player = Player.instance;
+            const e = this.entity;
+            if (player) {
+                if (player.entity.isDestroy == false) {
+                    this.entity.loopAtScreen(player.entity.positionScreen);
+                    const vecR = e.right.addVectors(e.origin.multiply(-1));
+                    e.position = e.position.addVectors(vecR.normalized.multiply(50).multiply(Engine.delta));
+                }
+            }
+            const bulletAttr = MComponent.getAttributeName(Bullet);
+            if (bulletAttr) {
+                const bullet = e.collides.find(e => e.attributes.getNamedItem(bulletAttr));
+                if (bullet) {
+                    bullet.remove();
+                    e.remove();
+                }
             }
         }
     }
+    Enemy.WIDTH = 100;
+    Enemy.HEIGHT = 100;
+    Enemy.generateNum = 1;
+
+    class Gun extends MComponent {
+        constructor() {
+            super(...arguments);
+            this.interval = 0;
+        }
+        update() {
+            if (this.interval > 0) {
+                this.interval -= Engine.delta;
+            }
+            if (Input.isPressingMouseLeft) {
+                if (this.interval <= 0) {
+                    const pos = this.entity.positionScreen;
+                    const rad = this.entity.radianScreen;
+                    Bullet.generate(pos, rad);
+                    this.interval = Gun.SPAN;
+                }
+            }
+        }
+    }
+    Gun.SPAN = 0.4;
+
+    class Player extends MComponent {
+        constructor() {
+            super(...arguments);
+            this.isReady = false;
+        }
+        static generate() {
+            const node = MEntity.generate();
+            const wScreen = document.body.offsetWidth;
+            const hScreen = document.body.offsetHeight;
+            node.w = 50;
+            node.h = 50;
+            node.positionScreen = new Vector2(wScreen / 2, hScreen / 2);
+            Player.instance = node.addComponent(Player);
+            const gun = MEntity.generate();
+            node.appendChild(gun);
+            gun.w = 25;
+            gun.h = 25;
+            gun.x = 37.5;
+            gun.y = 12.5;
+            gun.addComponent(Gun);
+        }
+        update() {
+            const d = Engine.delta;
+            const e = this.entity;
+            if (Input.isPressing("KeyW")) {
+                e.translateScreenY(-d * 500);
+            }
+            if (Input.isPressing("KeyA")) {
+                e.translateScreenX(-d * 500);
+            }
+            if (Input.isPressing("KeyS")) {
+                e.translateScreenY(d * 500);
+            }
+            if (Input.isPressing("KeyD")) {
+                e.translateScreenX(d * 500);
+            }
+            if (Input.isDownMouseLeft) {
+                this.isReady = true;
+            }
+            e.loopAtScreen(Input.mousePosition);
+            const wScreen = document.body.offsetWidth;
+            const hScreen = document.body.offsetHeight;
+            const pos = e.positionScreen;
+            let isOut = false;
+            if (pos.x < 0) {
+                pos.x = 0;
+                isOut = true;
+            }
+            else if (pos.x > wScreen) {
+                pos.x = wScreen;
+                isOut = true;
+            }
+            if (pos.y < 0) {
+                pos.y = 0;
+                isOut = true;
+            }
+            else if (pos.y > hScreen) {
+                pos.y = hScreen;
+                isOut = true;
+            }
+            if (isOut) {
+                e.positionScreen = pos;
+            }
+            const enemyAttr = MComponent.getAttributeName(Enemy);
+            if (enemyAttr && e.collides.some(e => e.attributes.getNamedItem(enemyAttr))) {
+                e.remove();
+            }
+        }
+    }
+    Player.instance = undefined;
 
     /* src\app\App.svelte generated by Svelte v3.35.0 */
-    const file = "src\\app\\App.svelte";
 
     function create_fragment(ctx) {
-    	let m_entity1;
-    	let m_entity0;
-
     	const block = {
-    		c: function create() {
-    			m_entity1 = element("m-entity");
-    			m_entity0 = element("m-entity");
-    			set_custom_element_data(m_entity0, "class", "b");
-    			set_style(m_entity0, "--w", "25px");
-    			set_style(m_entity0, "--h", "25px");
-    			set_style(m_entity0, "--x", "37.5px");
-    			set_style(m_entity0, "--y", "12.5px");
-    			set_custom_element_data(m_entity0, "gun", "");
-    			add_location(m_entity0, file, 18, 1, 621);
-    			set_custom_element_data(m_entity1, "class", "a");
-    			set_style(m_entity1, "--w", "50px");
-    			set_style(m_entity1, "--h", "50px");
-    			set_custom_element_data(m_entity1, "player", "");
-    			add_location(m_entity1, file, 17, 0, 550);
-    		},
+    		c: noop,
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, m_entity1, anchor);
-    			append_dev(m_entity1, m_entity0);
-    			/*m_entity0_binding*/ ctx[2](m_entity0);
-    			/*m_entity1_binding*/ ctx[3](m_entity1);
-    		},
+    		m: noop,
     		p: noop,
     		i: noop,
     		o: noop,
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(m_entity1);
-    			/*m_entity0_binding*/ ctx[2](null);
-    			/*m_entity1_binding*/ ctx[3](null);
-    		}
+    		d: noop
     	};
 
     	dispatch_dev("SvelteRegisterBlock", {
@@ -1035,35 +1065,41 @@ var app = (function () {
     function instance($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("App", slots, []);
-    	let t1;
-    	let t2;
+    	let generateTime = 0;
+    	let generateSpan = 3;
 
     	onMount(() => {
     		Engine.start();
     		MComponent.registerComponent("player", Player);
     		MComponent.registerComponent("gun", Gun);
     		MComponent.registerComponent("bullet", Bullet);
+    		MComponent.registerComponent("enemy", Enemy);
+    		Player.generate();
+    		generateTime = generateSpan;
+    		requestAnimationFrame(loop);
     	});
+
+    	const loop = () => {
+    		const player = Player.instance;
+
+    		if (player && player.isReady) {
+    			generateTime += Engine.delta;
+
+    			if (generateTime > generateSpan) {
+    				Enemy.generate();
+    				generateTime = 0;
+    				generateSpan = Math.max(generateSpan - 0.2, Gun.SPAN * 0.99);
+    			}
+    		}
+
+    		requestAnimationFrame(loop);
+    	};
 
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
     	});
-
-    	function m_entity0_binding($$value) {
-    		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			t2 = $$value;
-    			$$invalidate(1, t2);
-    		});
-    	}
-
-    	function m_entity1_binding($$value) {
-    		binding_callbacks[$$value ? "unshift" : "push"](() => {
-    			t1 = $$value;
-    			$$invalidate(0, t1);
-    		});
-    	}
 
     	$$self.$capture_state = () => ({
     		onMount,
@@ -1073,20 +1109,22 @@ var app = (function () {
     		Player,
     		Gun,
     		Bullet,
-    		t1,
-    		t2
+    		Enemy,
+    		generateTime,
+    		generateSpan,
+    		loop
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("t1" in $$props) $$invalidate(0, t1 = $$props.t1);
-    		if ("t2" in $$props) $$invalidate(1, t2 = $$props.t2);
+    		if ("generateTime" in $$props) generateTime = $$props.generateTime;
+    		if ("generateSpan" in $$props) generateSpan = $$props.generateSpan;
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [t1, t2, m_entity0_binding, m_entity1_binding];
+    	return [];
     }
 
     class App extends SvelteComponentDev {

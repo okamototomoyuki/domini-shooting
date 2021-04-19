@@ -21,6 +21,16 @@ export default class MEntity extends HTMLElement {
     }
 
     static update() {
+        // 衝突判定計算
+        for (const e of this.list) {
+            e.collides = [];
+            e.notCollides = [];
+        }
+        for (const e of this.list) {
+            e.calcCollides();
+        }
+
+        // 更新
         for (const e of this.list) {
             if (e.isDestroy == false) {
                 e.update();
@@ -32,6 +42,9 @@ export default class MEntity extends HTMLElement {
 
     vertices: MVertex[] = [];
     nameToComponent = new Map<string, MComponent>();
+    collides: Array<MEntity> = [];
+    notCollides: Array<MEntity> = [];
+
 
     connectedCallback() {
         this.initializeIfNotYet();
@@ -281,6 +294,11 @@ export default class MEntity extends HTMLElement {
             this.vertices[MVertex.TYPE_LB].positionScreen);
     };
 
+    get radius(): number {
+        ここと
+        // return Math.sqrt(Math.pow(this.w / 2, 2) + Math.pow(this.h / 2, 2))
+    }
+
     /**
      * 親ノード取得
      */
@@ -291,16 +309,18 @@ export default class MEntity extends HTMLElement {
     /**
      * 衝突した対象一覧
      */
-    get collides(): MEntity[] {
+    calcCollides() {
 
         const selfVs = this.computeVertexScreen();
         const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
 
-        const collides = new Array<MEntity>();
         for (const otherT of MEntity.list) {
-            if (otherT != this) {
+            if (otherT != this && this.collides.includes(otherT) == false && this.notCollides.includes(otherT) == false) {
                 const otherVs = otherT.computeVertexScreen();
                 const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
+
+                // 距離が接触範囲内か
+                ここに距離が近いかを追加
 
                 // 線分が交わっているか
                 let isCollide = false;
@@ -374,11 +394,14 @@ export default class MEntity extends HTMLElement {
                 }
 
                 if (isCollide) {
-                    collides.push(otherT);
+                    this.collides.push(otherT);
+                    otherT.collides.push(this);
+                } else {
+                    this.notCollides.push(otherT);
+                    otherT.notCollides.push(this);
                 }
             }
         }
-        return collides;
     }
 
     loopAtScreen(targetPos: Vector2) {

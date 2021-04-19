@@ -51,6 +51,14 @@ export default class Vector2 {
         return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
     }
 
+    /**
+     * 2点の距離
+     * @param pos 相手の位置
+     * @returns 長さ
+     */
+    getDistance(pos: Vector2): number {
+        return Math.sqrt(Math.pow(this.x - pos.x, 2) + Math.pow(this.y - pos.y, 2));
+    }
 
     /**
      * 外積

@@ -4,6 +4,7 @@ import VertexData from "../data/VertexData";
 import Engine from "../Engine";
 import Constructable from "../interface/Constructable";
 import MathUtils from "../util/MathUtils";
+import Vertex from "./MVertex";
 import MVertex from "./MVertex";
 
 /**
@@ -295,8 +296,7 @@ export default class MEntity extends HTMLElement {
     };
 
     get radius(): number {
-        ここと
-        // return Math.sqrt(Math.pow(this.w / 2, 2) + Math.pow(this.h / 2, 2))
+        return this.origin.getDistance(this.vertices[Vertex.TYPE_RT].positionScreen);
     }
 
     /**
@@ -319,76 +319,74 @@ export default class MEntity extends HTMLElement {
                 const otherVs = otherT.computeVertexScreen();
                 const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
 
-                // 距離が接触範囲内か
-                ここに距離が近いかを追加
-
-                // 線分が交わっているか
                 let isCollide = false;
-                if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
-                    || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
-                    || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
-                    || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
-                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
-                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
-                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
-                    || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
-                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
-                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
-                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
-                    || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
-                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
-                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
-                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
-                    || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
 
-                    isCollide = true;
-                }
+                // 距離が接触範囲内か
+                const length = otherT.positionScreen.getDistance(this.positionScreen)
+                if (length < (otherT.radius + this.radius)) {
+                    // 線分が交わっているか
+                    if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
+                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
+                        isCollide = true;
+                    } else {
+                        // 自身が相手の矩形内に入っているか
+                        for (const subSV of subSVs) {
+                            const otherVA = otherVs.a.addVectors(subSV);
+                            const otherVB = otherVs.b.addVectors(subSV);
+                            const otherVC = otherVs.c.addVectors(subSV);
+                            const otherVD = otherVs.d.addVectors(subSV);
 
-                if (isCollide == false) {
-                    // 自身が相手の矩形内に入っているか
-                    for (const subSV of subSVs) {
-                        const otherVA = otherVs.a.addVectors(subSV);
-                        const otherVB = otherVs.b.addVectors(subSV);
-                        const otherVC = otherVs.c.addVectors(subSV);
-                        const otherVD = otherVs.d.addVectors(subSV);
+                            const crossAB = Vector2.cross(otherVA, otherVB);
+                            const crossBC = Vector2.cross(otherVB, otherVC);
+                            const crossCD = Vector2.cross(otherVC, otherVD);
+                            const crossDA = Vector2.cross(otherVD, otherVA);
 
-                        const crossAB = Vector2.cross(otherVA, otherVB);
-                        const crossBC = Vector2.cross(otherVB, otherVC);
-                        const crossCD = Vector2.cross(otherVC, otherVD);
-                        const crossDA = Vector2.cross(otherVD, otherVA);
+                            if (crossAB * crossBC > 0
+                                && crossBC * crossCD > 0
+                                && crossCD * crossDA > 0
+                                && crossDA * crossAB > 0) {
 
-                        if (crossAB * crossBC > 0
-                            && crossBC * crossCD > 0
-                            && crossCD * crossDA > 0
-                            && crossDA * crossAB > 0) {
-
-                            isCollide = true;
-                            break;
+                                isCollide = true;
+                                break;
+                            }
                         }
-                    }
-                }
+                        if (isCollide == false) {
 
-                if (isCollide == false) {
+                            // 相手が自身の矩形内に入っているか
+                            for (const subOV of subOVs) {
+                                const selfVA = selfVs.a.addVectors(subOV);
+                                const selfVB = selfVs.b.addVectors(subOV);
+                                const selfVC = selfVs.c.addVectors(subOV);
+                                const selfVD = selfVs.d.addVectors(subOV);
 
-                    // 相手が自身の矩形内に入っているか
-                    for (const subOV of subOVs) {
-                        const selfVA = selfVs.a.addVectors(subOV);
-                        const selfVB = selfVs.b.addVectors(subOV);
-                        const selfVC = selfVs.c.addVectors(subOV);
-                        const selfVD = selfVs.d.addVectors(subOV);
+                                const crossAB = Vector2.cross(selfVA, selfVB);
+                                const crossBC = Vector2.cross(selfVB, selfVC);
+                                const crossCD = Vector2.cross(selfVC, selfVD);
+                                const crossDA = Vector2.cross(selfVD, selfVA);
 
-                        const crossAB = Vector2.cross(selfVA, selfVB);
-                        const crossBC = Vector2.cross(selfVB, selfVC);
-                        const crossCD = Vector2.cross(selfVC, selfVD);
-                        const crossDA = Vector2.cross(selfVD, selfVA);
+                                if (crossAB * crossBC > 0
+                                    && crossBC * crossCD > 0
+                                    && crossCD * crossDA > 0
+                                    && crossDA * crossAB > 0) {
 
-                        if (crossAB * crossBC > 0
-                            && crossBC * crossCD > 0
-                            && crossCD * crossDA > 0
-                            && crossDA * crossAB > 0) {
-
-                            isCollide = true;
-                            break;
+                                    isCollide = true;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }

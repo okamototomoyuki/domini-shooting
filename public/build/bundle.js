@@ -324,6 +324,9 @@ var app = (function () {
         get distance() {
             return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
         }
+        getDistance(pos) {
+            return Math.sqrt(Math.pow(this.x - pos.x, 2) + Math.pow(this.y - pos.y, 2));
+        }
         static cross(va, vb) {
             return va.x * vb.y - va.y * vb.x;
         }
@@ -397,6 +400,8 @@ var app = (function () {
             super(...arguments);
             this.vertices = [];
             this.nameToComponent = new Map();
+            this.collides = [];
+            this.notCollides = [];
         }
         static generate() {
             const node = document.createElement('m-entity');
@@ -405,6 +410,13 @@ var app = (function () {
             return node;
         }
         static update() {
+            for (const e of this.list) {
+                e.collides = [];
+                e.notCollides = [];
+            }
+            for (const e of this.list) {
+                e.calcCollides();
+            }
             for (const e of this.list) {
                 if (e.isDestroy == false) {
                     e.update();
@@ -619,80 +631,89 @@ var app = (function () {
             return new VertexData(this.vertices[Vertex.TYPE_LT].positionScreen, this.vertices[Vertex.TYPE_RT].positionScreen, this.vertices[Vertex.TYPE_RB].positionScreen, this.vertices[Vertex.TYPE_LB].positionScreen);
         }
         ;
+        get radius() {
+            return this.origin.getDistance(this.vertices[Vertex.TYPE_RT].positionScreen);
+        }
         get parentNode() {
             return this.parentNode;
         }
-        get collides() {
+        calcCollides() {
             const selfVs = this.computeVertexScreen();
             const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
-            const collides = new Array();
             for (const otherT of MEntity.list) {
-                if (otherT != this) {
+                if (otherT != this && this.collides.includes(otherT) == false && this.notCollides.includes(otherT) == false) {
                     const otherVs = otherT.computeVertexScreen();
                     const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
                     let isCollide = false;
-                    if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
-                        isCollide = true;
-                    }
-                    if (isCollide == false) {
-                        for (const subSV of subSVs) {
-                            const otherVA = otherVs.a.addVectors(subSV);
-                            const otherVB = otherVs.b.addVectors(subSV);
-                            const otherVC = otherVs.c.addVectors(subSV);
-                            const otherVD = otherVs.d.addVectors(subSV);
-                            const crossAB = Vector2.cross(otherVA, otherVB);
-                            const crossBC = Vector2.cross(otherVB, otherVC);
-                            const crossCD = Vector2.cross(otherVC, otherVD);
-                            const crossDA = Vector2.cross(otherVD, otherVA);
-                            if (crossAB * crossBC > 0
-                                && crossBC * crossCD > 0
-                                && crossCD * crossDA > 0
-                                && crossDA * crossAB > 0) {
-                                isCollide = true;
-                                break;
-                            }
+                    const length = otherT.positionScreen.getDistance(this.positionScreen);
+                    if (length < (otherT.radius + this.radius)) {
+                        if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
+                            || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
+                            || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
+                            || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
+                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
+                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
+                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
+                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
+                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
+                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
+                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
+                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
+                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
+                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
+                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
+                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
+                            isCollide = true;
                         }
-                    }
-                    if (isCollide == false) {
-                        for (const subOV of subOVs) {
-                            const selfVA = selfVs.a.addVectors(subOV);
-                            const selfVB = selfVs.b.addVectors(subOV);
-                            const selfVC = selfVs.c.addVectors(subOV);
-                            const selfVD = selfVs.d.addVectors(subOV);
-                            const crossAB = Vector2.cross(selfVA, selfVB);
-                            const crossBC = Vector2.cross(selfVB, selfVC);
-                            const crossCD = Vector2.cross(selfVC, selfVD);
-                            const crossDA = Vector2.cross(selfVD, selfVA);
-                            if (crossAB * crossBC > 0
-                                && crossBC * crossCD > 0
-                                && crossCD * crossDA > 0
-                                && crossDA * crossAB > 0) {
-                                isCollide = true;
-                                break;
+                        else {
+                            for (const subSV of subSVs) {
+                                const otherVA = otherVs.a.addVectors(subSV);
+                                const otherVB = otherVs.b.addVectors(subSV);
+                                const otherVC = otherVs.c.addVectors(subSV);
+                                const otherVD = otherVs.d.addVectors(subSV);
+                                const crossAB = Vector2.cross(otherVA, otherVB);
+                                const crossBC = Vector2.cross(otherVB, otherVC);
+                                const crossCD = Vector2.cross(otherVC, otherVD);
+                                const crossDA = Vector2.cross(otherVD, otherVA);
+                                if (crossAB * crossBC > 0
+                                    && crossBC * crossCD > 0
+                                    && crossCD * crossDA > 0
+                                    && crossDA * crossAB > 0) {
+                                    isCollide = true;
+                                    break;
+                                }
+                            }
+                            if (isCollide == false) {
+                                for (const subOV of subOVs) {
+                                    const selfVA = selfVs.a.addVectors(subOV);
+                                    const selfVB = selfVs.b.addVectors(subOV);
+                                    const selfVC = selfVs.c.addVectors(subOV);
+                                    const selfVD = selfVs.d.addVectors(subOV);
+                                    const crossAB = Vector2.cross(selfVA, selfVB);
+                                    const crossBC = Vector2.cross(selfVB, selfVC);
+                                    const crossCD = Vector2.cross(selfVC, selfVD);
+                                    const crossDA = Vector2.cross(selfVD, selfVA);
+                                    if (crossAB * crossBC > 0
+                                        && crossBC * crossCD > 0
+                                        && crossCD * crossDA > 0
+                                        && crossDA * crossAB > 0) {
+                                        isCollide = true;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
                     if (isCollide) {
-                        collides.push(otherT);
+                        this.collides.push(otherT);
+                        otherT.collides.push(this);
+                    }
+                    else {
+                        this.notCollides.push(otherT);
+                        otherT.notCollides.push(this);
                     }
                 }
             }
-            return collides;
         }
         loopAtScreen(targetPos) {
             const targetVec = targetPos.addVectors(this.origin.multiply(-1));

@@ -3,6 +3,7 @@ import Input from "../../engine/data/Input";
 import Vector2 from "../../engine/data/Vector2";
 import MEntity from "../../engine/element/MEntity";
 import Engine from "../../engine/Engine";
+import Game from "../Game";
 import Enemy from "./Enemy";
 import Gun from "./Gun";
 
@@ -28,7 +29,6 @@ export default class Player extends MComponent {
         gun.y = 12.5;
         gun.addComponent(Gun);
     }
-    isReady: boolean = false;
 
     update() {
         const d = Engine.delta;
@@ -72,7 +72,9 @@ export default class Player extends MComponent {
         //     t3.r += d * 100;
         // }
         if (Input.isDownMouseLeft) {
-            this.isReady = true;
+            if (Game.isReady == false) {
+                Game.isReady = true;
+            }
         }
 
         e.loopAtScreen(Input.mousePosition);

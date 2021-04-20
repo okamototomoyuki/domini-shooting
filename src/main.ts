@@ -1,9 +1,10 @@
-import App from './app/App.svelte'
-const app = new App({
+import Game from './app/Game';
+import View from './app/View.svelte'
+
+const view = new View({
 	target: document.body,
-	props: {
-		name: 'world'
-	}
 });
 
-export default app;
+Game.initialize();
+
+export default view;

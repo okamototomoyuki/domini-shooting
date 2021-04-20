@@ -339,18 +339,6 @@ var app = (function () {
         }
     }
 
-    class VertexData {
-        constructor(a, b, c, d) {
-            this.a = a;
-            this.b = b;
-            this.c = c;
-            this.d = d;
-        }
-        get vertices() {
-            return [this.a, this.b, this.c, this.d];
-        }
-    }
-
     class MathUtils {
         static degToRad(deg) {
             return deg * (Math.PI / 180);
@@ -402,6 +390,9 @@ var app = (function () {
             this.nameToComponent = new Map();
             this.collides = [];
             this.notCollides = [];
+            this.bufferVertexPos = [];
+            this.bufferPositionScreen = new Vector2(0, 0);
+            this.bufferRadius = 0;
         }
         static generate() {
             const node = document.createElement('m-entity');
@@ -410,13 +401,7 @@ var app = (function () {
             return node;
         }
         static update() {
-            for (const e of this.list) {
-                e.collides = [];
-                e.notCollides = [];
-            }
-            for (const e of this.list) {
-                e.calcCollides();
-            }
+            MEntity.calcCollides();
             for (const e of this.list) {
                 if (e.isDestroy == false) {
                     e.update();
@@ -424,6 +409,16 @@ var app = (function () {
                 else {
                     e.onDestroy();
                 }
+            }
+        }
+        static calcCollides() {
+            for (const e of MEntity.list) {
+                e.collides = [];
+                e.notCollides = [];
+                e.computeBuffer();
+            }
+            for (const e of MEntity.list) {
+                e.calcCollides();
             }
         }
         connectedCallback() {
@@ -627,8 +622,10 @@ var app = (function () {
             this.x += (x * Math.cos(-parentRad) - y * Math.cos(-(parentRad + Math.PI / 2))) * this.parentSx;
             this.y += (x * Math.sin(-parentRad) - y * Math.sin(-(parentRad + Math.PI / 2))) * this.parentSx;
         }
-        computeVertexScreen() {
-            return new VertexData(this.vertices[Vertex.TYPE_LT].positionScreen, this.vertices[Vertex.TYPE_RT].positionScreen, this.vertices[Vertex.TYPE_RB].positionScreen, this.vertices[Vertex.TYPE_LB].positionScreen);
+        computeBuffer() {
+            this.bufferVertexPos = [this.vertices[Vertex.TYPE_LT].positionScreen, this.vertices[Vertex.TYPE_RT].positionScreen, this.vertices[Vertex.TYPE_RB].positionScreen, this.vertices[Vertex.TYPE_LB].positionScreen];
+            this.bufferPositionScreen = this.positionScreen;
+            this.bufferRadius = this.radius;
         }
         ;
         get radius() {
@@ -638,39 +635,39 @@ var app = (function () {
             return this.parentNode;
         }
         calcCollides() {
-            const selfVs = this.computeVertexScreen();
-            const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
+            const selfVs = this.bufferVertexPos;
+            const subSVs = [selfVs[0].multiply(-1), selfVs[1].multiply(-1), selfVs[2].multiply(-1), selfVs[3].multiply(-1)];
             for (const otherT of MEntity.list) {
                 if (otherT != this && this.collides.includes(otherT) == false && this.notCollides.includes(otherT) == false) {
-                    const otherVs = otherT.computeVertexScreen();
-                    const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
+                    const otherVs = otherT.bufferVertexPos;
+                    const subOVs = [otherVs[0].multiply(-1), otherVs[1].multiply(-1), otherVs[2].multiply(-1), otherVs[3].multiply(-1)];
                     let isCollide = false;
-                    const length = otherT.positionScreen.getDistance(this.positionScreen);
-                    if (length < (otherT.radius + this.radius)) {
-                        if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
-                            || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
-                            || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
-                            || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
-                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
-                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
-                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
-                            || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
-                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
-                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
-                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
-                            || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
-                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
-                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
-                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
-                            || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
+                    const length = otherT.bufferPositionScreen.getDistance(this.bufferPositionScreen);
+                    if (length < (otherT.bufferRadius + this.bufferRadius)) {
+                        if (Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[0], otherVs[1])
+                            || Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[1], otherVs[2])
+                            || Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[2], otherVs[3])
+                            || Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[3], otherVs[0])
+                            || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[0], otherVs[1])
+                            || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[1], otherVs[2])
+                            || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[2], otherVs[3])
+                            || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[3], otherVs[0])
+                            || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[0], otherVs[1])
+                            || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[1], otherVs[2])
+                            || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[2], otherVs[3])
+                            || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[3], otherVs[0])
+                            || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[0], otherVs[1])
+                            || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[1], otherVs[2])
+                            || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[2], otherVs[3])
+                            || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[3], otherVs[0])) {
                             isCollide = true;
                         }
                         else {
                             for (const subSV of subSVs) {
-                                const otherVA = otherVs.a.addVectors(subSV);
-                                const otherVB = otherVs.b.addVectors(subSV);
-                                const otherVC = otherVs.c.addVectors(subSV);
-                                const otherVD = otherVs.d.addVectors(subSV);
+                                const otherVA = otherVs[0].addVectors(subSV);
+                                const otherVB = otherVs[1].addVectors(subSV);
+                                const otherVC = otherVs[2].addVectors(subSV);
+                                const otherVD = otherVs[3].addVectors(subSV);
                                 const crossAB = Vector2.cross(otherVA, otherVB);
                                 const crossBC = Vector2.cross(otherVB, otherVC);
                                 const crossCD = Vector2.cross(otherVC, otherVD);
@@ -685,10 +682,10 @@ var app = (function () {
                             }
                             if (isCollide == false) {
                                 for (const subOV of subOVs) {
-                                    const selfVA = selfVs.a.addVectors(subOV);
-                                    const selfVB = selfVs.b.addVectors(subOV);
-                                    const selfVC = selfVs.c.addVectors(subOV);
-                                    const selfVD = selfVs.d.addVectors(subOV);
+                                    const selfVA = selfVs[0].addVectors(subOV);
+                                    const selfVB = selfVs[1].addVectors(subOV);
+                                    const selfVC = selfVs[2].addVectors(subOV);
+                                    const selfVD = selfVs[3].addVectors(subOV);
                                     const crossAB = Vector2.cross(selfVA, selfVB);
                                     const crossBC = Vector2.cross(selfVB, selfVC);
                                     const crossCD = Vector2.cross(selfVC, selfVD);
@@ -703,14 +700,14 @@ var app = (function () {
                                 }
                             }
                         }
-                    }
-                    if (isCollide) {
-                        this.collides.push(otherT);
-                        otherT.collides.push(this);
-                    }
-                    else {
-                        this.notCollides.push(otherT);
-                        otherT.notCollides.push(this);
+                        if (isCollide) {
+                            this.collides.push(otherT);
+                            otherT.collides.push(this);
+                        }
+                        else {
+                            this.notCollides.push(otherT);
+                            otherT.notCollides.push(this);
+                        }
                     }
                 }
             }

@@ -1,7 +1,5 @@
 import MComponent from "../component/MComponent";
 import Vector2 from "../data/Vector2";
-import VertexData from "../data/VertexData";
-import Engine from "../Engine";
 import Constructable from "../interface/Constructable";
 import MathUtils from "../util/MathUtils";
 import Vertex from "./MVertex";
@@ -23,13 +21,7 @@ export default class MEntity extends HTMLElement {
 
     static update() {
         // 衝突判定計算
-        for (const e of this.list) {
-            e.collides = [];
-            e.notCollides = [];
-        }
-        for (const e of this.list) {
-            e.calcCollides();
-        }
+        MEntity.calcCollides()
 
         // 更新
         for (const e of this.list) {
@@ -41,11 +33,30 @@ export default class MEntity extends HTMLElement {
         }
     }
 
+    /**
+     * 衝突判定計算
+     */
+    static calcCollides() {
+        // 前準備
+        for (const e of MEntity.list) {
+            e.collides = [];
+            e.notCollides = [];
+            e.computeBuffer();
+        }
+        // 衝突判定実行
+        for (const e of MEntity.list) {
+            e.calcCollides();
+        }
+    }
+
     vertices: MVertex[] = [];
     nameToComponent = new Map<string, MComponent>();
     collides: Array<MEntity> = [];
     notCollides: Array<MEntity> = [];
 
+    bufferVertexPos: Vector2[] = [];
+    bufferPositionScreen: Vector2 = new Vector2(0, 0)
+    bufferRadius: number = 0
 
     connectedCallback() {
         this.initializeIfNotYet();
@@ -286,13 +297,11 @@ export default class MEntity extends HTMLElement {
 
     /**
      * 画面に対しての頂点データ計算
-     * @returns 頂点データ
      */
-    computeVertexScreen(): VertexData {
-        return new VertexData(this.vertices[MVertex.TYPE_LT].positionScreen,
-            this.vertices[MVertex.TYPE_RT].positionScreen,
-            this.vertices[MVertex.TYPE_RB].positionScreen,
-            this.vertices[MVertex.TYPE_LB].positionScreen);
+    computeBuffer() {
+        this.bufferVertexPos = [this.vertices[MVertex.TYPE_LT].positionScreen, this.vertices[MVertex.TYPE_RT].positionScreen, this.vertices[MVertex.TYPE_RB].positionScreen, this.vertices[MVertex.TYPE_LB].positionScreen];
+        this.bufferPositionScreen = this.positionScreen;
+        this.bufferRadius = this.radius
     };
 
     get radius(): number {
@@ -311,44 +320,43 @@ export default class MEntity extends HTMLElement {
      */
     calcCollides() {
 
-        const selfVs = this.computeVertexScreen();
-        const subSVs = [selfVs.a.multiply(-1), selfVs.b.multiply(-1), selfVs.c.multiply(-1), selfVs.d.multiply(-1)];
-
+        const selfVs = this.bufferVertexPos;
+        const subSVs = [selfVs[0].multiply(-1), selfVs[1].multiply(-1), selfVs[2].multiply(-1), selfVs[3].multiply(-1)];
         for (const otherT of MEntity.list) {
             if (otherT != this && this.collides.includes(otherT) == false && this.notCollides.includes(otherT) == false) {
-                const otherVs = otherT.computeVertexScreen();
-                const subOVs = [otherVs.a.multiply(-1), otherVs.b.multiply(-1), otherVs.c.multiply(-1), otherVs.d.multiply(-1)];
+                const otherVs = otherT.bufferVertexPos;
+                const subOVs = [otherVs[0].multiply(-1), otherVs[1].multiply(-1), otherVs[2].multiply(-1), otherVs[3].multiply(-1)];
 
                 let isCollide = false;
 
                 // 距離が接触範囲内か
-                const length = otherT.positionScreen.getDistance(this.positionScreen)
-                if (length < (otherT.radius + this.radius)) {
+                const length = otherT.bufferPositionScreen.getDistance(this.bufferPositionScreen)
+                if (length < (otherT.bufferRadius + this.bufferRadius)) {
                     // 線分が交わっているか
-                    if (Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.a, selfVs.b, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.b, selfVs.c, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.c, selfVs.d, otherVs.d, otherVs.a)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.a, otherVs.b)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.b, otherVs.c)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.c, otherVs.d)
-                        || Vector2.isCrossXY(selfVs.d, selfVs.a, otherVs.d, otherVs.a)) {
+                    if (Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[0], otherVs[1])
+                        || Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[1], otherVs[2])
+                        || Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[2], otherVs[3])
+                        || Vector2.isCrossXY(selfVs[0], selfVs[1], otherVs[3], otherVs[0])
+                        || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[0], otherVs[1])
+                        || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[1], otherVs[2])
+                        || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[2], otherVs[3])
+                        || Vector2.isCrossXY(selfVs[1], selfVs[2], otherVs[3], otherVs[0])
+                        || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[0], otherVs[1])
+                        || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[1], otherVs[2])
+                        || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[2], otherVs[3])
+                        || Vector2.isCrossXY(selfVs[2], selfVs[3], otherVs[3], otherVs[0])
+                        || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[0], otherVs[1])
+                        || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[1], otherVs[2])
+                        || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[2], otherVs[3])
+                        || Vector2.isCrossXY(selfVs[3], selfVs[0], otherVs[3], otherVs[0])) {
                         isCollide = true;
                     } else {
                         // 自身が相手の矩形内に入っているか
                         for (const subSV of subSVs) {
-                            const otherVA = otherVs.a.addVectors(subSV);
-                            const otherVB = otherVs.b.addVectors(subSV);
-                            const otherVC = otherVs.c.addVectors(subSV);
-                            const otherVD = otherVs.d.addVectors(subSV);
+                            const otherVA = otherVs[0].addVectors(subSV);
+                            const otherVB = otherVs[1].addVectors(subSV);
+                            const otherVC = otherVs[2].addVectors(subSV);
+                            const otherVD = otherVs[3].addVectors(subSV);
 
                             const crossAB = Vector2.cross(otherVA, otherVB);
                             const crossBC = Vector2.cross(otherVB, otherVC);
@@ -368,10 +376,10 @@ export default class MEntity extends HTMLElement {
 
                             // 相手が自身の矩形内に入っているか
                             for (const subOV of subOVs) {
-                                const selfVA = selfVs.a.addVectors(subOV);
-                                const selfVB = selfVs.b.addVectors(subOV);
-                                const selfVC = selfVs.c.addVectors(subOV);
-                                const selfVD = selfVs.d.addVectors(subOV);
+                                const selfVA = selfVs[0].addVectors(subOV);
+                                const selfVB = selfVs[1].addVectors(subOV);
+                                const selfVC = selfVs[2].addVectors(subOV);
+                                const selfVD = selfVs[3].addVectors(subOV);
 
                                 const crossAB = Vector2.cross(selfVA, selfVB);
                                 const crossBC = Vector2.cross(selfVB, selfVC);
@@ -389,14 +397,14 @@ export default class MEntity extends HTMLElement {
                             }
                         }
                     }
-                }
 
-                if (isCollide) {
-                    this.collides.push(otherT);
-                    otherT.collides.push(this);
-                } else {
-                    this.notCollides.push(otherT);
-                    otherT.notCollides.push(this);
+                    if (isCollide) {
+                        this.collides.push(otherT);
+                        otherT.collides.push(this);
+                    } else {
+                        this.notCollides.push(otherT);
+                        otherT.notCollides.push(this);
+                    }
                 }
             }
         }

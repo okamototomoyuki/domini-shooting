@@ -71,12 +71,6 @@ export default class Player extends MComponent {
         // if (Input.isPressing("BracketLeft")) {
         //     t3.r += d * 100;
         // }
-        if (Input.isDownMouseLeft) {
-            if (Game.isReady == false) {
-                Game.isReady = true;
-            }
-        }
-
         e.loopAtScreen(Input.mousePosition);
 
         const wScreen = document.body.offsetWidth;
@@ -104,6 +98,7 @@ export default class Player extends MComponent {
         const enemyAttr = MComponent.getAttributeName(Enemy);
         if (enemyAttr && e.collides.some(e => e.attributes.getNamedItem(enemyAttr))) {
             e.remove();
+            Game.toEndingState()
         }
     }
 }

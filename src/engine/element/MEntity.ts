@@ -436,6 +436,14 @@ export default class MEntity extends HTMLElement {
         return undefined;
     }
 
+    hasComponent(compClass: Constructable<MComponent>): boolean {
+        const attrName = MComponent.getAttributeName(compClass);
+        if (attrName) {
+            return this.nameToComponent.has(attrName);
+        }
+        return false;
+    }
+
     get isInBody(): boolean {
         const rect = document.body.getBoundingClientRect();
         const pos = this.positionScreen
@@ -445,5 +453,6 @@ export default class MEntity extends HTMLElement {
     get isDestroy(): boolean {
         return this.parentElement == null;
     }
+
 }
 customElements.define("m-entity", MEntity);

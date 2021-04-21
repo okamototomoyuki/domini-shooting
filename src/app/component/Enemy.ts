@@ -3,6 +3,7 @@ import MComponent from "../../engine/component/MComponent";
 import Vector2 from "../../engine/data/Vector2";
 import MEntity from "../../engine/element/MEntity";
 import Engine from "../../engine/Engine";
+import Game from "../Game";
 import Bullet from "./Bullet";
 import Player from "./Player";
 
@@ -38,6 +39,14 @@ export default class Enemy extends MComponent {
         return node.addComponent(Enemy) as Enemy
     }
 
+    static destroyAll() {
+        for (const e of MEntity.list) {
+            if (e.hasComponent(Enemy)) {
+                e.remove();
+            }
+        }
+    }
+
     update() {
         const player = Player.instance;
         const e = this.entity;
@@ -53,6 +62,10 @@ export default class Enemy extends MComponent {
         if (bulletAttr) {
             const bullet = e.collides.find(e => e.attributes.getNamedItem(bulletAttr))
             if (bullet) {
+                // ポイント加算
+                Game.state += 1;
+
+                // 破棄
                 bullet.remove();
                 e.remove();
             }

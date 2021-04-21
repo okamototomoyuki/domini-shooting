@@ -71,131 +71,6 @@ var app = (function () {
         }
     }
 
-    class Input {
-        static initialize() {
-            document.addEventListener("keydown", Input._onKeyDown);
-            document.addEventListener("keyup", Input._onKeyUp);
-            document.addEventListener("mousemove", Input._onMouseMove);
-            document.body.addEventListener("mousedown", Input._onMouseDown);
-            document.body.addEventListener("mouseup", Input._onMouseUp);
-            document.body.addEventListener("wheel", Input._onMouseWheel);
-            Input.update();
-        }
-        static update() {
-            for (let key of Input.map.keys()) {
-                let v = Input.map.get(key);
-                if (v == 2) {
-                    Input.map.set(key, 1);
-                }
-                else if (v == -1) {
-                    Input.map.set(key, 0);
-                }
-            }
-            if (Input.wheelFrame < Engine.currentFrame - 1) {
-                Input.wheel = 0;
-            }
-        }
-        static _onKeyDown(e) {
-            Input.map.set(e.code, 2);
-        }
-        static _onKeyUp(e) {
-            Input.map.set(e.code, -1);
-        }
-        static _onMouseMove(e) {
-            Input.mousePosition = new Vector2(e.clientX, e.clientY);
-        }
-        static _onMouseDown(e) {
-            switch (e.button) {
-                case 0:
-                    Input.map.set(Input._MOUSE_LEFT, 2);
-                case 1:
-                    Input.map.set(Input._MOUSE_MIDDLE, 2);
-                case 2:
-                    Input.map.set(Input._MOUSE_RIGHT, 2);
-            }
-        }
-        static _onMouseUp(e) {
-            switch (e.button) {
-                case 0:
-                    Input.map.set(Input._MOUSE_LEFT, -1);
-                case 1:
-                    Input.map.set(Input._MOUSE_MIDDLE, -1);
-                case 2:
-                    Input.map.set(Input._MOUSE_RIGHT, -1);
-            }
-        }
-        static _onMouseWheel(e) {
-            Input.wheelFrame = Engine.currentFrame;
-            Input.wheel = e.deltaY;
-        }
-        static isUp(code) {
-            if (Input.map.has(code)) {
-                return Input.map.get(code) == -1;
-            }
-            return false;
-        }
-        static isNotPress(code) {
-            const v = Input.map.get(code);
-            return v == 0 || v == -1;
-        }
-        static isDown(code) {
-            return Input.map.get(code) == 2;
-        }
-        static isPressing(code) {
-            const v = Input.map.get(code);
-            return v == 1 || v == 2;
-        }
-        static get isUpMouseLeft() {
-            return Input.map.get(Input._MOUSE_LEFT) == -1;
-        }
-        static get isNotPressMouseLeft() {
-            const v = Input.map.get(Input._MOUSE_LEFT);
-            return v == -1 || v == 0;
-        }
-        static get isDownMouseLeft() {
-            return Input.map.get(Input._MOUSE_LEFT) == 2;
-        }
-        static get isPressingMouseLeft() {
-            const v = Input.map.get(Input._MOUSE_LEFT);
-            return v == 1 || v == 2;
-        }
-        static get isUpMouseRight() {
-            return Input.map.get(Input._MOUSE_RIGHT) == -1;
-        }
-        static get isNotPressMouseRight() {
-            const v = Input.map.get(Input._MOUSE_RIGHT);
-            return v == -1 || v == 0;
-        }
-        static get isDownMouseRight() {
-            return Input.map.get(Input._MOUSE_RIGHT) == 2;
-        }
-        static get isPressingMouseRight() {
-            const v = Input.map.get(Input._MOUSE_RIGHT);
-            return v == 1 || v == 2;
-        }
-        static get isUpMouseMiddle() {
-            return Input.map.get(Input._MOUSE_MIDDLE) == -1;
-        }
-        static get isNotPressMouseMiddle() {
-            const v = Input.map.get(Input._MOUSE_MIDDLE);
-            return v == -1 || v == 0;
-        }
-        static get isDownMouseMiddle() {
-            return Input.map.get(Input._MOUSE_MIDDLE) == 2;
-        }
-        static get isPressingMouseMiddle() {
-            const v = Input.map.get(Input._MOUSE_MIDDLE);
-            return v == 1 || v == 2;
-        }
-    }
-    Input._MOUSE_LEFT = "_MOUSE_LEFT";
-    Input._MOUSE_RIGHT = "_MOUSE_RIGHT";
-    Input._MOUSE_MIDDLE = "_MOUSE_MIDDLE";
-    Input.map = new Map();
-    Input.mousePosition = new Vector2(0, 0);
-    Input.wheelFrame = 0;
-    Input.wheel = 0;
-
     class MathUtils {
         static degToRad(deg) {
             return deg * (Math.PI / 180);
@@ -591,6 +466,13 @@ var app = (function () {
             }
             return undefined;
         }
+        hasComponent(compClass) {
+            const attrName = MComponent.getAttributeName(compClass);
+            if (attrName) {
+                return this.nameToComponent.has(attrName);
+            }
+            return false;
+        }
         get isInBody() {
             const rect = document.body.getBoundingClientRect();
             const pos = this.positionScreen;
@@ -621,6 +503,131 @@ var app = (function () {
     Engine.prevDate = window.performance.now();
     Engine.currentFrame = 0;
     Engine.delta = 0;
+
+    class Input {
+        static initialize() {
+            document.addEventListener("keydown", Input._onKeyDown);
+            document.addEventListener("keyup", Input._onKeyUp);
+            document.addEventListener("mousemove", Input._onMouseMove);
+            document.body.addEventListener("mousedown", Input._onMouseDown);
+            document.body.addEventListener("mouseup", Input._onMouseUp);
+            document.body.addEventListener("wheel", Input._onMouseWheel);
+            Input.update();
+        }
+        static update() {
+            for (let key of Input.map.keys()) {
+                let v = Input.map.get(key);
+                if (v == 2) {
+                    Input.map.set(key, 1);
+                }
+                else if (v == -1) {
+                    Input.map.set(key, 0);
+                }
+            }
+            if (Input.wheelFrame < Engine.currentFrame - 1) {
+                Input.wheel = 0;
+            }
+        }
+        static _onKeyDown(e) {
+            Input.map.set(e.code, 2);
+        }
+        static _onKeyUp(e) {
+            Input.map.set(e.code, -1);
+        }
+        static _onMouseMove(e) {
+            Input.mousePosition = new Vector2(e.clientX, e.clientY);
+        }
+        static _onMouseDown(e) {
+            switch (e.button) {
+                case 0:
+                    Input.map.set(Input._MOUSE_LEFT, 2);
+                case 1:
+                    Input.map.set(Input._MOUSE_MIDDLE, 2);
+                case 2:
+                    Input.map.set(Input._MOUSE_RIGHT, 2);
+            }
+        }
+        static _onMouseUp(e) {
+            switch (e.button) {
+                case 0:
+                    Input.map.set(Input._MOUSE_LEFT, -1);
+                case 1:
+                    Input.map.set(Input._MOUSE_MIDDLE, -1);
+                case 2:
+                    Input.map.set(Input._MOUSE_RIGHT, -1);
+            }
+        }
+        static _onMouseWheel(e) {
+            Input.wheelFrame = Engine.currentFrame;
+            Input.wheel = e.deltaY;
+        }
+        static isUp(code) {
+            if (Input.map.has(code)) {
+                return Input.map.get(code) == -1;
+            }
+            return false;
+        }
+        static isNotPress(code) {
+            const v = Input.map.get(code);
+            return v == 0 || v == -1;
+        }
+        static isDown(code) {
+            return Input.map.get(code) == 2;
+        }
+        static isPressing(code) {
+            const v = Input.map.get(code);
+            return v == 1 || v == 2;
+        }
+        static get isUpMouseLeft() {
+            return Input.map.get(Input._MOUSE_LEFT) == -1;
+        }
+        static get isNotPressMouseLeft() {
+            const v = Input.map.get(Input._MOUSE_LEFT);
+            return v == -1 || v == 0;
+        }
+        static get isDownMouseLeft() {
+            return Input.map.get(Input._MOUSE_LEFT) == 2;
+        }
+        static get isPressingMouseLeft() {
+            const v = Input.map.get(Input._MOUSE_LEFT);
+            return v == 1 || v == 2;
+        }
+        static get isUpMouseRight() {
+            return Input.map.get(Input._MOUSE_RIGHT) == -1;
+        }
+        static get isNotPressMouseRight() {
+            const v = Input.map.get(Input._MOUSE_RIGHT);
+            return v == -1 || v == 0;
+        }
+        static get isDownMouseRight() {
+            return Input.map.get(Input._MOUSE_RIGHT) == 2;
+        }
+        static get isPressingMouseRight() {
+            const v = Input.map.get(Input._MOUSE_RIGHT);
+            return v == 1 || v == 2;
+        }
+        static get isUpMouseMiddle() {
+            return Input.map.get(Input._MOUSE_MIDDLE) == -1;
+        }
+        static get isNotPressMouseMiddle() {
+            const v = Input.map.get(Input._MOUSE_MIDDLE);
+            return v == -1 || v == 0;
+        }
+        static get isDownMouseMiddle() {
+            return Input.map.get(Input._MOUSE_MIDDLE) == 2;
+        }
+        static get isPressingMouseMiddle() {
+            const v = Input.map.get(Input._MOUSE_MIDDLE);
+            return v == 1 || v == 2;
+        }
+    }
+    Input._MOUSE_LEFT = "_MOUSE_LEFT";
+    Input._MOUSE_RIGHT = "_MOUSE_RIGHT";
+    Input._MOUSE_MIDDLE = "_MOUSE_MIDDLE";
+    Input.map = new Map();
+    Input.mousePosition = new Vector2(0, 0);
+    Input.wheelFrame = 0;
+    Input.wheel = 0;
 
     class Bullet extends MComponent {
         static generate(screenPos, rad) {
@@ -695,11 +702,6 @@ var app = (function () {
             if (Input.isPressing("KeyD")) {
                 e.translateScreenX(d * 500);
             }
-            if (Input.isDownMouseLeft) {
-                if (Game.isReady == false) {
-                    Game.isReady = true;
-                }
-            }
             e.loopAtScreen(Input.mousePosition);
             const wScreen = document.body.offsetWidth;
             const hScreen = document.body.offsetHeight;
@@ -727,6 +729,7 @@ var app = (function () {
             const enemyAttr = MComponent.getAttributeName(Enemy);
             if (enemyAttr && e.collides.some(e => e.attributes.getNamedItem(enemyAttr))) {
                 e.remove();
+                Game.toEndingState();
             }
         }
     }
@@ -760,6 +763,13 @@ var app = (function () {
             node.bg = "blue";
             return node.addComponent(Enemy);
         }
+        static destroyAll() {
+            for (const e of MEntity.list) {
+                if (e.hasComponent(Enemy)) {
+                    e.remove();
+                }
+            }
+        }
         update() {
             const player = Player.instance;
             const e = this.entity;
@@ -774,6 +784,7 @@ var app = (function () {
             if (bulletAttr) {
                 const bullet = e.collides.find(e => e.attributes.getNamedItem(bulletAttr));
                 if (bullet) {
+                    Game.state += 1;
                     bullet.remove();
                     e.remove();
                 }
@@ -796,8 +807,13 @@ var app = (function () {
             requestAnimationFrame(Game.loop);
         }
         static loop() {
+            if (Input.isDown("SPACE")) {
+                if (Game.isStatePlaying == false) {
+                    Game.toPlayingState();
+                }
+            }
             const player = Player.instance;
-            if (player && Game.isReady) {
+            if (player && Game.isStatePlaying) {
                 Game.generateTime += Engine.delta;
                 if (Game.generateTime > Game.generateSpan) {
                     Enemy.generate();
@@ -807,12 +823,38 @@ var app = (function () {
             }
             requestAnimationFrame(Game.loop);
         }
+        static get isStateWaiting() {
+            return Game.state == Game._STATE_WAITING;
+        }
+        static get isStatePlaying() {
+            return Game.state == Game._STATE_PLAYING;
+        }
+        static get isStateEnding() {
+            return Game.state == Game._STATE_ENDING;
+        }
+        static toPlayingState() {
+            Enemy.destroyAll();
+            Game.state = Game._STATE_PLAYING;
+            Game.score = 0;
+        }
+        static toEndingState() {
+            Game.state = Game._STATE_ENDING;
+        }
     }
+    Game._STATE_WAITING = 0;
+    Game._STATE_PLAYING = 1;
+    Game._STATE_ENDING = 2;
     Game.generateTime = 0;
     Game.generateSpan = 3;
-    Game.isReady = false;
+    Game.state = Game._STATE_WAITING;
+    Game.score = 0;
 
     function noop() { }
+    function add_location(element, file, line, column, char) {
+        element.__svelte_meta = {
+            loc: { file, line, column, char }
+        };
+    }
     function run(fn) {
         return fn();
     }
@@ -831,11 +873,36 @@ var app = (function () {
     function is_empty(obj) {
         return Object.keys(obj).length === 0;
     }
+
+    function append(target, node) {
+        target.appendChild(node);
+    }
+    function insert(target, node, anchor) {
+        target.insertBefore(node, anchor || null);
+    }
     function detach(node) {
         node.parentNode.removeChild(node);
     }
+    function element(name) {
+        return document.createElement(name);
+    }
+    function text(data) {
+        return document.createTextNode(data);
+    }
+    function space() {
+        return text(' ');
+    }
+    function attr(node, attribute, value) {
+        if (value == null)
+            node.removeAttribute(attribute);
+        else if (node.getAttribute(attribute) !== value)
+            node.setAttribute(attribute, value);
+    }
     function children(element) {
         return Array.from(element.childNodes);
+    }
+    function toggle_class(element, name, toggle) {
+        element.classList[toggle ? 'add' : 'remove'](name);
     }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
@@ -982,7 +1049,7 @@ var app = (function () {
             on_disconnect: [],
             before_update: [],
             after_update: [],
-            context: new Map(parent_component ? parent_component.$$.context : []),
+            context: new Map(parent_component ? parent_component.$$.context : options.context || []),
             // everything else
             callbacks: blank_object(),
             dirty,
@@ -1051,7 +1118,26 @@ var app = (function () {
     }
 
     function dispatch_dev(type, detail) {
-        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.35.0' }, detail)));
+        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.37.0' }, detail)));
+    }
+    function append_dev(target, node) {
+        dispatch_dev('SvelteDOMInsert', { target, node });
+        append(target, node);
+    }
+    function insert_dev(target, node, anchor) {
+        dispatch_dev('SvelteDOMInsert', { target, node, anchor });
+        insert(target, node, anchor);
+    }
+    function detach_dev(node) {
+        dispatch_dev('SvelteDOMRemove', { node });
+        detach(node);
+    }
+    function attr_dev(node, attribute, value) {
+        attr(node, attribute, value);
+        if (value == null)
+            dispatch_dev('SvelteDOMRemoveAttribute', { node, attribute });
+        else
+            dispatch_dev('SvelteDOMSetAttribute', { node, attribute, value });
     }
     function validate_slots(name, slot, keys) {
         for (const slot_key of Object.keys(slot)) {
@@ -1080,19 +1166,100 @@ var app = (function () {
         $inject_state() { }
     }
 
-    /* src\app\View.svelte generated by Svelte v3.35.0 */
+    /* src\app\View.svelte generated by Svelte v3.37.0 */
+    const file = "src\\app\\View.svelte";
 
     function create_fragment(ctx) {
+    	let div;
+    	let h1;
+    	let t1;
+    	let p0;
+    	let t4;
+    	let p1;
+    	let t5;
+    	let br0;
+    	let t6;
+    	let br1;
+    	let t7;
+    	let br2;
+    	let t8;
+    	let p2;
+    	let b0;
+    	let t10;
+    	let p3;
+    	let b1;
+
     	const block = {
-    		c: noop,
+    		c: function create() {
+    			div = element("div");
+    			h1 = element("h1");
+    			h1.textContent = "DOM Shooting Game";
+    			t1 = space();
+    			p0 = element("p");
+    			p0.textContent = `Score: ${Game.score}`;
+    			t4 = space();
+    			p1 = element("p");
+    			t5 = text("WASD : Move");
+    			br0 = element("br");
+    			t6 = text("\n\t\tMouse Move : Aim");
+    			br1 = element("br");
+    			t7 = text("\n\t\tClick : Shoot");
+    			br2 = element("br");
+    			t8 = space();
+    			p2 = element("p");
+    			b0 = element("b");
+    			b0.textContent = "Space: Game Start";
+    			t10 = space();
+    			p3 = element("p");
+    			b1 = element("b");
+    			b1.textContent = "Space：Restart";
+    			add_location(h1, file, 6, 1, 164);
+    			add_location(p0, file, 7, 1, 192);
+    			add_location(br0, file, 11, 13, 242);
+    			add_location(br1, file, 12, 18, 267);
+    			add_location(br2, file, 13, 15, 289);
+    			add_location(p1, file, 10, 1, 225);
+    			add_location(b0, file, 15, 48, 350);
+    			attr_dev(p2, "class", "svelte-1lngs05");
+    			toggle_class(p2, "hidden", Game.isStateWaiting == false);
+    			add_location(p2, file, 15, 1, 303);
+    			add_location(b1, file, 16, 47, 426);
+    			attr_dev(p3, "class", "svelte-1lngs05");
+    			toggle_class(p3, "hidden", Game.isStateEnding == false);
+    			add_location(p3, file, 16, 1, 380);
+    			attr_dev(div, "class", "svelte-1lngs05");
+    			toggle_class(div, "hidden", Game.isStateWaiting == false);
+    			add_location(div, file, 5, 0, 113);
+    		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
-    		m: noop,
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div, anchor);
+    			append_dev(div, h1);
+    			append_dev(div, t1);
+    			append_dev(div, p0);
+    			append_dev(div, t4);
+    			append_dev(div, p1);
+    			append_dev(p1, t5);
+    			append_dev(p1, br0);
+    			append_dev(p1, t6);
+    			append_dev(p1, br1);
+    			append_dev(p1, t7);
+    			append_dev(p1, br2);
+    			append_dev(div, t8);
+    			append_dev(div, p2);
+    			append_dev(p2, b0);
+    			append_dev(div, t10);
+    			append_dev(div, p3);
+    			append_dev(p3, b1);
+    		},
     		p: noop,
     		i: noop,
     		o: noop,
-    		d: noop
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div);
+    		}
     	};
 
     	dispatch_dev("SvelteRegisterBlock", {
@@ -1120,7 +1287,7 @@ var app = (function () {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<View> was created with unknown prop '${key}'`);
     	});
 
-    	$$self.$capture_state = () => ({ onMount });
+    	$$self.$capture_state = () => ({ onMount, Game });
     	return [];
     }
 

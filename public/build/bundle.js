@@ -1,6 +1,6 @@
 
 (function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
-var app = (function () {
+(function () {
     'use strict';
 
     class MComponent {
@@ -497,12 +497,19 @@ var app = (function () {
             Engine.prevDate = now;
             MEntity.update();
             Input.update();
+            for (const e of Engine.loops) {
+                e();
+            }
             requestAnimationFrame(Engine.loop);
+        }
+        static addRequestAnimationFrame(loop) {
+            Engine.loops.push(loop);
         }
     }
     Engine.prevDate = window.performance.now();
     Engine.currentFrame = 0;
     Engine.delta = 0;
+    Engine.loops = [];
 
     class Input {
         static initialize() {
@@ -515,13 +522,15 @@ var app = (function () {
             Input.update();
         }
         static update() {
-            for (let key of Input.map.keys()) {
-                let v = Input.map.get(key);
-                if (v == 2) {
-                    Input.map.set(key, 1);
+            for (let key of Input.keyToState.keys()) {
+                let state = Input.keyToState.get(key);
+                let downFrame = Input.keyToDownFrame.get(key);
+                let upFrame = Input.keyToUpFrame.get(key);
+                if (state == 2 && downFrame && downFrame <= Engine.currentFrame - 2) {
+                    Input.keyToState.set(key, 1);
                 }
-                else if (v == -1) {
-                    Input.map.set(key, 0);
+                else if (state == -1 && upFrame && upFrame <= Engine.currentFrame - 2) {
+                    Input.keyToState.set(key, 0);
                 }
             }
             if (Input.wheelFrame < Engine.currentFrame - 1) {
@@ -529,10 +538,12 @@ var app = (function () {
             }
         }
         static _onKeyDown(e) {
-            Input.map.set(e.code, 2);
+            Input.keyToDownFrame.set(e.code, Engine.currentFrame);
+            Input.keyToState.set(e.code, 2);
         }
         static _onKeyUp(e) {
-            Input.map.set(e.code, -1);
+            Input.keyToUpFrame.set(e.code, Engine.currentFrame);
+            Input.keyToState.set(e.code, -1);
         }
         static _onMouseMove(e) {
             Input.mousePosition = new Vector2(e.clientX, e.clientY);
@@ -540,21 +551,27 @@ var app = (function () {
         static _onMouseDown(e) {
             switch (e.button) {
                 case 0:
-                    Input.map.set(Input._MOUSE_LEFT, 2);
+                    Input.keyToDownFrame.set(Input._MOUSE_LEFT, Engine.currentFrame);
+                    Input.keyToState.set(Input._MOUSE_LEFT, 2);
                 case 1:
-                    Input.map.set(Input._MOUSE_MIDDLE, 2);
+                    Input.keyToDownFrame.set(Input._MOUSE_MIDDLE, Engine.currentFrame);
+                    Input.keyToState.set(Input._MOUSE_MIDDLE, 2);
                 case 2:
-                    Input.map.set(Input._MOUSE_RIGHT, 2);
+                    Input.keyToDownFrame.set(Input._MOUSE_RIGHT, Engine.currentFrame);
+                    Input.keyToState.set(Input._MOUSE_RIGHT, 2);
             }
         }
         static _onMouseUp(e) {
             switch (e.button) {
                 case 0:
-                    Input.map.set(Input._MOUSE_LEFT, -1);
+                    Input.keyToUpFrame.set(Input._MOUSE_LEFT, Engine.currentFrame);
+                    Input.keyToState.set(Input._MOUSE_LEFT, -1);
                 case 1:
-                    Input.map.set(Input._MOUSE_MIDDLE, -1);
+                    Input.keyToUpFrame.set(Input._MOUSE_MIDDLE, Engine.currentFrame);
+                    Input.keyToState.set(Input._MOUSE_MIDDLE, -1);
                 case 2:
-                    Input.map.set(Input._MOUSE_RIGHT, -1);
+                    Input.keyToUpFrame.set(Input._MOUSE_RIGHT, Engine.currentFrame);
+                    Input.keyToState.set(Input._MOUSE_RIGHT, -1);
             }
         }
         static _onMouseWheel(e) {
@@ -562,69 +579,71 @@ var app = (function () {
             Input.wheel = e.deltaY;
         }
         static isUp(code) {
-            if (Input.map.has(code)) {
-                return Input.map.get(code) == -1;
+            if (Input.keyToState.has(code)) {
+                return Input.keyToState.get(code) == -1;
             }
             return false;
         }
         static isNotPress(code) {
-            const v = Input.map.get(code);
+            const v = Input.keyToState.get(code);
             return v == 0 || v == -1;
         }
         static isDown(code) {
-            return Input.map.get(code) == 2;
+            return Input.keyToState.get(code) == 2;
         }
         static isPressing(code) {
-            const v = Input.map.get(code);
+            const v = Input.keyToState.get(code);
             return v == 1 || v == 2;
         }
         static get isUpMouseLeft() {
-            return Input.map.get(Input._MOUSE_LEFT) == -1;
+            return Input.keyToState.get(Input._MOUSE_LEFT) == -1;
         }
         static get isNotPressMouseLeft() {
-            const v = Input.map.get(Input._MOUSE_LEFT);
+            const v = Input.keyToState.get(Input._MOUSE_LEFT);
             return v == -1 || v == 0;
         }
         static get isDownMouseLeft() {
-            return Input.map.get(Input._MOUSE_LEFT) == 2;
+            return Input.keyToState.get(Input._MOUSE_LEFT) == 2;
         }
         static get isPressingMouseLeft() {
-            const v = Input.map.get(Input._MOUSE_LEFT);
+            const v = Input.keyToState.get(Input._MOUSE_LEFT);
             return v == 1 || v == 2;
         }
         static get isUpMouseRight() {
-            return Input.map.get(Input._MOUSE_RIGHT) == -1;
+            return Input.keyToState.get(Input._MOUSE_RIGHT) == -1;
         }
         static get isNotPressMouseRight() {
-            const v = Input.map.get(Input._MOUSE_RIGHT);
+            const v = Input.keyToState.get(Input._MOUSE_RIGHT);
             return v == -1 || v == 0;
         }
         static get isDownMouseRight() {
-            return Input.map.get(Input._MOUSE_RIGHT) == 2;
+            return Input.keyToState.get(Input._MOUSE_RIGHT) == 2;
         }
         static get isPressingMouseRight() {
-            const v = Input.map.get(Input._MOUSE_RIGHT);
+            const v = Input.keyToState.get(Input._MOUSE_RIGHT);
             return v == 1 || v == 2;
         }
         static get isUpMouseMiddle() {
-            return Input.map.get(Input._MOUSE_MIDDLE) == -1;
+            return Input.keyToState.get(Input._MOUSE_MIDDLE) == -1;
         }
         static get isNotPressMouseMiddle() {
-            const v = Input.map.get(Input._MOUSE_MIDDLE);
+            const v = Input.keyToState.get(Input._MOUSE_MIDDLE);
             return v == -1 || v == 0;
         }
         static get isDownMouseMiddle() {
-            return Input.map.get(Input._MOUSE_MIDDLE) == 2;
+            return Input.keyToState.get(Input._MOUSE_MIDDLE) == 2;
         }
         static get isPressingMouseMiddle() {
-            const v = Input.map.get(Input._MOUSE_MIDDLE);
+            const v = Input.keyToState.get(Input._MOUSE_MIDDLE);
             return v == 1 || v == 2;
         }
     }
     Input._MOUSE_LEFT = "_MOUSE_LEFT";
     Input._MOUSE_RIGHT = "_MOUSE_RIGHT";
     Input._MOUSE_MIDDLE = "_MOUSE_MIDDLE";
-    Input.map = new Map();
+    Input.keyToState = new Map();
+    Input.keyToDownFrame = new Map();
+    Input.keyToUpFrame = new Map();
     Input.mousePosition = new Vector2(0, 0);
     Input.wheelFrame = 0;
     Input.wheel = 0;
@@ -658,7 +677,7 @@ var app = (function () {
             if (this.interval > 0) {
                 this.interval -= Engine.delta;
             }
-            if (Input.isPressingMouseLeft) {
+            if (Input.isDownMouseLeft) {
                 if (this.interval <= 0) {
                     const pos = this.entity.positionScreen;
                     const rad = this.entity.radianScreen;
@@ -784,7 +803,7 @@ var app = (function () {
             if (bulletAttr) {
                 const bullet = e.collides.find(e => e.attributes.getNamedItem(bulletAttr));
                 if (bullet) {
-                    Game.state += 1;
+                    Game.score += 1;
                     bullet.remove();
                     e.remove();
                 }
@@ -793,61 +812,6 @@ var app = (function () {
     }
     Enemy.WIDTH = 100;
     Enemy.HEIGHT = 100;
-    Enemy.generateNum = 1;
-
-    class Game {
-        static initialize() {
-            Engine.start();
-            MComponent.registerComponent("player", Player);
-            MComponent.registerComponent("gun", Gun);
-            MComponent.registerComponent("bullet", Bullet);
-            MComponent.registerComponent("enemy", Enemy);
-            Player.generate();
-            Game.generateTime = Game.generateSpan;
-            requestAnimationFrame(Game.loop);
-        }
-        static loop() {
-            if (Input.isDown("SPACE")) {
-                if (Game.isStatePlaying == false) {
-                    Game.toPlayingState();
-                }
-            }
-            const player = Player.instance;
-            if (player && Game.isStatePlaying) {
-                Game.generateTime += Engine.delta;
-                if (Game.generateTime > Game.generateSpan) {
-                    Enemy.generate();
-                    Game.generateTime = 0;
-                    Game.generateSpan = Math.max(Game.generateSpan - 0.2, Gun.SPAN * 0.99);
-                }
-            }
-            requestAnimationFrame(Game.loop);
-        }
-        static get isStateWaiting() {
-            return Game.state == Game._STATE_WAITING;
-        }
-        static get isStatePlaying() {
-            return Game.state == Game._STATE_PLAYING;
-        }
-        static get isStateEnding() {
-            return Game.state == Game._STATE_ENDING;
-        }
-        static toPlayingState() {
-            Enemy.destroyAll();
-            Game.state = Game._STATE_PLAYING;
-            Game.score = 0;
-        }
-        static toEndingState() {
-            Game.state = Game._STATE_ENDING;
-        }
-    }
-    Game._STATE_WAITING = 0;
-    Game._STATE_PLAYING = 1;
-    Game._STATE_ENDING = 2;
-    Game.generateTime = 0;
-    Game.generateSpan = 3;
-    Game.state = Game._STATE_WAITING;
-    Game.score = 0;
 
     function noop() { }
     function add_location(element, file, line, column, char) {
@@ -892,17 +856,8 @@ var app = (function () {
     function space() {
         return text(' ');
     }
-    function attr(node, attribute, value) {
-        if (value == null)
-            node.removeAttribute(attribute);
-        else if (node.getAttribute(attribute) !== value)
-            node.setAttribute(attribute, value);
-    }
     function children(element) {
         return Array.from(element.childNodes);
-    }
-    function toggle_class(element, name, toggle) {
-        element.classList[toggle ? 'add' : 'remove'](name);
     }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
@@ -1132,12 +1087,12 @@ var app = (function () {
         dispatch_dev('SvelteDOMRemove', { node });
         detach(node);
     }
-    function attr_dev(node, attribute, value) {
-        attr(node, attribute, value);
-        if (value == null)
-            dispatch_dev('SvelteDOMRemoveAttribute', { node, attribute });
-        else
-            dispatch_dev('SvelteDOMSetAttribute', { node, attribute, value });
+    function set_data_dev(text, data) {
+        data = '' + data;
+        if (text.wholeText === data)
+            return;
+        dispatch_dev('SvelteDOMSetData', { node: text, data });
+        text.data = data;
     }
     function validate_slots(name, slot, keys) {
         for (const slot_key of Object.keys(slot)) {
@@ -1169,11 +1124,95 @@ var app = (function () {
     /* src\app\View.svelte generated by Svelte v3.37.0 */
     const file = "src\\app\\View.svelte";
 
+    // (25:3) {:else}
+    function create_else_block(ctx) {
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			t = text("Space：Restart");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_else_block.name,
+    		type: "else",
+    		source: "(25:3) {:else}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (23:33) 
+    function create_if_block_1(ctx) {
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			t = text("Shoot the enemy!");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block_1.name,
+    		type: "if",
+    		source: "(23:33) ",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (21:3) {#if Game.isStateWaiting}
+    function create_if_block(ctx) {
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			t = text("Space: Game Start");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block.name,
+    		type: "if",
+    		source: "(21:3) {#if Game.isStateWaiting}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
     function create_fragment(ctx) {
     	let div;
     	let h1;
     	let t1;
     	let p0;
+    	let t2;
+    	let t3_value = /*Game*/ ctx[0].score + "";
+    	let t3;
     	let t4;
     	let p1;
     	let t5;
@@ -1184,10 +1223,16 @@ var app = (function () {
     	let br2;
     	let t8;
     	let p2;
-    	let b0;
-    	let t10;
-    	let p3;
-    	let b1;
+    	let b;
+
+    	function select_block_type(ctx, dirty) {
+    		if (/*Game*/ ctx[0].isStateWaiting) return create_if_block;
+    		if (/*Game*/ ctx[0].isStatePlaying) return create_if_block_1;
+    		return create_else_block;
+    	}
+
+    	let current_block_type = select_block_type(ctx);
+    	let if_block = current_block_type(ctx);
 
     	const block = {
     		c: function create() {
@@ -1196,7 +1241,8 @@ var app = (function () {
     			h1.textContent = "DOM Shooting Game";
     			t1 = space();
     			p0 = element("p");
-    			p0.textContent = `Score: ${Game.score}`;
+    			t2 = text("Score: ");
+    			t3 = text(t3_value);
     			t4 = space();
     			p1 = element("p");
     			t5 = text("WASD : Move");
@@ -1207,29 +1253,17 @@ var app = (function () {
     			br2 = element("br");
     			t8 = space();
     			p2 = element("p");
-    			b0 = element("b");
-    			b0.textContent = "Space: Game Start";
-    			t10 = space();
-    			p3 = element("p");
-    			b1 = element("b");
-    			b1.textContent = "Space：Restart";
-    			add_location(h1, file, 6, 1, 164);
-    			add_location(p0, file, 7, 1, 192);
-    			add_location(br0, file, 11, 13, 242);
-    			add_location(br1, file, 12, 18, 267);
-    			add_location(br2, file, 13, 15, 289);
-    			add_location(p1, file, 10, 1, 225);
-    			add_location(b0, file, 15, 48, 350);
-    			attr_dev(p2, "class", "svelte-1lngs05");
-    			toggle_class(p2, "hidden", Game.isStateWaiting == false);
-    			add_location(p2, file, 15, 1, 303);
-    			add_location(b1, file, 16, 47, 426);
-    			attr_dev(p3, "class", "svelte-1lngs05");
-    			toggle_class(p3, "hidden", Game.isStateEnding == false);
-    			add_location(p3, file, 16, 1, 380);
-    			attr_dev(div, "class", "svelte-1lngs05");
-    			toggle_class(div, "hidden", Game.isStateWaiting == false);
-    			add_location(div, file, 5, 0, 113);
+    			b = element("b");
+    			if_block.c();
+    			add_location(h1, file, 9, 1, 185);
+    			add_location(p0, file, 10, 1, 213);
+    			add_location(br0, file, 14, 13, 263);
+    			add_location(br1, file, 15, 18, 288);
+    			add_location(br2, file, 16, 15, 310);
+    			add_location(p1, file, 13, 1, 246);
+    			add_location(b, file, 19, 2, 330);
+    			add_location(p2, file, 18, 1, 324);
+    			add_location(div, file, 8, 0, 178);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1239,6 +1273,8 @@ var app = (function () {
     			append_dev(div, h1);
     			append_dev(div, t1);
     			append_dev(div, p0);
+    			append_dev(p0, t2);
+    			append_dev(p0, t3);
     			append_dev(div, t4);
     			append_dev(div, p1);
     			append_dev(p1, t5);
@@ -1249,16 +1285,27 @@ var app = (function () {
     			append_dev(p1, br2);
     			append_dev(div, t8);
     			append_dev(div, p2);
-    			append_dev(p2, b0);
-    			append_dev(div, t10);
-    			append_dev(div, p3);
-    			append_dev(p3, b1);
+    			append_dev(p2, b);
+    			if_block.m(b, null);
     		},
-    		p: noop,
+    		p: function update(ctx, [dirty]) {
+    			if (dirty & /*Game*/ 1 && t3_value !== (t3_value = /*Game*/ ctx[0].score + "")) set_data_dev(t3, t3_value);
+
+    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    				if_block.d(1);
+    				if_block = current_block_type(ctx);
+
+    				if (if_block) {
+    					if_block.c();
+    					if_block.m(b, null);
+    				}
+    			}
+    		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div);
+    			if_block.d();
     		}
     	};
 
@@ -1277,6 +1324,10 @@ var app = (function () {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots("View", slots, []);
 
+    	const reload = () => {
+    		$$invalidate(0, Game);
+    	};
+
     	onMount(() => {
     		
     	});
@@ -1287,14 +1338,14 @@ var app = (function () {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<View> was created with unknown prop '${key}'`);
     	});
 
-    	$$self.$capture_state = () => ({ onMount, Game });
-    	return [];
+    	$$self.$capture_state = () => ({ onMount, Game, reload });
+    	return [Game, reload];
     }
 
     class View extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance, create_fragment, safe_not_equal, {});
+    		init(this, options, instance, create_fragment, safe_not_equal, { reload: 1 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -1303,14 +1354,93 @@ var app = (function () {
     			id: create_fragment.name
     		});
     	}
+
+    	get reload() {
+    		return this.$$.ctx[1];
+    	}
+
+    	set reload(value) {
+    		throw new Error("<View>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
     }
 
-    const view = new View({
-        target: document.body,
-    });
-    Game.initialize();
+    class Game {
+        static get state() {
+            return Game._state;
+        }
+        static set state(v) {
+            var _a;
+            Game._state = v;
+            (_a = Game.view) === null || _a === void 0 ? void 0 : _a.reload();
+        }
+        static get score() {
+            return Game._score;
+        }
+        static set score(v) {
+            var _a;
+            Game._score = v;
+            (_a = Game.view) === null || _a === void 0 ? void 0 : _a.reload();
+        }
+        static initialize() {
+            Engine.start();
+            MComponent.registerComponent("player", Player);
+            MComponent.registerComponent("gun", Gun);
+            MComponent.registerComponent("bullet", Bullet);
+            MComponent.registerComponent("enemy", Enemy);
+            Game.view = new View({
+                target: document.body,
+            });
+            Player.generate();
+            Game.generateTime = Game.generateSpan;
+            Engine.addRequestAnimationFrame(Game.loop);
+        }
+        static loop() {
+            if (Input.isDown("Space")) {
+                if (Game.isStatePlaying == false) {
+                    Game.toPlayingState();
+                }
+            }
+            const player = Player.instance;
+            if (player && Game.isStatePlaying) {
+                Game.generateTime += Engine.delta;
+                if (Game.generateTime > Game.generateSpan) {
+                    Enemy.generate();
+                    Game.generateTime = 0;
+                    Game.generateSpan = Math.max(Game.generateSpan - 0.2, Gun.SPAN * 0.99);
+                }
+            }
+        }
+        static get isStateWaiting() {
+            return Game.state == Game._STATE_WAITING;
+        }
+        static get isStatePlaying() {
+            return Game.state == Game._STATE_PLAYING;
+        }
+        static get isStateEnding() {
+            return Game.state == Game._STATE_ENDING;
+        }
+        static toPlayingState() {
+            Enemy.destroyAll();
+            if (Player.instance == undefined || Player.instance.entity.isDestroy) {
+                Player.generate();
+            }
+            Game.generateTime = 0;
+            Game.state = Game._STATE_PLAYING;
+        }
+        static toEndingState() {
+            Game.state = Game._STATE_ENDING;
+        }
+    }
+    Game._STATE_WAITING = 0;
+    Game._STATE_PLAYING = 1;
+    Game._STATE_ENDING = 2;
+    Game.view = undefined;
+    Game.generateTime = 0;
+    Game.generateSpan = 3;
+    Game._state = Game._STATE_WAITING;
+    Game._score = 0;
 
-    return view;
+    Game.initialize();
 
 }());
 //# sourceMappingURL=bundle.js.map

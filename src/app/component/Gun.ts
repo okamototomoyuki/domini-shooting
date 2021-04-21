@@ -14,7 +14,7 @@ export default class Gun extends MComponent {
             this.interval -= Engine.delta;
         }
 
-        if (Input.isPressingMouseLeft) {
+        if (Input.isDownMouseLeft) {
             if (this.interval <= 0) {
                 const pos = this.entity.positionScreen;
                 const rad = this.entity.radianScreen;

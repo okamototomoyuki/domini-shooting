@@ -10,7 +10,6 @@ import Player from "./Player";
 export default class Enemy extends MComponent {
     static WIDTH = 100;
     static HEIGHT = 100;
-    static generateNum = 1;
 
     static generate(): Enemy {
         const node = MEntity.generate();
@@ -63,7 +62,7 @@ export default class Enemy extends MComponent {
             const bullet = e.collides.find(e => e.attributes.getNamedItem(bulletAttr))
             if (bullet) {
                 // ポイント加算
-                Game.state += 1;
+                Game.score += 1;
 
                 // 破棄
                 bullet.remove();

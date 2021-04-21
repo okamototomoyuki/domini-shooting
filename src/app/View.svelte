@@ -2,10 +2,14 @@
 	import { onMount } from "svelte";
 	import Game from "./Game";
 
+	export const reload = () => {
+		Game.score = Game.score;
+	};
+
 	onMount(() => {});
 </script>
 
-<div class:hidden={Game.isStateWaiting == false}>
+<div>
 	<h1>DOM Shooting Game</h1>
 	<p>
 		Score: {Game.score}
@@ -15,16 +19,23 @@
 		Mouse Move : Aim<br />
 		Click : Shoot<br />
 	</p>
-	<p class:hidden={Game.isStateWaiting == false}><b>Space: Game Start</b></p>
-	<p class:hidden={Game.isStateEnding == false}><b>Space：Restart</b></p>
+	<p>
+		<b>
+			{#if Game.isStateWaiting}
+				Space: Game Start
+			{:else if Game.isStatePlaying}
+				Shoot the enemy!
+			{:else}
+				Space：Restart
+			{/if}
+		</b>
+	</p>
 </div>
 
 <style lang="scss">
-	.hidden {
-		display: none;
-	}
 	:global(body) {
 		overflow: hidden;
+		user-select: none;
 	}
 	:global(m-entity) {
 		transform: translate(var(--x, 0), var(--y, 0)) rotate(var(--rad, 0))

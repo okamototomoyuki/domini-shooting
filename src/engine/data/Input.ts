@@ -9,7 +9,9 @@ export default class Input {
     static _MOUSE_RIGHT = "_MOUSE_RIGHT";
     static _MOUSE_MIDDLE = "_MOUSE_MIDDLE";
 
-    static map = new Map<string, number>();
+    static keyToState = new Map<string, number>();
+    static keyToDownFrame = new Map<string, number>();
+    static keyToUpFrame = new Map<string, number>();
     static mousePosition = new Vector2(0, 0);
     static wheelFrame = 0
     static wheel = 0
@@ -26,12 +28,15 @@ export default class Input {
     }
 
     static update() {
-        for (let key of Input.map.keys()) {
-            let v = Input.map.get(key);
-            if (v == 2) {
-                Input.map.set(key, 1);
-            } else if (v == -1) {
-                Input.map.set(key, 0);
+        for (let key of Input.keyToState.keys()) {
+            let state = Input.keyToState.get(key);
+            let downFrame = Input.keyToDownFrame.get(key);
+            let upFrame = Input.keyToUpFrame.get(key);
+
+            if (state == 2 && downFrame && downFrame <= Engine.currentFrame - 2) {
+                Input.keyToState.set(key, 1);
+            } else if (state == -1 && upFrame && upFrame <= Engine.currentFrame - 2) {
+                Input.keyToState.set(key, 0);
             }
         }
         if (Input.wheelFrame < Engine.currentFrame - 1) {
@@ -40,11 +45,13 @@ export default class Input {
     }
 
     static _onKeyDown(e: KeyboardEvent) {
-        Input.map.set(e.code, 2);
+        Input.keyToDownFrame.set(e.code, Engine.currentFrame);
+        Input.keyToState.set(e.code, 2);
     }
 
     static _onKeyUp(e: KeyboardEvent) {
-        Input.map.set(e.code, -1);
+        Input.keyToUpFrame.set(e.code, Engine.currentFrame);
+        Input.keyToState.set(e.code, -1);
     }
 
     static _onMouseMove(e: MouseEvent) {
@@ -54,22 +61,28 @@ export default class Input {
     static _onMouseDown(e: MouseEvent) {
         switch (e.button) {
             case 0:
-                Input.map.set(Input._MOUSE_LEFT, 2);
+                Input.keyToDownFrame.set(Input._MOUSE_LEFT, Engine.currentFrame);
+                Input.keyToState.set(Input._MOUSE_LEFT, 2);
             case 1:
-                Input.map.set(Input._MOUSE_MIDDLE, 2);
+                Input.keyToDownFrame.set(Input._MOUSE_MIDDLE, Engine.currentFrame);
+                Input.keyToState.set(Input._MOUSE_MIDDLE, 2);
             case 2:
-                Input.map.set(Input._MOUSE_RIGHT, 2);
+                Input.keyToDownFrame.set(Input._MOUSE_RIGHT, Engine.currentFrame);
+                Input.keyToState.set(Input._MOUSE_RIGHT, 2);
         }
     }
 
     static _onMouseUp(e: MouseEvent) {
         switch (e.button) {
             case 0:
-                Input.map.set(Input._MOUSE_LEFT, -1);
+                Input.keyToUpFrame.set(Input._MOUSE_LEFT, Engine.currentFrame);
+                Input.keyToState.set(Input._MOUSE_LEFT, -1);
             case 1:
-                Input.map.set(Input._MOUSE_MIDDLE, -1);
+                Input.keyToUpFrame.set(Input._MOUSE_MIDDLE, Engine.currentFrame);
+                Input.keyToState.set(Input._MOUSE_MIDDLE, -1);
             case 2:
-                Input.map.set(Input._MOUSE_RIGHT, -1);
+                Input.keyToUpFrame.set(Input._MOUSE_RIGHT, Engine.currentFrame);
+                Input.keyToState.set(Input._MOUSE_RIGHT, -1);
         }
     }
 
@@ -79,80 +92,80 @@ export default class Input {
     }
 
     static isUp(code: string): boolean {
-        if (Input.map.has(code)) {
-            return Input.map.get(code) == -1;
+        if (Input.keyToState.has(code)) {
+            return Input.keyToState.get(code) == -1;
         }
         return false;
     }
 
     static isNotPress(code: string): boolean {
-        const v = Input.map.get(code);
+        const v = Input.keyToState.get(code);
         return v == 0 || v == -1;
     }
 
     static isDown(code: string): boolean {
-        return Input.map.get(code) == 2;
+        return Input.keyToState.get(code) == 2;
     }
 
     static isPressing(code: string): boolean {
-        const v = Input.map.get(code)
+        const v = Input.keyToState.get(code)
         return v == 1 || v == 2;
     }
 
 
     static get isUpMouseLeft(): boolean {
-        return Input.map.get(Input._MOUSE_LEFT) == -1
+        return Input.keyToState.get(Input._MOUSE_LEFT) == -1
     }
 
     static get isNotPressMouseLeft(): boolean {
-        const v = Input.map.get(Input._MOUSE_LEFT);
+        const v = Input.keyToState.get(Input._MOUSE_LEFT);
         return v == -1 || v == 0
     }
 
     static get isDownMouseLeft(): boolean {
-        return Input.map.get(Input._MOUSE_LEFT) == 2;
+        return Input.keyToState.get(Input._MOUSE_LEFT) == 2;
     }
 
     static get isPressingMouseLeft(): boolean {
-        const v = Input.map.get(Input._MOUSE_LEFT)
+        const v = Input.keyToState.get(Input._MOUSE_LEFT)
         return v == 1 || v == 2;
     }
 
 
     static get isUpMouseRight(): boolean {
-        return Input.map.get(Input._MOUSE_RIGHT) == -1;
+        return Input.keyToState.get(Input._MOUSE_RIGHT) == -1;
     }
 
     static get isNotPressMouseRight(): boolean {
-        const v = Input.map.get(Input._MOUSE_RIGHT)
+        const v = Input.keyToState.get(Input._MOUSE_RIGHT)
         return v == -1 || v == 0
     }
 
     static get isDownMouseRight(): boolean {
-        return Input.map.get(Input._MOUSE_RIGHT) == 2;
+        return Input.keyToState.get(Input._MOUSE_RIGHT) == 2;
     }
 
     static get isPressingMouseRight(): boolean {
-        const v = Input.map.get(Input._MOUSE_RIGHT)
+        const v = Input.keyToState.get(Input._MOUSE_RIGHT)
         return v == 1 || v == 2;
     }
 
 
     static get isUpMouseMiddle(): boolean {
-        return Input.map.get(Input._MOUSE_MIDDLE) == -1;
+        return Input.keyToState.get(Input._MOUSE_MIDDLE) == -1;
     }
 
     static get isNotPressMouseMiddle(): boolean {
-        const v = Input.map.get(Input._MOUSE_MIDDLE)
+        const v = Input.keyToState.get(Input._MOUSE_MIDDLE)
         return v == -1 || v == 0;
     }
 
     static get isDownMouseMiddle(): boolean {
-        return Input.map.get(Input._MOUSE_MIDDLE) == 2;
+        return Input.keyToState.get(Input._MOUSE_MIDDLE) == 2;
     }
 
     static get isPressingMouseMiddle(): boolean {
-        const v = Input.map.get(Input._MOUSE_MIDDLE)
+        const v = Input.keyToState.get(Input._MOUSE_MIDDLE)
         return v == 1 || v == 2;
     }
 }

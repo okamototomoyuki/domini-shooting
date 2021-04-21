@@ -6,6 +6,7 @@ export default class Engine {
     static prevDate = window.performance.now();
     static currentFrame = 0;
     static delta = 0;
+    static loops: Array<() => void> = []
 
     static start() {
         Input.initialize()
@@ -22,7 +23,14 @@ export default class Engine {
 
         MEntity.update();
         Input.update();
+        for (const e of Engine.loops) {
+            e();
+        }
 
         requestAnimationFrame(Engine.loop);
+    }
+
+    static addRequestAnimationFrame(loop: () => void): void {
+        Engine.loops.push(loop);
     }
 }

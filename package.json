@@ -1,6 +1,6 @@
 {
   "name": "domini-shooting",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "cross-env ROLLUP_WATCH= rollup -c",

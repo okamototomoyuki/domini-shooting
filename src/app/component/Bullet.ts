@@ -1,7 +1,7 @@
-import MComponent from "../../engine/component/MComponent";
-import Vector2 from "../../engine/data/Vector2";
-import MEntity from "../../engine/element/MEntity";
-import Engine from "../../engine/Engine";
+import MComponent from "../../domini/component/MComponent";
+import Vector2 from "../../domini/data/Vector2";
+import MEntity from "../../domini/element/MEntity";
+import Domini from "../../domini/Domini";
 
 export default class Bullet extends MComponent {
 
@@ -18,9 +18,9 @@ export default class Bullet extends MComponent {
     update() {
         const e = this.entity;
         const vecR = e.right.addVectors(e.origin.multiply(-1));
-        e.position = e.position.addVectors(vecR.normalized.multiply(500).multiply(Engine.delta));
+        e.position = e.position.addVectors(vecR.normalized.multiply(500).multiply(Domini.delta));
         if (e.isInBody == false) {
-            e.remove();
+            e.destroy();
         }
     }
 }

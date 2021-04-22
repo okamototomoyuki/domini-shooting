@@ -1,8 +1,8 @@
-import MComponent from "../../engine/component/MComponent";
-import Input from "../../engine/data/Input";
-import Vector2 from "../../engine/data/Vector2";
-import MEntity from "../../engine/element/MEntity";
-import Engine from "../../engine/Engine";
+import MComponent from "../../domini/component/MComponent";
+import Input from "../../domini/data/Input";
+import Vector2 from "../../domini/data/Vector2";
+import MEntity from "../../domini/element/MEntity";
+import Domini from "../../domini/Domini";
 import Game from "../Game";
 import Enemy from "./Enemy";
 import Gun from "./Gun";
@@ -31,7 +31,7 @@ export default class Player extends MComponent {
     }
 
     update() {
-        const d = Engine.delta;
+        const d = Domini.delta;
         const e = this.entity;
 
         if (Input.isPressing("KeyW")) {
@@ -97,7 +97,7 @@ export default class Player extends MComponent {
 
         const enemyAttr = MComponent.getAttributeName(Enemy);
         if (enemyAttr && e.collides.some(e => e.attributes.getNamedItem(enemyAttr))) {
-            e.remove();
+            e.destroy();
             Game.toEndingState()
         }
     }

@@ -24,11 +24,14 @@
 			{#if Game.isStateWaiting}
 				Space: Game Start
 			{:else if Game.isStatePlaying}
-				Shoot the enemy!
+				Shoot Enemies!
 			{:else}
 				Space：Restart
 			{/if}
 		</b>
+	</p>
+	<p>
+		<a href="/">back</a>
 	</p>
 </div>
 

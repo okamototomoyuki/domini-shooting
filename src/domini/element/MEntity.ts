@@ -1,6 +1,7 @@
 import MComponent from "../component/MComponent";
 import Vector2 from "../data/Vector2";
 import Constructable from "../interface/Constructable";
+import ElementUtils from "../util/ElementUtils";
 import MathUtils from "../util/MathUtils";
 import Vertex from "./MVertex";
 import MVertex from "./MVertex";
@@ -442,6 +443,10 @@ export default class MEntity extends HTMLElement {
             return this.nameToComponent.has(attrName);
         }
         return false;
+    }
+
+    destroy() {
+        ElementUtils.destoyRecursive(this);
     }
 
     get isInBody(): boolean {

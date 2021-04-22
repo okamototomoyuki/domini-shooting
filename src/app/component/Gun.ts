@@ -1,6 +1,6 @@
-import MComponent from "../../engine/component/MComponent";
-import Input from "../../engine/data/Input";
-import Engine from "../../engine/Engine";
+import MComponent from "../../domini/component/MComponent";
+import Input from "../../domini/data/Input";
+import Domini from "../../domini/Domini";
 import Bullet from "./Bullet";
 import Enemy from "./Enemy";
 
@@ -11,7 +11,7 @@ export default class Gun extends MComponent {
 
     update() {
         if (this.interval > 0) {
-            this.interval -= Engine.delta;
+            this.interval -= Domini.delta;
         }
 
         if (Input.isDownMouseLeft) {

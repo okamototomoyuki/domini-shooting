@@ -1,8 +1,8 @@
 
-import MComponent from "../../engine/component/MComponent";
-import Vector2 from "../../engine/data/Vector2";
-import MEntity from "../../engine/element/MEntity";
-import Engine from "../../engine/Engine";
+import MComponent from "../../domini/component/MComponent";
+import Vector2 from "../../domini/data/Vector2";
+import MEntity from "../../domini/element/MEntity";
+import Domini from "../../domini/Domini";
 import Game from "../Game";
 import Bullet from "./Bullet";
 import Player from "./Player";
@@ -41,7 +41,7 @@ export default class Enemy extends MComponent {
     static destroyAll() {
         for (const e of MEntity.list) {
             if (e.hasComponent(Enemy)) {
-                e.remove();
+                e.destroy();
             }
         }
     }
@@ -53,7 +53,7 @@ export default class Enemy extends MComponent {
             if (player.entity.isDestroy == false) {
                 this.entity.loopAtScreen(player.entity.positionScreen);
                 const vecR = e.right.addVectors(e.origin.multiply(-1));
-                e.position = e.position.addVectors(vecR.normalized.multiply(50).multiply(Engine.delta));
+                e.position = e.position.addVectors(vecR.normalized.multiply(50).multiply(Domini.delta));
             }
         }
 
@@ -65,8 +65,8 @@ export default class Enemy extends MComponent {
                 Game.score += 1;
 
                 // 破棄
-                bullet.remove();
-                e.remove();
+                bullet.destroy();
+                e.destroy();
             }
         }
     }

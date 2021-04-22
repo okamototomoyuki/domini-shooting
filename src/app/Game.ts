@@ -1,7 +1,7 @@
-import MComponent from "../engine/component/MComponent";
-import Input from "../engine/data/Input";
-import MEntity from "../engine/element/MEntity";
-import Engine from "../engine/Engine";
+import MComponent from "../domini/component/MComponent";
+import Input from "../domini/data/Input";
+import MEntity from "../domini/element/MEntity";
+import Domini from "../domini/Domini";
 import Bullet from "./component/Bullet";
 import Enemy from "./component/Enemy";
 import Gun from "./component/Gun";
@@ -14,10 +14,12 @@ export default class Game {
     static _STATE_PLAYING = 1;
     static _STATE_ENDING = 2;
 
+    static _GENERATE_SPAN_DEFAULT = 3
+
     static view: View | undefined = undefined;
 
     static generateTime = 0;
-    static generateSpan = 3;
+    static generateSpan = Game._GENERATE_SPAN_DEFAULT;
 
     static _state = Game._STATE_WAITING;
     static get state() {
@@ -37,7 +39,7 @@ export default class Game {
     }
 
     static initialize() {
-        Engine.start();
+        Domini.start();
 
         MComponent.registerComponent("player", Player);
         MComponent.registerComponent("gun", Gun);
@@ -50,8 +52,9 @@ export default class Game {
         });
 
         Player.generate();
+        Game.generateSpan = Game._GENERATE_SPAN_DEFAULT;
         Game.generateTime = Game.generateSpan;
-        Engine.addRequestAnimationFrame(Game.loop);
+        Domini.addRequestAnimationFrame(Game.loop);
     }
 
     static loop() {
@@ -63,7 +66,7 @@ export default class Game {
 
         const player = Player.instance;
         if (player && Game.isStatePlaying) {
-            Game.generateTime += Engine.delta;
+            Game.generateTime += Domini.delta;
             if (Game.generateTime > Game.generateSpan) {
                 Enemy.generate();
                 Game.generateTime = 0;

@@ -1,5 +1,5 @@
 
-(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
+(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35730/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 (function () {
     'use strict';
 
@@ -68,6 +68,15 @@
             const tc = (aFrom.x - aTo.x) * (bFrom.y - aFrom.y) + (aFrom.y - aTo.y) * (aFrom.x - bFrom.x);
             const td = (aFrom.x - aTo.x) * (bTo.y - aFrom.y) + (aFrom.y - aTo.y) * (aFrom.x - bTo.x);
             return tc * td < 0 && ta * tb < 0;
+        }
+    }
+
+    class ElementUtils {
+        static destoyRecursive(ele) {
+            for (let e of ele.children) {
+                ElementUtils.destoyRecursive(e);
+            }
+            ele.remove();
         }
     }
 
@@ -473,6 +482,9 @@
             }
             return false;
         }
+        destroy() {
+            ElementUtils.destoyRecursive(this);
+        }
         get isInBody() {
             const rect = document.body.getBoundingClientRect();
             const pos = this.positionScreen;
@@ -485,31 +497,31 @@
     MEntity.list = new Array();
     customElements.define("m-entity", MEntity);
 
-    class Engine {
+    class Domini {
         static start() {
             Input.initialize();
             this.loop();
         }
         static loop() {
-            Engine.currentFrame = Engine.currentFrame + 1;
+            Domini.currentFrame = Domini.currentFrame + 1;
             const now = window.performance.now();
-            Engine.delta = (now - Engine.prevDate) / 1000;
-            Engine.prevDate = now;
+            Domini.delta = (now - Domini.prevDate) / 1000;
+            Domini.prevDate = now;
             MEntity.update();
             Input.update();
-            for (const e of Engine.loops) {
+            for (const e of Domini.loops) {
                 e();
             }
-            requestAnimationFrame(Engine.loop);
+            requestAnimationFrame(Domini.loop);
         }
         static addRequestAnimationFrame(loop) {
-            Engine.loops.push(loop);
+            Domini.loops.push(loop);
         }
     }
-    Engine.prevDate = window.performance.now();
-    Engine.currentFrame = 0;
-    Engine.delta = 0;
-    Engine.loops = [];
+    Domini.prevDate = window.performance.now();
+    Domini.currentFrame = 0;
+    Domini.delta = 0;
+    Domini.loops = [];
 
     class Input {
         static initialize() {
@@ -526,23 +538,23 @@
                 let state = Input.keyToState.get(key);
                 let downFrame = Input.keyToDownFrame.get(key);
                 let upFrame = Input.keyToUpFrame.get(key);
-                if (state == 2 && downFrame && downFrame <= Engine.currentFrame - 2) {
+                if (state == 2 && downFrame && downFrame <= Domini.currentFrame - 2) {
                     Input.keyToState.set(key, 1);
                 }
-                else if (state == -1 && upFrame && upFrame <= Engine.currentFrame - 2) {
+                else if (state == -1 && upFrame && upFrame <= Domini.currentFrame - 2) {
                     Input.keyToState.set(key, 0);
                 }
             }
-            if (Input.wheelFrame < Engine.currentFrame - 1) {
+            if (Input.wheelFrame < Domini.currentFrame - 1) {
                 Input.wheel = 0;
             }
         }
         static _onKeyDown(e) {
-            Input.keyToDownFrame.set(e.code, Engine.currentFrame);
+            Input.keyToDownFrame.set(e.code, Domini.currentFrame);
             Input.keyToState.set(e.code, 2);
         }
         static _onKeyUp(e) {
-            Input.keyToUpFrame.set(e.code, Engine.currentFrame);
+            Input.keyToUpFrame.set(e.code, Domini.currentFrame);
             Input.keyToState.set(e.code, -1);
         }
         static _onMouseMove(e) {
@@ -551,31 +563,31 @@
         static _onMouseDown(e) {
             switch (e.button) {
                 case 0:
-                    Input.keyToDownFrame.set(Input._MOUSE_LEFT, Engine.currentFrame);
+                    Input.keyToDownFrame.set(Input._MOUSE_LEFT, Domini.currentFrame);
                     Input.keyToState.set(Input._MOUSE_LEFT, 2);
                 case 1:
-                    Input.keyToDownFrame.set(Input._MOUSE_MIDDLE, Engine.currentFrame);
+                    Input.keyToDownFrame.set(Input._MOUSE_MIDDLE, Domini.currentFrame);
                     Input.keyToState.set(Input._MOUSE_MIDDLE, 2);
                 case 2:
-                    Input.keyToDownFrame.set(Input._MOUSE_RIGHT, Engine.currentFrame);
+                    Input.keyToDownFrame.set(Input._MOUSE_RIGHT, Domini.currentFrame);
                     Input.keyToState.set(Input._MOUSE_RIGHT, 2);
             }
         }
         static _onMouseUp(e) {
             switch (e.button) {
                 case 0:
-                    Input.keyToUpFrame.set(Input._MOUSE_LEFT, Engine.currentFrame);
+                    Input.keyToUpFrame.set(Input._MOUSE_LEFT, Domini.currentFrame);
                     Input.keyToState.set(Input._MOUSE_LEFT, -1);
                 case 1:
-                    Input.keyToUpFrame.set(Input._MOUSE_MIDDLE, Engine.currentFrame);
+                    Input.keyToUpFrame.set(Input._MOUSE_MIDDLE, Domini.currentFrame);
                     Input.keyToState.set(Input._MOUSE_MIDDLE, -1);
                 case 2:
-                    Input.keyToUpFrame.set(Input._MOUSE_RIGHT, Engine.currentFrame);
+                    Input.keyToUpFrame.set(Input._MOUSE_RIGHT, Domini.currentFrame);
                     Input.keyToState.set(Input._MOUSE_RIGHT, -1);
             }
         }
         static _onMouseWheel(e) {
-            Input.wheelFrame = Engine.currentFrame;
+            Input.wheelFrame = Domini.currentFrame;
             Input.wheel = e.deltaY;
         }
         static isUp(code) {
@@ -661,9 +673,9 @@
         update() {
             const e = this.entity;
             const vecR = e.right.addVectors(e.origin.multiply(-1));
-            e.position = e.position.addVectors(vecR.normalized.multiply(500).multiply(Engine.delta));
+            e.position = e.position.addVectors(vecR.normalized.multiply(500).multiply(Domini.delta));
             if (e.isInBody == false) {
-                e.remove();
+                e.destroy();
             }
         }
     }
@@ -675,7 +687,7 @@
         }
         update() {
             if (this.interval > 0) {
-                this.interval -= Engine.delta;
+                this.interval -= Domini.delta;
             }
             if (Input.isDownMouseLeft) {
                 if (this.interval <= 0) {
@@ -707,7 +719,7 @@
             gun.addComponent(Gun);
         }
         update() {
-            const d = Engine.delta;
+            const d = Domini.delta;
             const e = this.entity;
             if (Input.isPressing("KeyW")) {
                 e.translateScreenY(-d * 500);
@@ -747,7 +759,7 @@
             }
             const enemyAttr = MComponent.getAttributeName(Enemy);
             if (enemyAttr && e.collides.some(e => e.attributes.getNamedItem(enemyAttr))) {
-                e.remove();
+                e.destroy();
                 Game.toEndingState();
             }
         }
@@ -785,7 +797,7 @@
         static destroyAll() {
             for (const e of MEntity.list) {
                 if (e.hasComponent(Enemy)) {
-                    e.remove();
+                    e.destroy();
                 }
             }
         }
@@ -796,7 +808,7 @@
                 if (player.entity.isDestroy == false) {
                     this.entity.loopAtScreen(player.entity.positionScreen);
                     const vecR = e.right.addVectors(e.origin.multiply(-1));
-                    e.position = e.position.addVectors(vecR.normalized.multiply(50).multiply(Engine.delta));
+                    e.position = e.position.addVectors(vecR.normalized.multiply(50).multiply(Domini.delta));
                 }
             }
             const bulletAttr = MComponent.getAttributeName(Bullet);
@@ -804,8 +816,8 @@
                 const bullet = e.collides.find(e => e.attributes.getNamedItem(bulletAttr));
                 if (bullet) {
                     Game.score += 1;
-                    bullet.remove();
-                    e.remove();
+                    bullet.destroy();
+                    e.destroy();
                 }
             }
         }
@@ -855,6 +867,12 @@
     }
     function space() {
         return text(' ');
+    }
+    function attr(node, attribute, value) {
+        if (value == null)
+            node.removeAttribute(attribute);
+        else if (node.getAttribute(attribute) !== value)
+            node.setAttribute(attribute, value);
     }
     function children(element) {
         return Array.from(element.childNodes);
@@ -1087,6 +1105,13 @@
         dispatch_dev('SvelteDOMRemove', { node });
         detach(node);
     }
+    function attr_dev(node, attribute, value) {
+        attr(node, attribute, value);
+        if (value == null)
+            dispatch_dev('SvelteDOMRemoveAttribute', { node, attribute });
+        else
+            dispatch_dev('SvelteDOMSetAttribute', { node, attribute, value });
+    }
     function set_data_dev(text, data) {
         data = '' + data;
         if (text.wholeText === data)
@@ -1157,7 +1182,7 @@
 
     	const block = {
     		c: function create() {
-    			t = text("Shoot the enemy!");
+    			t = text("Shoot Enemies!");
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, t, anchor);
@@ -1224,6 +1249,9 @@
     	let t8;
     	let p2;
     	let b;
+    	let t9;
+    	let p3;
+    	let a;
 
     	function select_block_type(ctx, dirty) {
     		if (/*Game*/ ctx[0].isStateWaiting) return create_if_block;
@@ -1255,6 +1283,10 @@
     			p2 = element("p");
     			b = element("b");
     			if_block.c();
+    			t9 = space();
+    			p3 = element("p");
+    			a = element("a");
+    			a.textContent = "back";
     			add_location(h1, file, 9, 1, 185);
     			add_location(p0, file, 10, 1, 213);
     			add_location(br0, file, 14, 13, 263);
@@ -1263,6 +1295,9 @@
     			add_location(p1, file, 13, 1, 246);
     			add_location(b, file, 19, 2, 330);
     			add_location(p2, file, 18, 1, 324);
+    			attr_dev(a, "href", "/");
+    			add_location(a, file, 30, 2, 496);
+    			add_location(p3, file, 29, 1, 490);
     			add_location(div, file, 8, 0, 178);
     		},
     		l: function claim(nodes) {
@@ -1287,6 +1322,9 @@
     			append_dev(div, p2);
     			append_dev(p2, b);
     			if_block.m(b, null);
+    			append_dev(div, t9);
+    			append_dev(div, p3);
+    			append_dev(p3, a);
     		},
     		p: function update(ctx, [dirty]) {
     			if (dirty & /*Game*/ 1 && t3_value !== (t3_value = /*Game*/ ctx[0].score + "")) set_data_dev(t3, t3_value);
@@ -1382,7 +1420,7 @@
             (_a = Game.view) === null || _a === void 0 ? void 0 : _a.reload();
         }
         static initialize() {
-            Engine.start();
+            Domini.start();
             MComponent.registerComponent("player", Player);
             MComponent.registerComponent("gun", Gun);
             MComponent.registerComponent("bullet", Bullet);
@@ -1391,8 +1429,9 @@
                 target: document.body,
             });
             Player.generate();
+            Game.generateSpan = Game._GENERATE_SPAN_DEFAULT;
             Game.generateTime = Game.generateSpan;
-            Engine.addRequestAnimationFrame(Game.loop);
+            Domini.addRequestAnimationFrame(Game.loop);
         }
         static loop() {
             if (Input.isDown("Space")) {
@@ -1402,7 +1441,7 @@
             }
             const player = Player.instance;
             if (player && Game.isStatePlaying) {
-                Game.generateTime += Engine.delta;
+                Game.generateTime += Domini.delta;
                 if (Game.generateTime > Game.generateSpan) {
                     Enemy.generate();
                     Game.generateTime = 0;
@@ -1434,9 +1473,10 @@
     Game._STATE_WAITING = 0;
     Game._STATE_PLAYING = 1;
     Game._STATE_ENDING = 2;
+    Game._GENERATE_SPAN_DEFAULT = 3;
     Game.view = undefined;
     Game.generateTime = 0;
-    Game.generateSpan = 3;
+    Game.generateSpan = Game._GENERATE_SPAN_DEFAULT;
     Game._state = Game._STATE_WAITING;
     Game._score = 0;
 

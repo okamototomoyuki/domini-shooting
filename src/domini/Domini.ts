@@ -1,7 +1,7 @@
 import Input from "./data/Input";
 import MEntity from "./element/MEntity";
 
-export default class Engine {
+export default class Domini {
 
     static prevDate = window.performance.now();
     static currentFrame = 0;
@@ -15,22 +15,22 @@ export default class Engine {
     }
 
     static loop() {
-        Engine.currentFrame = Engine.currentFrame + 1;
+        Domini.currentFrame = Domini.currentFrame + 1;
 
         const now = window.performance.now();
-        Engine.delta = (now - Engine.prevDate) / 1000;
-        Engine.prevDate = now;
+        Domini.delta = (now - Domini.prevDate) / 1000;
+        Domini.prevDate = now;
 
         MEntity.update();
         Input.update();
-        for (const e of Engine.loops) {
+        for (const e of Domini.loops) {
             e();
         }
 
-        requestAnimationFrame(Engine.loop);
+        requestAnimationFrame(Domini.loop);
     }
 
     static addRequestAnimationFrame(loop: () => void): void {
-        Engine.loops.push(loop);
+        Domini.loops.push(loop);
     }
 }

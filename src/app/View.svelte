@@ -12,26 +12,26 @@
 <div>
 	<h1>DOM Shooting Game</h1>
 	<p>
-		Score: {Game.score}
+		スコア: {Game.score}
 	</p>
 	<p>
-		WASD : Move<br />
-		Mouse Move : Aim<br />
-		Click : Shoot<br />
+		WASD : 移動<br />
+		マウス移動 : 回転<br />
+		左クリック : 弾発射<br />
 	</p>
 	<p>
 		<b>
 			{#if Game.isStateWaiting}
-				Space: Game Start
+				スペース: ゲーム開始
 			{:else if Game.isStatePlaying}
-				Shoot Enemies!
+				敵を撃て！
 			{:else}
-				Space：Restart
+				スペース：最初から
 			{/if}
 		</b>
 	</p>
 	<p>
-		<a href="/">back</a>
+		<a href="/">ミニゲー</a>
 	</p>
 </div>
 

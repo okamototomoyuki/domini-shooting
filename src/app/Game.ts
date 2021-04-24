@@ -89,7 +89,8 @@ export default class Game {
         if (Player.instance == undefined || Player.instance.entity.isDestroy) {
             Player.generate();
         }
-        Game.generateTime = 0;
+        Game.generateSpan = Game._GENERATE_SPAN_DEFAULT;
+        Game.generateTime = Game.generateSpan;
         Game.state = Game._STATE_PLAYING;
     }
     static toEndingState() {
